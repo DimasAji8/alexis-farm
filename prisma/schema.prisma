@@ -1,14 +1,230 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  password  String
+  role      String   @default("staff")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([username])
+}
+
+model Kandang {
+  id               String           @id @default(cuid())
+  kode             String           @unique
+  nama             String
+  lokasi           String?
+  jumlahAyam       Int              @default(0)
+  status           String           @default("aktif")
+  keterangan       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  ayamMasukRecords AyamMasuk[]
+  kematianRecords  KematianRecord[]
+  pemakaianPakan   PemakaianPakan[]
+  produksiTelur    ProduksiTelur[]
+
+  @@index([kode])
+  @@index([status])
+}
+
+model JenisPakan {
+  id             String           @id @default(cuid())
+  kode           String           @unique
+  nama           String
+  satuan         String           @default("KG")
+  keterangan     String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  pemakaianPakan PemakaianPakan[]
+  pembelianPakan PembelianPakan[]
+
+  @@index([kode])
+}
+
+model AyamMasuk {
+  id           String   @id @default(cuid())
+  kandangId    String
+  tanggal      DateTime
+  jumlahAyam   Int
+  umurHari     Int?
+  hargaPerEkor Float?
+  totalHarga   Float?
+  supplier     String?
+  keterangan   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  kandang      Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
+
+  @@index([kandangId])
+  @@index([tanggal])
+}
+
+model KematianRecord {
+  id         String   @id @default(cuid())
+  kandangId  String
+  tanggal    DateTime
+  jumlahMati Int
+  keterangan String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  kandang    Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
+
+  @@index([kandangId])
+  @@index([tanggal])
+}
+
+model PembelianPakan {
+  id             String           @id @default(cuid())
+  jenisPakanId   String
+  tanggalBeli    DateTime
+  jumlahKg       Float
+  hargaPerKg     Float
+  totalHarga     Float
+  sisaStokKg     Float
+  keterangan     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  pemakaianPakan PemakaianPakan[]
+  jenisPakan     JenisPakan       @relation(fields: [jenisPakanId], references: [id])
+
+  @@index([jenisPakanId])
+  @@index([tanggalBeli])
+}
+
+model PemakaianPakan {
+  id               String         @id @default(cuid())
+  kandangId        String
+  jenisPakanId     String
+  pembelianPakanId String
+  tanggalPakai     DateTime
+  jumlahKg         Float
+  hargaPerKg       Float
+  totalBiaya       Float
+  keterangan       String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  jenisPakan       JenisPakan     @relation(fields: [jenisPakanId], references: [id])
+  kandang          Kandang        @relation(fields: [kandangId], references: [id], onDelete: Cascade)
+  pembelianPakan   PembelianPakan @relation(fields: [pembelianPakanId], references: [id])
+
+  @@index([kandangId])
+  @@index([jenisPakanId])
+  @@index([tanggalPakai])
+}
+
+model ProduksiTelur {
+  id                    String   @id @default(cuid())
+  kandangId             String
+  tanggal               DateTime
+  jumlahBagusButir      Int      @default(0)
+  beratBagusKg          Float    @default(0)
+  jumlahTidakBagusButir Int      @default(0)
+  beratTidakBagusKg     Float    @default(0)
+  totalButir            Int
+  totalKg               Float
+  keterangan            String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  kandang               Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
+
+  @@unique([kandangId, tanggal])
+  @@index([kandangId])
+  @@index([tanggal])
+}
+
+model StockTelur {
+  id         String   @id @default(cuid())
+  tanggal    DateTime
+  stockButir Int
+  stockKg    Float
+  keterangan String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tanggal])
+}
+
+model PenjualanTelur {
+  id             String   @id @default(cuid())
+  nomorTransaksi String   @unique
+  tanggal        DateTime
+  pembeli        String
+  jumlahButir    Int
+  beratKg        Float
+  hargaPerKg     Float
+  totalHarga     Float
+  saldoAwal      Float    @default(0)
+  uangMasuk      Float    @default(0)
+  uangKeluar     Float    @default(0)
+  saldoAkhir     Float    @default(0)
+  metodeBayar    String?
+  keterangan     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tanggal])
+  @@index([pembeli])
+}
+
+model TransaksiKeuangan {
+  id            String   @id @default(cuid())
+  tanggal       DateTime
+  jenis         String
+  kategori      String
+  jumlah        Float
+  keterangan    String?
+  referensiId   String?
+  referensiType String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tanggal])
+  @@index([jenis])
+  @@index([kategori])
+}
+
+model PengeluaranOperasional {
+  id         String   @id @default(cuid())
+  tanggal    DateTime
+  kategori   String
+  jumlah     Float
+  keterangan String
+  bukti      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tanggal])
+  @@index([kategori])
+}
+
+model LaporanBulanan {
+  id                          String   @id @default(cuid())
+  bulan                       Int
+  tahun                       Int
+  totalPemasukanTelur         Float    @default(0)
+  totalPemasukanLain          Float    @default(0)
+  totalPengeluaranPakan       Float    @default(0)
+  totalPengeluaranOperasional Float    @default(0)
+  totalPengeluaranLain        Float    @default(0)
+  totalPemasukan              Float    @default(0)
+  totalPengeluaran            Float    @default(0)
+  labaRugi                    Float    @default(0)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@unique([bulan, tahun])
+  @@index([tahun, bulan])
 }
