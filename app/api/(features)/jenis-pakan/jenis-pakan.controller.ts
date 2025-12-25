@@ -5,6 +5,17 @@ import { apiError, apiResponse } from "@/app/api/shared/utils/api-response";
 import { JenisPakanService } from "./jenis-pakan.service";
 import { createJenisPakanSchema, updateJenisPakanSchema } from "./jenis-pakan.validation";
 
+function extractId(req: NextRequest, params?: { id?: string }) {
+  const fromParams = params?.id;
+  if (fromParams) return fromParams;
+
+  const pathnameParts = req.nextUrl.pathname.split("/");
+  const last = pathnameParts[pathnameParts.length - 1];
+  if (last) return last;
+
+  throw new Error("Parameter id wajib diisi");
+}
+
 export class JenisPakanController {
   static async getAll() {
     try {
@@ -17,7 +28,8 @@ export class JenisPakanController {
 
   static async getById(_req: NextRequest, { params }: { params: { id: string } }) {
     try {
-      const data = await JenisPakanService.getById(params.id);
+      const id = extractId(_req, params);
+      const data = await JenisPakanService.getById(id);
       return apiResponse(data, "Jenis pakan berhasil diambil");
     } catch (error) {
       return apiError(error, "Jenis pakan tidak ditemukan", 404);
@@ -37,9 +49,10 @@ export class JenisPakanController {
 
   static async update(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+      const id = extractId(req, params);
       const body = await req.json();
       const validated = updateJenisPakanSchema.parse(body);
-      const data = await JenisPakanService.update(params.id, validated);
+      const data = await JenisPakanService.update(id, validated);
       return apiResponse(data, "Jenis pakan berhasil diperbarui");
     } catch (error) {
       return apiError(error);
@@ -48,7 +61,8 @@ export class JenisPakanController {
 
   static async delete(_req: NextRequest, { params }: { params: { id: string } }) {
     try {
-      const data = await JenisPakanService.delete(params.id);
+      const id = extractId(_req, params);
+      const data = await JenisPakanService.delete(id);
       return apiResponse(data, "Jenis pakan berhasil dihapus");
     } catch (error) {
       return apiError(error, "Jenis pakan tidak ditemukan", 404);

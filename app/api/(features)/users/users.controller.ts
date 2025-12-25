@@ -5,6 +5,16 @@ import { apiError, apiResponse } from "@/app/api/shared/utils/api-response";
 import { UsersService } from "./users.service";
 import { createUserSchema } from "./users.validation";
 
+function extractId(req: NextRequest, params?: { id?: string }) {
+  const fromParams = params?.id;
+  if (fromParams) return fromParams;
+
+  const last = req.nextUrl.pathname.split("/").pop();
+  if (last) return last;
+
+  throw new Error("Parameter id wajib diisi");
+}
+
 export class UsersController {
   static async getAll() {
     try {
@@ -28,7 +38,8 @@ export class UsersController {
 
   static async delete(_req: NextRequest, { params }: { params: { id: string } }) {
     try {
-      const data = await UsersService.delete(params.id);
+      const id = extractId(_req, params);
+      const data = await UsersService.delete(id);
       return apiResponse(data, "User berhasil dihapus");
     } catch (error) {
       return apiError(error, "User tidak ditemukan", 404);

@@ -2,5 +2,10 @@ import { NextRequest } from "next/server";
 
 import { KandangController } from "./index";
 
-export const GET = () => KandangController.getAll();
-export const POST = (req: NextRequest) => KandangController.create(req);
+export async function GET() {
+  return KandangController.getAll();
+}
+
+export async function POST(req: NextRequest) {
+  return KandangController.create(req);
+}

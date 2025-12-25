@@ -4,9 +4,14 @@ import { KandangController } from "../index";
 
 type Params = { params: { id: string } };
 
-export const GET = (req: NextRequest, context: Params) =>
-  KandangController.getById(req, context);
-export const PUT = (req: NextRequest, context: Params) =>
-  KandangController.update(req, context);
-export const DELETE = (req: NextRequest, context: Params) =>
-  KandangController.delete(req, context);
+export async function GET(req: NextRequest, { params }: Params) {
+  return KandangController.getById(req, { params });
+}
+
+export async function PUT(req: NextRequest, { params }: Params) {
+  return KandangController.update(req, { params });
+}
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  return KandangController.delete(req, { params });
+}

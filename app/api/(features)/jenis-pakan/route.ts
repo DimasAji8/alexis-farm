@@ -2,5 +2,10 @@ import { NextRequest } from "next/server";
 
 import { JenisPakanController } from "./index";
 
-export const GET = () => JenisPakanController.getAll();
-export const POST = (req: NextRequest) => JenisPakanController.create(req);
+export async function GET() {
+  return JenisPakanController.getAll();
+}
+
+export async function POST(req: NextRequest) {
+  return JenisPakanController.create(req);
+}

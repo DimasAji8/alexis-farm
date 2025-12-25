@@ -2,5 +2,10 @@ import { NextRequest } from "next/server";
 
 import { UsersController } from "./index";
 
-export const GET = () => UsersController.getAll();
-export const POST = (req: NextRequest) => UsersController.create(req);
+export async function GET() {
+  return UsersController.getAll();
+}
+
+export async function POST(req: NextRequest) {
+  return UsersController.create(req);
+}

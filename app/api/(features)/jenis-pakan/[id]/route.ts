@@ -4,9 +4,14 @@ import { JenisPakanController } from "../index";
 
 type Params = { params: { id: string } };
 
-export const GET = (req: NextRequest, context: Params) =>
-  JenisPakanController.getById(req, context);
-export const PUT = (req: NextRequest, context: Params) =>
-  JenisPakanController.update(req, context);
-export const DELETE = (req: NextRequest, context: Params) =>
-  JenisPakanController.delete(req, context);
+export async function GET(req: NextRequest, { params }: Params) {
+  return JenisPakanController.getById(req, { params });
+}
+
+export async function PUT(req: NextRequest, { params }: Params) {
+  return JenisPakanController.update(req, { params });
+}
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  return JenisPakanController.delete(req, { params });
+}

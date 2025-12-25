@@ -4,5 +4,6 @@ import { UsersController } from "../index";
 
 type Params = { params: { id: string } };
 
-export const DELETE = (req: NextRequest, context: Params) =>
-  UsersController.delete(req, context);
+export async function DELETE(req: NextRequest, { params }: Params) {
+  return UsersController.delete(req, { params });
+}

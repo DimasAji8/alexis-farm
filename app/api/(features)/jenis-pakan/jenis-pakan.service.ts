@@ -10,6 +10,9 @@ export class JenisPakanService {
   }
 
   static async getById(id: string) {
+    if (!id) {
+      throw new Error("ID jenis pakan tidak valid");
+    }
     const jenisPakan = await prisma.jenisPakan.findUnique({ where: { id } });
     if (!jenisPakan) {
       throw new Error("Jenis pakan tidak ditemukan");
