@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("id_mst_users")
   username  String   @unique
   name      String
   password  String
@@ -18,10 +18,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([username])
+  @@map("mst_users")
 }
 
 model Kandang {
-  id               String           @id @default(cuid())
+  id               String           @id @default(cuid()) @map("id_mst_kandang")
   kode             String           @unique
   nama             String
   lokasi           String?
@@ -37,10 +38,11 @@ model Kandang {
 
   @@index([kode])
   @@index([status])
+  @@map("mst_kandang")
 }
 
 model JenisPakan {
-  id             String           @id @default(cuid())
+  id             String           @id @default(cuid()) @map("id_mst_jenis_pakan")
   kode           String           @unique
   nama           String
   satuan         String           @default("KG")
@@ -52,29 +54,26 @@ model JenisPakan {
   pembelianPakan PembelianPakan[]
 
   @@index([kode])
+  @@map("mst_jenis_pakan")
 }
 
 model AyamMasuk {
-  id           String   @id @default(cuid())
-  kandangId    String
+  id           String   @id @default(cuid()) @map("id_trx_ayam_masuk")
+  kandangId    String   @map("id_mst_kandang")
   tanggal      DateTime
   jumlahAyam   Int
-  umurHari     Int?
-  hargaPerEkor Float?
-  totalHarga   Float?
-  supplier     String?
-  keterangan   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   kandang      Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
 
   @@index([kandangId])
   @@index([tanggal])
+  @@map("trx_ayam_masuk")
 }
 
 model KematianRecord {
-  id         String   @id @default(cuid())
-  kandangId  String
+  id         String   @id @default(cuid()) @map("id_trx_kematian_ayam")
+  kandangId  String   @map("id_mst_kandang")
   tanggal    DateTime
   jumlahMati Int
   keterangan String?
@@ -84,11 +83,12 @@ model KematianRecord {
 
   @@index([kandangId])
   @@index([tanggal])
+  @@map("trx_kematian_ayam")
 }
 
 model PembelianPakan {
-  id             String           @id @default(cuid())
-  jenisPakanId   String
+  id             String           @id @default(cuid()) @map("id_trx_pembelian_pakan")
+  jenisPakanId   String           @map("id_mst_jenis_pakan")
   tanggalBeli    DateTime
   jumlahKg       Float
   hargaPerKg     Float
@@ -102,13 +102,14 @@ model PembelianPakan {
 
   @@index([jenisPakanId])
   @@index([tanggalBeli])
+  @@map("trx_pembelian_pakan")
 }
 
 model PemakaianPakan {
-  id               String         @id @default(cuid())
-  kandangId        String
-  jenisPakanId     String
-  pembelianPakanId String
+  id               String         @id @default(cuid()) @map("id_trx_pemakaian_pakan")
+  kandangId        String         @map("id_mst_kandang")
+  jenisPakanId     String         @map("id_mst_jenis_pakan")
+  pembelianPakanId String         @map("id_trx_pembelian_pakan")
   tanggalPakai     DateTime
   jumlahKg         Float
   hargaPerKg       Float
@@ -123,16 +124,15 @@ model PemakaianPakan {
   @@index([kandangId])
   @@index([jenisPakanId])
   @@index([tanggalPakai])
+  @@map("trx_pemakaian_pakan")
 }
 
 model ProduksiTelur {
-  id                    String   @id @default(cuid())
-  kandangId             String
+  id                    String   @id @default(cuid()) @map("id_trx_produksi_telur")
+  kandangId             String   @map("id_mst_kandang")
   tanggal               DateTime
   jumlahBagusButir      Int      @default(0)
-  beratBagusKg          Float    @default(0)
   jumlahTidakBagusButir Int      @default(0)
-  beratTidakBagusKg     Float    @default(0)
   totalButir            Int
   totalKg               Float
   keterangan            String?
@@ -143,10 +143,11 @@ model ProduksiTelur {
   @@unique([kandangId, tanggal])
   @@index([kandangId])
   @@index([tanggal])
+  @@map("trx_produksi_telur")
 }
 
 model StockTelur {
-  id         String   @id @default(cuid())
+  id         String   @id @default(cuid()) @map("id_trx_stock_telur")
   tanggal    DateTime
   stockButir Int
   stockKg    Float
@@ -155,10 +156,12 @@ model StockTelur {
   updatedAt  DateTime @updatedAt
 
   @@index([tanggal])
+  @@unique([tanggal])
+  @@map("trx_stock_telur")
 }
 
 model PenjualanTelur {
-  id             String   @id @default(cuid())
+  id             String   @id @default(cuid()) @map("id_trx_penjualan_telur")
   nomorTransaksi String   @unique
   tanggal        DateTime
   pembeli        String
@@ -177,10 +180,11 @@ model PenjualanTelur {
 
   @@index([tanggal])
   @@index([pembeli])
+  @@map("trx_penjualan_telur")
 }
 
 model TransaksiKeuangan {
-  id            String   @id @default(cuid())
+  id            String   @id @default(cuid()) @map("id_trx_transaksi_keuangan")
   tanggal       DateTime
   jenis         String
   kategori      String
@@ -194,10 +198,11 @@ model TransaksiKeuangan {
   @@index([tanggal])
   @@index([jenis])
   @@index([kategori])
+  @@map("trx_transaksi_keuangan")
 }
 
 model PengeluaranOperasional {
-  id         String   @id @default(cuid())
+  id         String   @id @default(cuid()) @map("id_trx_pengeluaran_operasional")
   tanggal    DateTime
   kategori   String
   jumlah     Float
@@ -208,10 +213,11 @@ model PengeluaranOperasional {
 
   @@index([tanggal])
   @@index([kategori])
+  @@map("trx_pengeluaran_operasional")
 }
 
 model LaporanBulanan {
-  id                          String   @id @default(cuid())
+  id                          String   @id @default(cuid()) @map("id_trx_laporan_bulanan")
   bulan                       Int
   tahun                       Int
   totalPemasukanTelur         Float    @default(0)
@@ -227,4 +233,5 @@ model LaporanBulanan {
 
   @@unique([bulan, tahun])
   @@index([tahun, bulan])
+  @@map("trx_laporan_bulanan")
 }

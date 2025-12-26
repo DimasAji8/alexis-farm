@@ -28,12 +28,6 @@ export function apiError(error: unknown, message?: string, status = 500) {
     {
       success: false,
       message: errorMessage,
-      error:
-        process.env.NODE_ENV === "development"
-          ? error instanceof Error
-            ? { name: error.name, message: error.message, stack: error.stack }
-            : { error }
-          : undefined,
     },
     { status },
   );
