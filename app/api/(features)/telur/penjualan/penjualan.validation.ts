@@ -13,3 +13,7 @@ export const createPenjualanTelurSchema = z.object({
 });
 
 export type CreatePenjualanTelurInput = z.infer<typeof createPenjualanTelurSchema>;
+
+export const updatePenjualanTelurSchema = createPenjualanTelurSchema.partial();
+
+export type UpdatePenjualanTelurInput = z.infer<typeof updatePenjualanTelurSchema>;

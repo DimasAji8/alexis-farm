@@ -1,5 +1,7 @@
 import { prisma } from "@/app/api/db/prisma";
 
+import { requireRole } from "@/app/api/shared/utils/auth-guard";
+import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan.validation";
 
 export class JenisPakanService {
@@ -11,11 +13,11 @@ export class JenisPakanService {
 
   static async getById(id: string) {
     if (!id) {
-      throw new Error("ID jenis pakan tidak valid");
+      throw new ValidationError("ID jenis pakan tidak valid");
     }
     const jenisPakan = await prisma.jenisPakan.findUnique({ where: { id } });
     if (!jenisPakan) {
-      throw new Error("Jenis pakan tidak ditemukan");
+      throw new NotFoundError("Jenis pakan tidak ditemukan");
     }
     return jenisPakan;
   }
@@ -25,15 +27,17 @@ export class JenisPakanService {
   }
 
   static async create(data: CreateJenisPakanInput) {
+    await requireRole(["super_user", "staff"]);
     const existing = await this.getByKode(data.kode);
     if (existing) {
-      throw new Error("Kode pakan sudah digunakan");
+      throw new ValidationError("Kode pakan sudah digunakan");
     }
 
     return prisma.jenisPakan.create({ data });
   }
 
   static async update(id: string, data: UpdateJenisPakanInput) {
+    await requireRole(["super_user", "staff"]);
     await this.getById(id);
 
     if (data.kode) {
@@ -55,6 +59,7 @@ export class JenisPakanService {
   }
 
   static async delete(id: string) {
+    await requireRole(["super_user", "staff"]);
     await this.getById(id);
     return prisma.jenisPakan.delete({ where: { id } });
   }

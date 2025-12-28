@@ -8,3 +8,7 @@ export const createKematianAyamSchema = z.object({
 });
 
 export type CreateKematianAyamInput = z.infer<typeof createKematianAyamSchema>;
+
+export const updateKematianAyamSchema = createKematianAyamSchema.partial();
+
+export type UpdateKematianAyamInput = z.infer<typeof updateKematianAyamSchema>;

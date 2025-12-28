@@ -25,4 +25,19 @@ export class ProduksiTelurController {
       return apiError(error);
     }
   }
+
+  static async update(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      const body = await req.json();
+      const validated = createProduksiTelurSchema.partial().parse(body);
+      const data = await ProduksiTelurService.update(id, validated);
+      return apiResponse(data, "Produksi telur berhasil diperbarui");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

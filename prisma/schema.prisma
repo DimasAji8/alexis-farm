@@ -62,6 +62,8 @@ model AyamMasuk {
   kandangId    String   @map("id_mst_kandang")
   tanggal      DateTime
   jumlahAyam   Int
+  createdBy    String?  @map("created_by")
+  updatedBy    String?  @map("updated_by")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   kandang      Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
@@ -77,6 +79,8 @@ model KematianRecord {
   tanggal    DateTime
   jumlahMati Int
   keterangan String?
+  createdBy  String?  @map("created_by")
+  updatedBy  String?  @map("updated_by")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   kandang    Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
@@ -95,6 +99,8 @@ model PembelianPakan {
   totalHarga     Float
   sisaStokKg     Float
   keterangan     String?
+  createdBy      String?          @map("created_by")
+  updatedBy      String?          @map("updated_by")
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   pemakaianPakan PemakaianPakan[]
@@ -115,6 +121,8 @@ model PemakaianPakan {
   hargaPerKg       Float
   totalBiaya       Float
   keterangan       String?
+  createdBy        String?        @map("created_by")
+  updatedBy        String?        @map("updated_by")
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   jenisPakan       JenisPakan     @relation(fields: [jenisPakanId], references: [id])
@@ -136,6 +144,8 @@ model ProduksiTelur {
   totalButir            Int
   totalKg               Float
   keterangan            String?
+  createdBy             String?  @map("created_by")
+  updatedBy             String?  @map("updated_by")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   kandang               Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
@@ -175,6 +185,8 @@ model PenjualanTelur {
   saldoAkhir     Float    @default(0)
   metodeBayar    String?
   keterangan     String?
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

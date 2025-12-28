@@ -25,4 +25,32 @@ export class PenjualanTelurController {
       return apiError(error);
     }
   }
+
+  static async update(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      const body = await req.json();
+      const validated = createPenjualanTelurSchema.partial().parse(body);
+      const data = await PenjualanTelurService.update(id, validated);
+      return apiResponse(data, "Penjualan telur berhasil diperbarui");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
+
+  static async delete(_req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      const data = await PenjualanTelurService.delete(id);
+      return apiResponse(data, "Penjualan telur berhasil dihapus");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

@@ -10,3 +10,7 @@ export const createProduksiTelurSchema = z.object({
 });
 
 export type CreateProduksiTelurInput = z.infer<typeof createProduksiTelurSchema>;
+
+export const updateProduksiTelurSchema = createProduksiTelurSchema.partial();
+
+export type UpdateProduksiTelurInput = z.infer<typeof updateProduksiTelurSchema>;

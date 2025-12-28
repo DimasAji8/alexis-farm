@@ -25,4 +25,19 @@ export class KematianAyamController {
       return apiError(error);
     }
   }
+
+  static async update(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      const body = await req.json();
+      const validated = createKematianAyamSchema.partial().parse(body);
+      const data = await KematianAyamService.update(id, validated);
+      return apiResponse(data, "Kematian ayam berhasil diperbarui");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

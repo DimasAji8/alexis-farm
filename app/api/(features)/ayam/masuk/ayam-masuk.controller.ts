@@ -25,4 +25,19 @@ export class AyamMasukController {
       return apiError(error);
     }
   }
+
+  static async update(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      const body = await req.json();
+      const validated = createAyamMasukSchema.partial().parse(body);
+      const data = await AyamMasukService.update(id, validated);
+      return apiResponse(data, "Ayam masuk berhasil diperbarui");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

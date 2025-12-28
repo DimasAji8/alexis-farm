@@ -1,5 +1,8 @@
 import { prisma } from "@/app/api/db/prisma";
 
+import { requireAuth, requireRole } from "@/app/api/shared/utils/auth-guard";
+import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
+
 import type { CreateKandangInput, UpdateKandangInput } from "./kandang.validation";
 
 export class KandangService {
@@ -12,7 +15,7 @@ export class KandangService {
   static async getById(id: string) {
     const kandang = await prisma.kandang.findUnique({ where: { id } });
     if (!kandang) {
-      throw new Error("Kandang tidak ditemukan");
+      throw new NotFoundError("Kandang tidak ditemukan");
     }
     return kandang;
   }
@@ -22,9 +25,10 @@ export class KandangService {
   }
 
   static async create(data: CreateKandangInput) {
+    await requireRole(["super_user", "staff"]);
     const existing = await this.getByKode(data.kode);
     if (existing) {
-      throw new Error("Kode kandang sudah digunakan");
+      throw new ValidationError("Kode kandang sudah digunakan");
     }
 
     return prisma.kandang.create({
@@ -36,6 +40,7 @@ export class KandangService {
   }
 
   static async update(id: string, data: UpdateKandangInput) {
+    await requireRole(["super_user", "staff"]);
     await this.getById(id);
 
     if (data.kode) {
@@ -57,6 +62,7 @@ export class KandangService {
   }
 
   static async delete(id: string) {
+    await requireRole(["super_user", "staff"]);
     await this.getById(id);
     return prisma.kandang.delete({ where: { id } });
   }
