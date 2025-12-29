@@ -1,5 +1,6 @@
 import { prisma } from "@/app/api/db/prisma";
 import { hashPassword, verifyPassword } from "@/app/api/shared/utils/password";
+import { ValidationError } from "@/app/api/shared/utils/errors";
 
 import type { AuthUser } from "./auth.types";
 import type { LoginInput, RegisterInput } from "./auth.validation";
@@ -24,17 +25,17 @@ export class AuthService {
     const user = await this.findByUsername(username);
 
     if (!user) {
-      throw new Error("User tidak ditemukan");
+      throw new ValidationError("User tidak ditemukan");
     }
 
     if (!user.isActive) {
-      throw new Error("Akun tidak aktif, hubungi admin");
+      throw new ValidationError("Akun tidak aktif, hubungi admin");
     }
 
     const isValid = await verifyPassword(credentials.password, user.password);
 
     if (!isValid) {
-      throw new Error("Password salah");
+      throw new ValidationError("Password salah");
     }
 
     return this.toAuthUser(user);

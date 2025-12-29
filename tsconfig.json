@@ -13,13 +13,18 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/components": ["app/client/components"],
+      "@/components/*": ["app/client/components/*"],
+      "@/lib": ["app/client/lib"],
+      "@/lib/*": ["app/client/lib/*"]
     }
   },
   "include": [

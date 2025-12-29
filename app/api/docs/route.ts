@@ -77,14 +77,11 @@ const openapiSpec = {
       post: {
         summary: "Login dengan credentials",
         tags: ["Auth"],
-        description:
-          "Langkah: 1) GET /api/auth/csrf untuk ambil csrfToken. 2) POST ke endpoint ini dengan csrfToken, username, password, callbackUrl.",
         requestBody: {
           required: true,
           content: {
             "application/x-www-form-urlencoded": {
               example: {
-                csrfToken: "isi_dari_/api/auth/csrf",
                 username: "superuser",
                 password: "super123!",
                 callbackUrl: "/client/dashboard",
@@ -92,7 +89,6 @@ const openapiSpec = {
             },
             "application/json": {
               example: {
-                csrfToken: "isi_dari_/api/auth/csrf",
                 username: "superuser",
                 password: "super123!",
                 callbackUrl: "/client/dashboard",
@@ -111,25 +107,6 @@ const openapiSpec = {
                 example: {
                   success: false,
                   message: "Password salah",
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    "/api/auth/csrf": {
-      get: {
-        summary: "Ambil CSRF token untuk login",
-        tags: ["Auth"],
-        responses: {
-          200: {
-            description: "Token CSRF",
-            content: {
-              "application/json": {
-                example: {
-                  csrfToken: "contoh-token",
-                  cookie: "next-auth.csrf-token=contoh-token; Path=/; HttpOnly; SameSite=Lax",
                 },
               },
             },

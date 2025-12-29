@@ -10,6 +10,27 @@ export const authConfig: NextAuthConfig = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === "production" ? "__Secure-" : ""}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name: `${process.env.NODE_ENV === "production" ? "__Host-" : ""}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
   providers: [
     Credentials({
@@ -19,15 +40,19 @@ export const authConfig: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        const parsed = loginSchema.safeParse(credentials);
+        try {
+          const parsed = loginSchema.safeParse(credentials);
 
-        if (!parsed.success) {
-          throw new Error("Input tidak valid");
+          if (!parsed.success) {
+            return null;
+          }
+
+          const user = await AuthService.verifyCredentials(parsed.data);
+          return user;
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-
-        const user = await AuthService.verifyCredentials(parsed.data);
-
-        return user;
       },
     }),
   ],
@@ -52,5 +77,5 @@ export const authConfig: NextAuthConfig = {
       return session;
     },
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
 };
