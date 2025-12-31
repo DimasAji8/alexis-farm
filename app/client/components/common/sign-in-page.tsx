@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
+import { toast } from "sonner";
 
 import { loginSchema, type LoginInput } from "@/app/api/(features)/auth/auth.validation";
 import { Button } from "@/app/client/components/ui/button";
@@ -15,7 +16,6 @@ export function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/client/dashboard";
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -28,7 +28,6 @@ export function SignInPage() {
   });
 
   const onSubmit = async (values: LoginInput) => {
-    setError(null);
     try {
       const result = await signIn("credentials", {
         ...values,
@@ -39,14 +38,15 @@ export function SignInPage() {
       if (result?.error) {
         // NextAuth returns "CredentialsSignin" for invalid credentials
         if (result.error === "CredentialsSignin") {
-          setError("Username atau password salah");
+          toast.error("Username atau password salah");
         } else {
-          setError(result.error);
+          toast.error(result.error);
         }
         return;
       }
       
       if (result?.ok) {
+        toast.success("Login berhasil! Mengalihkan ke dashboard...");
         // Redirect dengan startTransition untuk menghindari error
         startTransition(() => {
           router.push(callbackUrl);
@@ -54,7 +54,7 @@ export function SignInPage() {
         });
       }
     } catch (err) {
-      setError("Terjadi kesalahan saat login");
+      toast.error("Gagal melakukan login, silakan coba lagi");
       console.error("Login error:", err);
     }
   };
@@ -66,8 +66,15 @@ export function SignInPage() {
         <div className="w-full max-w-sm">
           {/* Logo/Brand */}
           <div className="mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 mb-4">
-              <span className="text-white font-bold text-xl">AF</span>
+            <div className="inline-flex items-center justify-center mb-4">
+              <Image
+                src="/images/Avisa.webp"
+                alt="Alexis Farm Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+                priority
+              />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome Back</h1>
             <p className="text-sm text-gray-500">Masuk dengan username dan password Anda.</p>
@@ -126,21 +133,13 @@ export function SignInPage() {
               )}
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
-                <span className="font-medium">Error:</span> {error}
-              </div>
-            )}
-
             {/* Submit */}
             <Button
               type="submit"
               disabled={isSubmitting}
-              isLoading={isSubmitting}
               className="w-full mt-6 bg-black text-white hover:bg-black/90"
             >
-              Sign In
+              {isSubmitting ? "Signing In..." : "Sign In"}
             </Button>
           </form>
 
@@ -163,7 +162,7 @@ export function SignInPage() {
             className="object-cover md:rounded-l-3xl"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent md:rounded-l-3xl" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/40 to-transparent md:rounded-l-3xl" />
         </div>
 
         {/* Content overlay */}

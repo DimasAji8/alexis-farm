@@ -1,5 +1,6 @@
 import { auth } from "@/app/api/(features)/auth";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { Toaster } from "@/app/client/components/ui/sonner";
 
 export default async function ClientLayout({
   children,
@@ -8,5 +9,14 @@ export default async function ClientLayout({
 }>) {
   const session = await auth();
   
-  return <AuthProvider session={session}>{children}</AuthProvider>;
+  return (
+    <AuthProvider session={session}>
+      {children}
+      <Toaster 
+        position="bottom-right" 
+        expand={true}
+        closeButton
+      />
+    </AuthProvider>
+  );
 }
