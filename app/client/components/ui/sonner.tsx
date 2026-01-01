@@ -26,11 +26,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       toastOptions={{
+        style: {
+          background: 'white',
+          color: 'black',
+          border: '1px solid #e5e7eb',
+        },
         classNames: {
-          error: 'bg-red-600 text-white border-red-600',
-          success: 'bg-green-600 text-white border-green-600',
-          warning: 'bg-yellow-600 text-white border-yellow-600',
-          info: 'bg-blue-600 text-white border-blue-600',
+          error: '!bg-red-600 !text-white !border-red-600',
+          success: '!bg-green-600 !text-white !border-green-600',
+          warning: '!bg-yellow-600 !text-white !border-yellow-600',
+          info: '!bg-blue-600 !text-white !border-blue-600',
           toast: 'shadow-lg',
         },
       }}

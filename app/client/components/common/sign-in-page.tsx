@@ -68,10 +68,10 @@ export function SignInPage() {
           <div className="mb-8">
             <div className="inline-flex items-center justify-center mb-4">
               <Image
-                src="/images/Avisa.webp"
+                src="/images/avisa-login.webp"
                 alt="Alexis Farm Logo"
-                width={80}
-                height={80}
+                width={260}
+                height={90}
                 className="object-contain"
                 priority
               />
@@ -153,16 +153,16 @@ export function SignInPage() {
       </div>
 
       {/* Right Panel - Image Section (70% on desktop, hidden on mobile) */}
-      <div className="hidden md:block md:w-[70%] relative overflow-hidden md:rounded-l-3xl">
+      <div className="hidden md:block md:w-[70%] relative overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/images/login.webp"
             alt="Alexis Farm"
             fill
-            className="object-cover md:rounded-l-3xl"
+            className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/40 to-transparent md:rounded-l-3xl" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/40 to-transparent" />
         </div>
 
         {/* Content overlay */}
