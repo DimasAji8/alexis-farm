@@ -15,7 +15,7 @@ export default async function ClientLayout({
       <Toaster 
         position="bottom-right" 
         expand={true}
-        closeButton
+        closeButton={false}
       />
     </AuthProvider>
   );

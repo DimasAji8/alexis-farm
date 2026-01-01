@@ -62,89 +62,91 @@ export function SignInPage() {
   return (
     <div className="h-screen w-screen flex flex-col md:flex-row">
       {/* Left Panel - Form Section (30% on desktop, full width on mobile) */}
-      <div className="w-full md:w-[30%] flex items-center justify-center bg-white px-6 py-8 md:px-8 md:py-12">
-        <div className="w-full max-w-sm">
-          {/* Logo/Brand */}
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center mb-4">
-              <Image
-                src="/images/avisa-login.webp"
-                alt="Alexis Farm Logo"
-                width={260}
-                height={90}
-                className="object-contain"
-                priority
-              />
+      <div className="w-full md:w-[30%] flex items-stretch justify-center bg-white px-6 py-8 md:px-8 md:py-12">
+        <div className="w-full max-w-sm flex flex-col h-full">
+          <div className="flex-1 flex flex-col justify-center">
+            {/* Logo/Brand */}
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center mb-4">
+                <Image
+                  src="/images/avisa-login.webp"
+                  alt="Alexis Farm Logo"
+                  width={260}
+                  height={90}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome Back</h1>
+              <p className="text-sm text-gray-500">Masuk dengan username dan password Anda.</p>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome Back</h1>
-            <p className="text-sm text-gray-500">Masuk dengan username dan password Anda.</p>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Username */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  placeholder="masukkan username"
+                  className="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                  {...register("username")}
+                />
+                {errors.username && (
+                  <p className="text-xs text-red-600 mt-1.5" role="alert">
+                    {errors.username.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="********"
+                    className="w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <Eye className="w-4 h-4 text-gray-500" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-xs text-red-600 mt-1.5" role="alert">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6 bg-black text-white hover:bg-black/90"
+              >
+                {isSubmitting ? "Signing In..." : "Sign In"}
+              </Button>
+            </form>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Username */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                Username
-              </label>
-              <input
-                type="text"
-                autoComplete="username"
-                placeholder="masukkan username"
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
-                {...register("username")}
-              />
-              {errors.username && (
-                <p className="text-xs text-red-600 mt-1.5" role="alert">
-                  {errors.username.message}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder="********"
-                  className="w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-gray-500" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-red-600 mt-1.5" role="alert">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-6 bg-black text-white hover:bg-black/90"
-            >
-              {isSubmitting ? "Signing In..." : "Sign In"}
-            </Button>
-          </form>
-
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="pt-8 border-t border-gray-200">
             <p className="text-xs text-center text-gray-500">
               © 2025 Alexis Farm. All rights reserved.
             </p>
@@ -162,7 +164,8 @@ export function SignInPage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/55 to-transparent" />
         </div>
 
         {/* Content overlay */}
