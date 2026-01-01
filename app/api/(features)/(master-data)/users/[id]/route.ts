@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 
 import { UsersController } from "../index";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  return UsersController.delete(req, { params });
+  const resolvedParams = await params;
+  return UsersController.delete(req, { params: resolvedParams });
 }

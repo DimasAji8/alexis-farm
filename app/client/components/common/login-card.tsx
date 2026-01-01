@@ -80,8 +80,12 @@ export function LoginCard() {
           <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">{error}</div>
         ) : null}
 
-        <Button type="submit" className="w-full bg-black text-white hover:bg-black/90" isLoading={isSubmitting}>
-          Sign in
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-black text-white hover:bg-black/90"
+        >
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
       </form>
     </div>

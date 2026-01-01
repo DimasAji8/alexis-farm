@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createPenjualanTelurSchema = z.object({
-  tanggal: z.coerce.date({ required_error: "Tanggal wajib diisi" }),
+  tanggal: z.coerce.date({ error: "Tanggal wajib diisi" }),
   deskripsi: z.string().optional(),
   pembeli: z.string().optional(),
   beratKg: z.number().positive("Berat harus lebih dari 0"),
