@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { UserRound } from "lucide-react";
 
 import { auth } from "@/app/api/(features)/auth/auth";
+import { MasterDataMenu } from "@/components/common/dashboard-sidebar-master-data";
 import { DashboardSidebarNav } from "@/components/common/dashboard-sidebar-nav";
-import { SignOutButton } from "@/components/features/auth/SignOutButton";
+import { UserMenu } from "@/components/common/user-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +30,24 @@ export default async function DashboardLayout({
 
   const navItems = [
     { title: "Dashboard", href: "/client/dashboard", icon: "dashboard" as const },
-    { title: "API Docs", href: "/client/docs", icon: "docs" as const },
+  ];
+
+  const masterDataItems = [
+    {
+      title: "Kandang",
+      href: "/client/dashboard/master-data/kandang",
+      icon: "kandang" as const,
+    },
+    {
+      title: "Jenis Pakan",
+      href: "/client/dashboard/master-data/jenis-pakan",
+      icon: "jenisPakan" as const,
+    },
+    {
+      title: "Users",
+      href: "/client/dashboard/master-data/users",
+      icon: "users" as const,
+    },
   ];
 
   const initials =
@@ -71,31 +88,23 @@ export default async function DashboardLayout({
           <SidebarGroup>
             <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Menu</SidebarGroupLabel>
             <SidebarGroupContent>
-              <DashboardSidebarNav items={navItems} />
+              <DashboardSidebarNav items={navItems}>
+                <MasterDataMenu items={masterDataItems} />
+              </DashboardSidebarNav>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
         <SidebarRail />
         <SidebarFooter className="border-t px-2 py-4">
-          <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800">
-              {initials}
-            </div>
-            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
-              <p className="truncate text-xs text-muted-foreground capitalize flex items-center gap-1">
-                <UserRound className="h-3.5 w-3.5" />
-                {userRole}
-              </p>
-            </div>
-          </div>
-          <div className="pt-3 group-data-[collapsible=icon]:hidden">
-            <SignOutButton />
-          </div>
+          <UserMenu
+            userName={userName}
+            userRole={userRole}
+            initials={initials}
+          />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 items-center gap-3 border-b bg-white/70 px-4 backdrop-blur">
+        <header className="flex h-14 items-center gap-3 bg-white/70 px-4 backdrop-blur">
           <SidebarTrigger className="inline-flex" />
           <div className="flex flex-col">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-600">Alexis Farm</p>
