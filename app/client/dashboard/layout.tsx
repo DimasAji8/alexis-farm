@@ -67,7 +67,7 @@ export default async function DashboardLayout({
             </Link>
           </div>
         </SidebarHeader>
-        <SidebarContent className="px-2">
+        <SidebarContent className="px-2 group-data-[collapsible=icon]:px-0">
           <SidebarGroup>
             <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Menu</SidebarGroupLabel>
             <SidebarGroupContent>

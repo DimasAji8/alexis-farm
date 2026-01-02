@@ -25,7 +25,7 @@ export function DashboardSidebarNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="group-data-[collapsible=icon]:items-center">
       {items.map((item) => {
         const Icon = iconMap[item.icon] ?? LayoutDashboard;
         const isActive =
@@ -36,9 +36,9 @@ export function DashboardSidebarNav({ items }: { items: NavItem[] }) {
             <SidebarMenuButton
               asChild
               isActive={isActive}
-              className="group-data-[collapsible=icon]:!justify-center group-data-[collapsible=icon]:!px-0 group-data-[collapsible=icon]:!gap-0"
+              className="group-data-[collapsible=icon]:!mx-auto group-data-[collapsible=icon]:!justify-center"
             >
-              <Link href={item.href} className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:w-full">
+              <Link href={item.href} className="flex items-center gap-2">
                 <Icon className="shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
               </Link>
