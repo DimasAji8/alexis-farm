@@ -1,15 +1,18 @@
+import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
+
 export default function MasterDataJenisPakanPage() {
   return (
-    <section className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
-          Master Data
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Jenis Pakan</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Halaman master data jenis pakan. Konten akan ditambahkan berikutnya.
-        </p>
-      </div>
+    <section className="space-y-6">
+      <PageHeader
+        title="Jenis Pakan"
+        description="Kelola daftar jenis pakan untuk pencatatan pembelian dan pemakaian."
+        eyebrow="Master Data"
+      />
+      <EmptyState
+        title="Belum ada jenis pakan"
+        description="Halaman ini akan diisi dengan tabel data dan form pengelolaan."
+      />
     </section>
   );
 }

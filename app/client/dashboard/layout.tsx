@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { auth } from "@/app/api/(features)/auth/auth";
-import { MasterDataMenu } from "@/components/common/dashboard-sidebar-master-data";
 import { DashboardSidebarNav } from "@/components/common/dashboard-sidebar-nav";
 import { UserMenu } from "@/components/common/user-menu";
+import { dashboardNavItems } from "@/app/client/lib/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -27,28 +27,6 @@ export default async function DashboardLayout({
   const session = await auth();
   const userName = session?.user?.name ?? session?.user?.username ?? "User";
   const userRole = session?.user?.role ?? "staff";
-
-  const navItems = [
-    { title: "Dashboard", href: "/client/dashboard", icon: "dashboard" as const },
-  ];
-
-  const masterDataItems = [
-    {
-      title: "Kandang",
-      href: "/client/dashboard/master-data/kandang",
-      icon: "kandang" as const,
-    },
-    {
-      title: "Jenis Pakan",
-      href: "/client/dashboard/master-data/jenis-pakan",
-      icon: "jenisPakan" as const,
-    },
-    {
-      title: "Users",
-      href: "/client/dashboard/master-data/users",
-      icon: "users" as const,
-    },
-  ];
 
   const initials =
     userName
@@ -88,9 +66,7 @@ export default async function DashboardLayout({
           <SidebarGroup>
             <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Menu</SidebarGroupLabel>
             <SidebarGroupContent>
-              <DashboardSidebarNav items={navItems}>
-                <MasterDataMenu items={masterDataItems} />
-              </DashboardSidebarNav>
+              <DashboardSidebarNav items={dashboardNavItems} />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
@@ -112,7 +88,7 @@ export default async function DashboardLayout({
           </div>
         </header>
         <main className="min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-slate-50 via-white to-amber-50 p-4 md:p-6">
-          <div className="mx-auto max-w-6xl space-y-6">{children}</div>
+          <div className="w-full space-y-6">{children}</div>
         </main>
       </SidebarInset>
     </SidebarProvider>

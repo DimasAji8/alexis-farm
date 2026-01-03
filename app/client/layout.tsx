@@ -1,5 +1,6 @@
 import { auth } from "@/app/api/(features)/auth";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/app/client/components/ui/sonner";
 
 export default async function ClientLayout({
@@ -11,12 +12,14 @@ export default async function ClientLayout({
   
   return (
     <AuthProvider session={session}>
-      {children}
-      <Toaster 
-        position="bottom-right" 
-        expand={true}
-        closeButton={false}
-      />
+      <QueryProvider>
+        {children}
+        <Toaster 
+          position="bottom-right" 
+          expand={true}
+          closeButton={false}
+        />
+      </QueryProvider>
     </AuthProvider>
   );
 }
