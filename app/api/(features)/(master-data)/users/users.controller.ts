@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiResponse } from "@/app/api/shared/utils/api-response";
 
 import { UsersService } from "./users.service";
-import { createUserSchema } from "./users.validation";
+import { createUserSchema, changePasswordSchema } from "./users.validation";
 
 function extractId(req: NextRequest, params?: { id?: string }) {
   const fromParams = params?.id;
@@ -31,6 +31,17 @@ export class UsersController {
       const validated = createUserSchema.parse(body);
       const data = await UsersService.create(validated);
       return apiResponse(data, "User berhasil dibuat", 201);
+    } catch (error) {
+      return apiError(error);
+    }
+  }
+
+  static async changePassword(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const validated = changePasswordSchema.parse(body);
+      const data = await UsersService.changePassword(validated);
+      return apiResponse(data, "Password berhasil diubah");
     } catch (error) {
       return apiError(error);
     }

@@ -9,6 +9,14 @@ export async function requireAuth() {
   return userId;
 }
 
+export async function getCurrentUser() {
+  const session = await import("@/app/api/(features)/auth").then((m) => m.auth());
+  if (!session?.user?.id) {
+    throw new UnauthorizedError();
+  }
+  return session.user;
+}
+
 export async function requireRole(allowed: string[]) {
   const session = await import("@/app/api/(features)/auth").then((m) => m.auth());
   const role = session?.user?.role;

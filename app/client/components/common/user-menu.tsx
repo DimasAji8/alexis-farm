@@ -1,11 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, KeyRound } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { toast } from "sonner";
 
 import { cn } from "@/app/client/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { apiClient } from "@/lib/api-client";
 
 type UserMenuProps = {
   userName: string;
@@ -42,6 +46,33 @@ export function UserMenu({
 }: UserMenuProps) {
   const [open, setOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [passwordOpen, setPasswordOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [oldPassword, setOldPassword] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast.error("Password baru minimal 6 karakter");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await apiClient("/api/users/change-password", {
+        method: "POST",
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      toast.success("Password berhasil diubah");
+      setPasswordOpen(false);
+      setOldPassword("");
+      setNewPassword("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengubah password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -87,15 +118,48 @@ export function UserMenu({
             onSelect={(event) => {
               event.preventDefault();
               setOpen(false);
+              setPasswordOpen(true);
+            }}
+          >
+            <KeyRound className="mr-2 h-4 w-4" />
+            Ubah Password
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              setOpen(false);
               setConfirmOpen(true);
             }}
-            className="text-red-600 focus:text-red-700"
+            className="text-red-600 dark:text-red-400 focus:bg-red-100 focus:text-red-700 dark:focus:bg-red-900/50 dark:focus:text-red-300"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Keluar
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ubah Password</DialogTitle>
+            <DialogDescription>Masukkan password lama dan password baru Anda.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="oldPassword">Password Lama</Label>
+              <Input id="oldPassword" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="newPassword">Password Baru</Label>
+              <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimal 6 karakter" required />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setPasswordOpen(false)} disabled={isLoading}>Batal</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? "Menyimpan..." : "Simpan"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-sm">

@@ -36,7 +36,7 @@ export const dashboardNavItems: SidebarNavItem[] = [
         href: "/client/dashboard/master-data/jenis-pakan",
       },
       {
-        title: "Users",
+        title: "Pengguna",
         href: "/client/dashboard/master-data/users",
       },
     ],

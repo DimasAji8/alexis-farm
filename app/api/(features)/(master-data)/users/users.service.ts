@@ -1,9 +1,11 @@
 import { prisma } from "@/app/api/db/prisma";
-import { requireRole } from "@/app/api/shared/utils/auth-guard";
+import { requireRole, getCurrentUser } from "@/app/api/shared/utils/auth-guard";
 import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
-import { hashPassword } from "@/app/api/shared/utils/password";
+import { hashPassword, verifyPassword } from "@/app/api/shared/utils/password";
 
-import type { CreateUserInput } from "./users.validation";
+import type { CreateUserInput, ChangePasswordInput } from "./users.validation";
+
+const DEFAULT_PASSWORD = "alex1s";
 
 export class UsersService {
   static async getAll() {
@@ -28,7 +30,7 @@ export class UsersService {
       throw new ValidationError("Username sudah digunakan");
     }
 
-    const hashedPassword = await hashPassword(data.password);
+    const hashedPassword = await hashPassword(DEFAULT_PASSWORD);
 
     return prisma.user.create({
       data: {
@@ -48,6 +50,27 @@ export class UsersService {
         updatedAt: true,
       },
     });
+  }
+
+  static async changePassword(data: ChangePasswordInput) {
+    const currentUser = await getCurrentUser();
+    const user = await prisma.user.findUnique({ where: { id: currentUser.id } });
+    if (!user) {
+      throw new NotFoundError("User tidak ditemukan");
+    }
+
+    const isValid = await verifyPassword(data.oldPassword, user.password);
+    if (!isValid) {
+      throw new ValidationError("Password lama tidak sesuai");
+    }
+
+    const hashedPassword = await hashPassword(data.newPassword);
+    await prisma.user.update({
+      where: { id: currentUser.id },
+      data: { password: hashedPassword },
+    });
+
+    return { message: "Password berhasil diubah" };
   }
 
   static async delete(id: string) {

@@ -14,13 +14,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { styles } from "@/lib/styles";
 
 interface TableActionsProps {
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export function TableActions({ onEdit, onDelete }: TableActionsProps) {
+  if (!onEdit && !onDelete) return null;
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -30,31 +33,32 @@ export function TableActions({ onEdit, onDelete }: TableActionsProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 hover:bg-slate-100 data-[state=open]:bg-slate-100"
+                className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 data-[state=open]:bg-slate-100 dark:data-[state=open]:bg-slate-700"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem
-              onClick={onEdit}
-              className="cursor-pointer text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={onDelete}
-              className="cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Hapus
-            </DropdownMenuItem>
+            {onEdit && (
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="cursor-pointer text-slate-700 dark:text-slate-300 hover:bg-slate-50 focus:bg-slate-50 dark:hover:bg-slate-700 dark:focus:bg-slate-700"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+            )}
+            {onDelete && (
+              <DropdownMenuItem onClick={onDelete} className={styles.dropdown.itemDestructive}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hapus
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
         <TooltipContent>
-          <p>Edit / Hapus</p>
+          <p>{onEdit && onDelete ? "Edit / Hapus" : onEdit ? "Edit" : "Hapus"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
