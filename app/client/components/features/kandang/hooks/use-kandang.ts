@@ -13,6 +13,7 @@ export function useKandangList() {
   return useQuery({
     queryKey: ["kandang"],
     queryFn: fetchKandangList,
+    staleTime: 0,
   });
 }
 

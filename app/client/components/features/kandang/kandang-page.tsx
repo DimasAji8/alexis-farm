@@ -22,7 +22,7 @@ import type { CreateKandangInput, UpdateKandangInput } from "./kandang.api";
 const ITEMS_PER_PAGE = 10;
 
 export function KandangPage() {
-  const { data, isLoading, isError, error, refetch } = useKandangList();
+  const { data, isLoading, isPending, isError, error, refetch } = useKandangList();
   const createMutation = useCreateKandang();
   const updateMutation = useUpdateKandang();
   const deleteMutation = useDeleteKandang();
@@ -32,6 +32,9 @@ export function KandangPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedKandang, setSelectedKandang] = useState<Kandang | null>(null);
+
+  // Gunakan isPending untuk menampilkan skeleton saat data belum ada
+  const showSkeleton = isPending || isLoading || data === undefined;
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -113,7 +116,7 @@ export function KandangPage() {
     </Button>
   );
 
-  if (isLoading) {
+  if (showSkeleton) {
     return (
       <section className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -219,6 +222,7 @@ export function KandangPage() {
             items={paginatedData}
             currentPage={currentPage}
             itemsPerPage={ITEMS_PER_PAGE}
+            isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

@@ -21,12 +21,12 @@ export function TableSkeleton({ rows = 5, showPagination = false }: TableSkeleto
           <TableHeader>
             <TableRow className="bg-slate-700 hover:bg-slate-700">
               <TableHead className="font-semibold text-white w-12 text-xs sm:text-sm">No</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm">Kode</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm">Nama</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm hidden sm:table-cell">Lokasi</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm text-right">Ayam</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm">Status</TableHead>
-              <TableHead className="font-semibold text-white text-xs sm:text-sm hidden md:table-cell">Diperbarui</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm min-w-[70px]">Kode</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm min-w-[100px]">Nama</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm min-w-[80px] hidden sm:table-cell">Lokasi</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm text-right min-w-[80px]">Ayam</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm min-w-[90px]">Status</TableHead>
+              <TableHead className="font-semibold text-white text-xs sm:text-sm min-w-[100px] hidden md:table-cell">Diperbarui</TableHead>
               <TableHead className="font-semibold text-white w-12 text-center">Aksi</TableHead>
             </TableRow>
           </TableHeader>

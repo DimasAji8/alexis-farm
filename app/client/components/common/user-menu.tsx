@@ -47,10 +47,10 @@ export function UserMenu({
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg bg-muted/40 px-3 py-3 text-left transition-colors hover:bg-muted/60",
+              "flex w-full items-center gap-3 rounded-lg bg-muted/40 px-3 py-3 text-left transition-colors hover:bg-muted/60 h-auto",
               "group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
             )}
           >
@@ -66,7 +66,7 @@ export function UserMenu({
               </p>
             </div>
             <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="end" className="w-56">
           <div className="flex items-center gap-3 px-3 py-2">

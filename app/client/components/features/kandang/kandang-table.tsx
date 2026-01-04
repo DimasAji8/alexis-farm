@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TableActions } from "@/components/shared/table-actions";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
@@ -43,6 +44,7 @@ interface KandangTableProps {
   items: Kandang[];
   currentPage?: number;
   itemsPerPage?: number;
+  isLoading?: boolean;
   onEdit?: (kandang: Kandang) => void;
   onDelete?: (kandang: Kandang) => void;
 }
@@ -51,6 +53,7 @@ export function KandangTable({
   items, 
   currentPage, 
   itemsPerPage, 
+  isLoading,
   onEdit, 
   onDelete 
 }: KandangTableProps) {
@@ -63,6 +66,20 @@ export function KandangTable({
   const startIndex = hasPagination ? (currentPage - 1) * itemsPerPage : 0;
   const handleEdit = onEdit ?? (() => undefined);
   const handleDelete = onDelete ?? (() => undefined);
+
+  const renderSkeletonRows = () =>
+    Array.from({ length: itemsPerPage || 10 }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell className="py-3"><Skeleton className="h-4 w-5" /></TableCell>
+        <TableCell className="py-3"><Skeleton className="h-4 w-12 sm:w-16" /></TableCell>
+        <TableCell className="py-3"><Skeleton className="h-4 w-16 sm:w-24" /></TableCell>
+        <TableCell className="py-3 hidden sm:table-cell"><Skeleton className="h-4 w-16" /></TableCell>
+        <TableCell className="py-3 text-right"><Skeleton className="h-4 w-10 ml-auto" /></TableCell>
+        <TableCell className="py-3"><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+        <TableCell className="py-3 hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+        <TableCell className="py-3 text-center"><Skeleton className="h-8 w-8 rounded mx-auto" /></TableCell>
+      </TableRow>
+    ));
 
   return (
     <div className="overflow-x-auto">
@@ -80,7 +97,7 @@ export function KandangTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item, index) => (
+          {isLoading ? renderSkeletonRows() : items.map((item, index) => (
             <TableRow key={item.id}>
               <TableCell className="font-medium text-slate-600 text-xs sm:text-sm py-3">
                 {startIndex + index + 1}
