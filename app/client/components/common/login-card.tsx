@@ -40,44 +40,42 @@ export function LoginCard() {
   };
 
   return (
-    <div className="w-full max-w-sm rounded-3xl border border-white/25 bg-white/10 p-8 text-white shadow-2xl backdrop-blur-md">
-      <h1 className="text-3xl font-semibold">Sign in</h1>
-      <p className="mt-2 text-sm text-white/80">Masuk dengan username dan password Anda.</p>
+    <div className="w-full max-w-sm rounded-3xl border bg-white p-8 shadow-2xl">
+      <h1 className="text-3xl font-semibold text-gray-900">Sign in</h1>
+      <p className="mt-2 text-sm text-gray-600">Masuk dengan username dan password Anda.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-white">Username</label>
+          <label className="text-sm font-medium text-gray-700">Username</label>
           <Input
             placeholder="masukkan username"
             autoComplete="username"
-            className="border-white/30 bg-black/40 text-white placeholder:text-white/50"
             {...register("username")}
           />
           {errors.username && (
-            <p className="text-sm text-red-200" role="alert">
+            <p className="text-sm text-red-500" role="alert">
               {errors.username.message}
             </p>
           )}
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-white">Password</label>
+          <label className="text-sm font-medium text-gray-700">Password</label>
           <Input
             type="password"
             placeholder="********"
             autoComplete="current-password"
-            className="border-white/30 bg-black/40 text-white placeholder:text-white/50"
             {...register("password")}
           />
           {errors.password && (
-            <p className="text-sm text-red-200" role="alert">
+            <p className="text-sm text-red-500" role="alert">
               {errors.password.message}
             </p>
           )}
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">{error}</div>
+          <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
         ) : null}
 
         <Button

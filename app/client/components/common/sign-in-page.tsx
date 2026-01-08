@@ -60,7 +60,7 @@ export function SignInPage() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col md:flex-row">
+    <div className="h-screen w-screen flex flex-col md:flex-row bg-white">
       {/* Left Panel - Form Section (30% on desktop, full width on mobile) */}
       <div className="w-full md:w-[30%] flex items-stretch justify-center bg-white px-6 py-8 md:px-8 md:py-12">
         <div className="w-full max-w-sm flex flex-col h-full">
@@ -92,7 +92,13 @@ export function SignInPage() {
                   type="text"
                   autoComplete="username"
                   placeholder="masukkan username"
-                  className="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      document.getElementById("password")?.focus();
+                    }
+                  }}
                   {...register("username")}
                 />
                 {errors.username && (
@@ -109,10 +115,11 @@ export function SignInPage() {
                 </label>
                 <div className="relative">
                   <input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="********"
-                    className="w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all bg-white text-gray-900 placeholder:text-gray-400"
                     {...register("password")}
                   />
                   <button
