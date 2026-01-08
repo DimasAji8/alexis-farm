@@ -94,4 +94,31 @@ export class AyamMasukService {
       });
     });
   }
+
+  static async delete(id: string) {
+    await requireRole(["super_user", "staff"]);
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.ayamMasuk.findUnique({ where: { id } });
+      if (!existing) {
+        throw new NotFoundError("Ayam masuk tidak ditemukan");
+      }
+
+      const kandang = await tx.kandang.findUnique({ where: { id: existing.kandangId } });
+      if (!kandang) {
+        throw new NotFoundError("Kandang tidak ditemukan");
+      }
+
+      const newJumlah = kandang.jumlahAyam - existing.jumlahAyam;
+      if (newJumlah < 0) {
+        throw new ValidationError("Jumlah ayam tidak boleh negatif");
+      }
+
+      await tx.kandang.update({
+        where: { id: existing.kandangId },
+        data: { jumlahAyam: newJumlah },
+      });
+
+      return tx.ayamMasuk.delete({ where: { id } });
+    });
+  }
 }

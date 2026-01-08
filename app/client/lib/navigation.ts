@@ -3,7 +3,8 @@ export type SidebarNavIcon =
   | "masterData"
   | "kandang"
   | "jenisPakan"
-  | "users";
+  | "users"
+  | "ayam";
 
 export type SidebarNavChild = {
   title: string;
@@ -22,6 +23,20 @@ export const dashboardNavItems: SidebarNavItem[] = [
     title: "Dashboard",
     href: "/client/dashboard",
     icon: "dashboard",
+  },
+  {
+    title: "Ayam",
+    icon: "ayam",
+    children: [
+      {
+        title: "Ayam Masuk",
+        href: "/client/dashboard/ayam/masuk",
+      },
+      {
+        title: "Kematian",
+        href: "/client/dashboard/ayam/kematian",
+      },
+    ],
   },
   {
     title: "Master Data",

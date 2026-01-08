@@ -41,6 +41,8 @@ model Kandang {
   @@map("mst_kandang")
 }
 
+
+
 model JenisPakan {
   id             String           @id @default(cuid()) @map("id_mst_jenis_pakan")
   kode           String           @unique

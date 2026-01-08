@@ -105,4 +105,27 @@ export class KematianAyamService {
       });
     });
   }
+
+  static async delete(id: string) {
+    await requireRole(["super_user", "staff"]);
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.kematianRecord.findUnique({ where: { id } });
+      if (!existing) {
+        throw new NotFoundError("Catatan kematian tidak ditemukan");
+      }
+
+      const kandang = await tx.kandang.findUnique({ where: { id: existing.kandangId } });
+      if (!kandang) {
+        throw new NotFoundError("Kandang tidak ditemukan");
+      }
+
+      // Kembalikan jumlah ayam yang mati
+      await tx.kandang.update({
+        where: { id: existing.kandangId },
+        data: { jumlahAyam: kandang.jumlahAyam + existing.jumlahMati },
+      });
+
+      return tx.kematianRecord.delete({ where: { id } });
+    });
+  }
 }

@@ -40,4 +40,17 @@ export class AyamMasukController {
       return apiError(error);
     }
   }
+
+  static async delete({ params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      await AyamMasukService.delete(id);
+      return apiResponse(null, "Ayam masuk berhasil dihapus");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

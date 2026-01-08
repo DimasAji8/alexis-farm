@@ -40,4 +40,17 @@ export class KematianAyamController {
       return apiError(error);
     }
   }
+
+  static async delete({ params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      await KematianAyamService.delete(id);
+      return apiResponse(null, "Kematian ayam berhasil dihapus");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }
