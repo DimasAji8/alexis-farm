@@ -1,4 +1,4 @@
-import { AyamMasukPage } from "@/components/features/ayam/masuk/ayam-masuk-page";
+import { AyamMasukPage } from "@/components/features/ayam/masuk";
 
 export default function Page() {
   return <AyamMasukPage />;

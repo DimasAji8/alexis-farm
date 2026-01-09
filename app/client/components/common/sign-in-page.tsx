@@ -74,6 +74,7 @@ export function SignInPage() {
                   width={260}
                   height={90}
                   className="object-contain"
+                  style={{ height: "auto" }}
                   priority
                 />
               </div>

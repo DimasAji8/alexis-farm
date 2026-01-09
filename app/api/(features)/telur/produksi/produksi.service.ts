@@ -16,7 +16,7 @@ export class ProduksiTelurService {
   }
 
   static async create(data: CreateProduksiTelurInput) {
-    const userId = await requireRole(["super_user", "staff"]);
+    const userId = await requireRole(["super_user", "manager", "staff"]);
     return prisma.$transaction(async (tx) => {
       const existing = await tx.produksiTelur.findFirst({
         where: {
@@ -67,7 +67,7 @@ export class ProduksiTelurService {
   }
 
   static async update(id: string, data: UpdateProduksiTelurInput) {
-    const userId = await requireRole(["super_user", "staff"]);
+    const userId = await requireRole(["super_user", "manager", "staff"]);
     return prisma.$transaction(async (tx) => {
       const existing = await tx.produksiTelur.findUnique({ where: { id } });
       if (!existing) {

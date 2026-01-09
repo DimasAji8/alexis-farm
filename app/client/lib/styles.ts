@@ -32,10 +32,10 @@ export const styles = {
   table: {
     headerRow: "bg-slate-800 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-700",
     row: "hover:bg-slate-50 dark:hover:bg-slate-800/50",
-    cellMuted: "font-medium text-slate-600 dark:text-slate-400 text-xs sm:text-sm py-3",
-    cellPrimary: "font-medium text-slate-900 dark:text-slate-100 text-xs sm:text-sm py-3",
-    cellSecondary: "text-slate-700 dark:text-slate-300 text-xs sm:text-sm py-3",
-    cellTertiary: "text-slate-600 dark:text-slate-400 text-xs sm:text-sm py-3",
+    cellMuted: "font-medium text-slate-600 dark:text-slate-400 text-sm py-3",
+    cellPrimary: "font-semibold text-slate-900 dark:text-slate-100 text-sm py-3",
+    cellSecondary: "font-medium text-slate-700 dark:text-slate-300 text-sm py-3",
+    cellTertiary: "font-medium text-slate-600 dark:text-slate-400 text-sm py-3",
     empty: "py-10 text-center text-slate-500 dark:text-slate-400",
   },
 } as const;

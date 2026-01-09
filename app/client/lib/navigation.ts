@@ -4,7 +4,8 @@ export type SidebarNavIcon =
   | "kandang"
   | "jenisPakan"
   | "users"
-  | "ayam";
+  | "ayam"
+  | "telur";
 
 export type SidebarNavChild = {
   title: string;
@@ -35,6 +36,24 @@ export const dashboardNavItems: SidebarNavItem[] = [
       {
         title: "Kematian",
         href: "/client/dashboard/ayam/kematian",
+      },
+    ],
+  },
+  {
+    title: "Telur",
+    icon: "telur",
+    children: [
+      {
+        title: "Produktivitas",
+        href: "/client/dashboard/telur/produktivitas",
+      },
+      {
+        title: "Stok Telur",
+        href: "/client/dashboard/telur/stok",
+      },
+      {
+        title: "Penjualan",
+        href: "/client/dashboard/telur/penjualan",
       },
     ],
   },

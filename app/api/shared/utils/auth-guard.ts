@@ -1,5 +1,8 @@
 import { getCurrentUserId } from "./current-user";
-import { ApiError, ForbiddenError, UnauthorizedError } from "./errors";
+import { ForbiddenError, UnauthorizedError } from "./errors";
+
+export const ALL_ROLES = ["super_user", "manager", "staff"] as const;
+export const ADMIN_ROLES = ["super_user"] as const;
 
 export async function requireAuth() {
   const userId = await getCurrentUserId();
@@ -17,7 +20,7 @@ export async function getCurrentUser() {
   return session.user;
 }
 
-export async function requireRole(allowed: string[]) {
+export async function requireRole(allowed: readonly string[] = ALL_ROLES) {
   const session = await import("@/app/api/(features)/auth").then((m) => m.auth());
   const role = session?.user?.role;
   if (!session?.user?.id) {
