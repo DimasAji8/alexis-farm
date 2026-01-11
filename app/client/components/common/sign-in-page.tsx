@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { loginSchema, type LoginInput } from "@/app/api/(features)/auth/auth.validation";
 import { Button } from "@/app/client/components/ui/button";
+import { Loader } from "@/app/client/components/ui/loader";
 
 export function SignInPage() {
   const router = useRouter();
@@ -60,7 +61,9 @@ export function SignInPage() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col md:flex-row bg-white">
+    <>
+      {isSubmitting && <Loader />}
+      <div className="h-screen w-screen flex flex-col md:flex-row bg-white">
       {/* Left Panel - Form Section (30% on desktop, full width on mobile) */}
       <div className="w-full md:w-[30%] flex items-stretch justify-center bg-white px-6 py-8 md:px-8 md:py-12">
         <div className="w-full max-w-sm flex flex-col h-full">
@@ -225,5 +228,6 @@ export function SignInPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

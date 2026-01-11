@@ -12,11 +12,12 @@ import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { Plus, AlertCircle } from "lucide-react";
 import { styles } from "@/lib/styles";
+import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 import { PenjualanFormDialog } from "../components/form-dialog";
 import { usePenjualanList, useCreatePenjualan, useUpdatePenjualan, useDeletePenjualan } from "../hooks/use-penjualan";
 import { useStokTelurList } from "../../stok/hooks/use-stok-telur";
-import type { PenjualanTelur, CreatePenjualanInput, UpdatePenjualanInput } from "../types";
+import type { PenjualanTelur, CreatePenjualanInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -29,65 +30,62 @@ const formatDate = (value?: string | null) => {
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 const filterConfig: FilterConfig[] = [
-  { key: "search", label: "Cari", type: "search", placeholder: "Cari pembeli atau nomor transaksi..." },
+  { key: "bulan", label: "Bulan", type: "month" },
+  { key: "search", label: "Cari", type: "search", placeholder: "Cari pembeli..." },
 ];
 
 export function PenjualanTelurPage() {
-  const { data, isLoading, isError, error, refetch } = usePenjualanList();
-  const { data: stokData } = useStokTelurList();
+  const { selectedKandangId } = useSelectedKandang();
+  const { data, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId);
+  const { data: stokData } = useStokTelurList(selectedKandangId);
   const createMutation = useCreatePenjualan();
   const updateMutation = useUpdatePenjualan();
   const deleteMutation = useDeletePenjualan();
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({ search: null });
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<PenjualanTelur | null>(null);
 
-  // Stok tersedia saat ini
   const stokTersedia = useMemo(() => {
     if (!stokData || stokData.length === 0) return { butir: 0, kg: 0 };
-    const sorted = [...stokData].sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
-    return { butir: sorted[0].stockButir, kg: sorted[0].stockKg };
+    const totalButir = stokData.reduce((sum, s) => sum + s.stockButir, 0);
+    const totalKg = stokData.reduce((sum, s) => sum + s.stockKg, 0);
+    return { butir: totalButir, kg: totalKg };
   }, [stokData]);
 
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter((item) => {
-      const matchSearch = !filters.search || 
-        item.pembeli.toLowerCase().includes(filters.search.toLowerCase()) || 
-        item.nomorTransaksi.toLowerCase().includes(filters.search.toLowerCase());
-      return matchSearch;
+      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
+      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
+      if (month !== null && year !== null) {
+        const date = new Date(item.tanggal);
+        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
+      }
+      if (filters.search && !item.pembeli.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      return true;
     });
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const d = data || [];
-    const now = new Date();
-    const thisMonth = d.filter(item => {
-      const date = new Date(item.tanggal);
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-    });
-    const today = d.filter(item => {
-      const date = new Date(item.tanggal);
-      return date.toDateString() === now.toDateString();
-    });
-    
+    const d = filteredData || [];
+    const totalPenjualan = d.reduce((s, i) => s + i.totalHarga, 0);
+    const totalKg = d.reduce((s, i) => s + i.beratKg, 0);
     return [
       { label: "Stok Tersedia", value: `${stokTersedia.kg.toLocaleString("id-ID")} kg`, color: stokTersedia.kg > 0 ? "blue" : "rose" },
-      { label: "Penjualan Hari Ini", value: formatCurrency(today.reduce((s, i) => s + i.totalHarga, 0)), color: "emerald" },
-      { label: "Penjualan Bulan Ini", value: formatCurrency(thisMonth.reduce((s, i) => s + i.totalHarga, 0)), color: "amber" },
-      { label: "Total Transaksi", value: d.length, color: "slate" },
+      { label: "Total Penjualan", value: formatCurrency(totalPenjualan), color: "emerald" },
+      { label: "Total Terjual", value: `${totalKg.toLocaleString("id-ID")} kg`, color: "amber" },
+      { label: "Jumlah Transaksi", value: d.length, color: "slate" },
     ];
-  }, [data, stokTersedia]);
+  }, [filteredData, stokTersedia]);
 
   const columns: ColumnDef<PenjualanTelur>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },
     { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: (item) => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-20" /> },
     { key: "pembeli", header: "Pembeli", className: styles.table.cellSecondary, render: (item) => item.pembeli, skeleton: <Skeleton className="h-4 w-24" /> },
     { key: "beratKg", header: "Berat", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums`, render: (item) => `${item.beratKg.toLocaleString("id-ID")} kg`, skeleton: <Skeleton className="h-4 w-14 ml-auto" /> },
-    { key: "hargaPerKg", header: "Harga/Kg", headerClassName: "text-right hidden sm:table-cell", className: `${styles.table.cellTertiary} text-right tabular-nums hidden sm:table-cell`, render: (item) => formatCurrency(item.hargaPerKg), skeleton: <Skeleton className="h-4 w-20 ml-auto" /> },
     { key: "totalHarga", header: "Total", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400`, render: (item) => formatCurrency(item.totalHarga), skeleton: <Skeleton className="h-4 w-24 ml-auto" /> },
   ];
 
@@ -99,14 +97,15 @@ export function PenjualanTelurPage() {
   const handleEdit = (item: PenjualanTelur) => { setSelected(item); setFormOpen(true); };
   const handleDelete = (item: PenjualanTelur) => { setSelected(item); setDeleteOpen(true); };
 
-  const handleFormSubmit = (formData: CreatePenjualanInput | UpdatePenjualanInput) => {
+  const handleFormSubmit = (formData: Omit<CreatePenjualanInput, "kandangId">) => {
+    const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
     if (selected) {
-      updateMutation.mutate({ id: selected.id, data: formData }, {
+      updateMutation.mutate({ id: selected.id, data: dataWithKandang }, {
         onSuccess: () => { toast.success("Transaksi berhasil diperbarui"); setFormOpen(false); setSelected(null); },
         onError: (err) => toast.error(err.message || "Gagal memperbarui"),
       });
     } else {
-      createMutation.mutate(formData as CreatePenjualanInput, {
+      createMutation.mutate(dataWithKandang, {
         onSuccess: () => { toast.success("Penjualan berhasil dicatat"); setFormOpen(false); },
         onError: (err) => toast.error(err.message || "Gagal mencatat penjualan"),
       });

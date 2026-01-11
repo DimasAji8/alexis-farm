@@ -2,8 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAyamMasukList, createAyamMasuk, updateAyamMasuk, deleteAyamMasuk } from "./api";
 import type { CreateAyamMasukInput, UpdateAyamMasukInput } from "../types";
 
-export function useAyamMasukList() {
-  return useQuery({ queryKey: ["ayam-masuk"], queryFn: fetchAyamMasukList, staleTime: 0 });
+export function useAyamMasukList(kandangId?: string | null) {
+  return useQuery({
+    queryKey: ["ayam-masuk", kandangId],
+    queryFn: () => fetchAyamMasukList(kandangId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!kandangId,
+  });
 }
 
 export function useCreateAyamMasuk() {

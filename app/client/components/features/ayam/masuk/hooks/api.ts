@@ -1,8 +1,9 @@
 import { apiClient } from "@/lib/api-client";
 import type { AyamMasuk, CreateAyamMasukInput, UpdateAyamMasukInput } from "../types";
 
-export async function fetchAyamMasukList(): Promise<AyamMasuk[]> {
-  const response = await apiClient<AyamMasuk[]>("/api/ayam/masuk");
+export async function fetchAyamMasukList(kandangId?: string | null): Promise<AyamMasuk[]> {
+  const params = kandangId ? `?kandangId=${kandangId}` : "";
+  const response = await apiClient<AyamMasuk[]>(`/api/ayam/masuk${params}`);
   return response.data;
 }
 

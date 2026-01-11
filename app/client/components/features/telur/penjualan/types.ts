@@ -1,5 +1,6 @@
 export type PenjualanTelur = {
   id: string;
+  kandangId: string;
   nomorTransaksi: string;
   tanggal: string;
   pembeli: string;
@@ -11,9 +12,11 @@ export type PenjualanTelur = {
   keterangan?: string | null;
   createdAt: string;
   updatedAt: string;
+  kandang: { id: string; kode: string; nama: string };
 };
 
 export type CreatePenjualanInput = {
+  kandangId: string;
   tanggal: string;
   pembeli: string;
   beratKg: number;

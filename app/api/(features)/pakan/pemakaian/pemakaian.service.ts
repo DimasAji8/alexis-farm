@@ -7,7 +7,7 @@ import type { CreatePemakaianPakanInput, UpdatePemakaianPakanInput } from "./pem
 export class PemakaianPakanService {
   static async getAll() {
     return prisma.pemakaianPakan.findMany({
-      orderBy: { tanggalPakai: "desc" },
+      orderBy: { tanggalPakai: "asc" },
       include: {
         jenisPakan: { select: { id: true, kode: true, nama: true, satuan: true } },
         kandang: { select: { id: true, kode: true, nama: true } },

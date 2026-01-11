@@ -6,9 +6,10 @@ import { ProduksiTelurService } from "./produksi.service";
 import { createProduksiTelurSchema } from "./produksi.validation";
 
 export class ProduksiTelurController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await ProduksiTelurService.getAll();
+      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const data = await ProduksiTelurService.getAll(kandangId);
       return apiResponse(data, "Produksi telur berhasil diambil");
     } catch (error) {
       return apiError(error);

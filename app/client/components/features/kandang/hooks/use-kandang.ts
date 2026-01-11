@@ -3,7 +3,7 @@ import { fetchKandangList, createKandang, updateKandang, deleteKandang } from ".
 import type { CreateKandangInput, UpdateKandangInput } from "../types";
 
 export function useKandangList() {
-  return useQuery({ queryKey: ["kandang"], queryFn: fetchKandangList, staleTime: 0 });
+  return useQuery({ queryKey: ["kandang"], queryFn: fetchKandangList, staleTime: 5 * 60 * 1000 });
 }
 
 export function useCreateKandang() {

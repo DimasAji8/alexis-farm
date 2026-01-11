@@ -13,13 +13,15 @@ import { DataFilters, type FilterConfig } from "@/components/shared/data-filters
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
+import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
 
 import { AyamMasukFormDialog } from "../components/form-dialog";
 import { useAyamMasukList, useCreateAyamMasuk, useUpdateAyamMasuk, useDeleteAyamMasuk } from "../hooks/use-ayam-masuk";
-import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
 import type { AyamMasuk, CreateAyamMasukInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
+
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -27,68 +29,76 @@ const formatDate = (value?: string | null) => {
 };
 
 const filterConfig: FilterConfig[] = [
-  { key: "search", label: "Cari", type: "search", placeholder: "Cari kandang..." },
-  { key: "kandangId", label: "Kandang", type: "select", options: [] },
+  { key: "bulan", label: "Bulan", type: "month" },
 ];
 
 export function AyamMasukPage() {
-  const { data, isLoading, isError, error, refetch } = useAyamMasukList();
+  const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
+  const { data, isLoading, isError, error, refetch } = useAyamMasukList(selectedKandangId);
   const createMutation = useCreateAyamMasuk();
   const updateMutation = useUpdateAyamMasuk();
   const deleteMutation = useDeleteAyamMasuk();
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({ search: null, kandangId: null });
+  const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
+
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<AyamMasuk | null>(null);
 
-  const dynamicFilterConfig = useMemo(() => {
-    const config = [...filterConfig];
-    const f = config.find(c => c.key === "kandangId");
-    if (f && kandangList) f.options = kandangList.map(k => ({ value: k.id, label: `${k.kode} - ${k.nama}` }));
-    return config;
-  }, [kandangList]);
-
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter(item => {
-      const matchSearch = !filters.search || item.kandang.kode.toLowerCase().includes(filters.search.toLowerCase()) || item.kandang.nama.toLowerCase().includes(filters.search.toLowerCase());
-      const matchKandang = !filters.kandangId || item.kandangId === filters.kandangId;
-      return matchSearch && matchKandang;
+      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
+      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
+      if (month !== null && year !== null) {
+        const date = new Date(item.tanggal);
+        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
+      }
+      return true;
     });
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const d = filteredData;
-    const total = d.reduce((sum, item) => sum + item.jumlahAyam, 0);
-    const thisMonth = d.filter(item => { const date = new Date(item.tanggal); const now = new Date(); return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear(); });
+    if (!data) return [];
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    
+    const last6MonthsTotal = data.filter(item => new Date(item.tanggal) >= sixMonthsAgo)
+      .reduce((sum, item) => sum + item.jumlahAyam, 0);
+    
+    const thisMonthTotal = data.filter(item => {
+      const d = new Date(item.tanggal);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).reduce((sum, item) => sum + item.jumlahAyam, 0);
+    
     return [
-      { label: "Total Record", value: d.length, color: "slate" },
-      { label: "Total Ayam Masuk", value: total.toLocaleString("id-ID"), color: "emerald" },
-      { label: "Bulan Ini", value: thisMonth.reduce((s, i) => s + i.jumlahAyam, 0).toLocaleString("id-ID"), color: "blue" },
+      { label: "6 Bulan Terakhir", value: last6MonthsTotal.toLocaleString("id-ID"), color: "emerald" },
+      { label: "Bulan Ini", value: thisMonthTotal.toLocaleString("id-ID"), color: "blue" },
+      { label: "Ayam Hidup", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
-  }, [filteredData]);
+  }, [data, currentKandang]);
 
   const columns: ColumnDef<AyamMasuk>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },
     { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: item => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-20" /> },
-    { key: "kandang", header: "Kandang", className: styles.table.cellSecondary, render: item => `${item.kandang.kode} - ${item.kandang.nama}`, skeleton: <Skeleton className="h-4 w-32" /> },
     { key: "jumlah", header: "Jumlah", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums text-emerald-600`, render: item => item.jumlahAyam.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 ml-auto" /> },
   ];
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleFormSubmit = (formData: CreateAyamMasukInput) => {
+  const handleFormSubmit = (formData: Omit<CreateAyamMasukInput, "kandangId">) => {
+    const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
     if (selected) {
-      updateMutation.mutate({ id: selected.id, data: formData }, {
+      updateMutation.mutate({ id: selected.id, data: dataWithKandang }, {
         onSuccess: () => { toast.success("Data berhasil diperbarui"); setFormOpen(false); setSelected(null); },
         onError: (err) => toast.error(err.message || "Gagal memperbarui"),
       });
     } else {
-      createMutation.mutate(formData, {
+      createMutation.mutate(dataWithKandang, {
         onSuccess: () => { toast.success("Data berhasil ditambahkan"); setFormOpen(false); },
         onError: (err) => toast.error(err.message || "Gagal menambahkan"),
       });
@@ -103,7 +113,7 @@ export function AyamMasukPage() {
     });
   };
 
-  if (isLoading && !data) return <PageSkeleton eyebrow="Ayam" title="Ayam Masuk" description="Rekap data ayam masuk ke kandang." statsCount={3} statsColumns={3} tableColumns={4} />;
+  if (isLoading && !data) return <PageSkeleton eyebrow="Ayam" title="Ayam Masuk" description="Rekap data ayam masuk ke kandang." statsCount={3} statsColumns={3} tableColumns={3} />;
 
   if (isError) {
     return (
@@ -126,14 +136,14 @@ export function AyamMasukPage() {
       </div>
 
       <DataStats stats={stats} columns={3} />
-      <DataFilters config={dynamicFilterConfig} onFilterChange={f => { setFilters(f); setCurrentPage(1); }} />
+      <DataFilters config={filterConfig} onFilterChange={f => { setFilters(f); setCurrentPage(1); }} />
 
       <Card className={styles.card.table}>
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} onDelete={item => { setSelected(item); setDeleteOpen(true); }} getRowKey={item => item.id} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
-      <AyamMasukFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} kandangList={kandangList} />
+      <AyamMasukFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} />
       <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} isLoading={deleteMutation.isPending} title="Hapus Data" description={`Hapus data ayam masuk tanggal ${formatDate(selected?.tanggal)}? Jumlah ayam di kandang akan dikurangi.`} />
     </section>
   );

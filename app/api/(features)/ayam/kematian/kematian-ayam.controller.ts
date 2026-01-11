@@ -6,9 +6,10 @@ import { KematianAyamService } from "./kematian-ayam.service";
 import { createKematianAyamSchema } from "./kematian-ayam.validation";
 
 export class KematianAyamController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await KematianAyamService.getAll();
+      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const data = await KematianAyamService.getAll(kandangId);
       return apiResponse(data, "Riwayat kematian ayam berhasil diambil");
     } catch (error) {
       return apiError(error);

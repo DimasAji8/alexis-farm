@@ -8,9 +8,10 @@ import type {
 } from "./kematian-ayam.validation";
 
 export class KematianAyamService {
-  static async getAll() {
+  static async getAll(kandangId?: string) {
     return prisma.kematianRecord.findMany({
-      orderBy: { tanggal: "desc" },
+      where: kandangId ? { kandangId } : undefined,
+      orderBy: { tanggal: "asc" },
       include: { kandang: { select: { id: true, kode: true, nama: true, jumlahAyam: true } } },
     });
   }

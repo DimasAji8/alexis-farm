@@ -3,7 +3,7 @@ import { fetchJenisPakanList, createJenisPakan, updateJenisPakan, deleteJenisPak
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "../types";
 
 export function useJenisPakanList() {
-  return useQuery({ queryKey: ["jenis-pakan"], queryFn: fetchJenisPakanList, staleTime: 0 });
+  return useQuery({ queryKey: ["jenis-pakan"], queryFn: fetchJenisPakanList, staleTime: 5 * 60 * 1000 });
 }
 
 export function useCreateJenisPakan() {

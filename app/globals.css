@@ -125,3 +125,24 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+/* Loader Animation */
+.loader {
+  width: 55px;
+  aspect-ratio: 1;
+  --c: #f59e0b;
+  --g1: linear-gradient(var(--c) 0 0);
+  --g2: linear-gradient(var(--c) 0 0);
+  background: var(--g1), var(--g1), var(--g1), var(--g2), var(--g2), var(--g2);
+  background-size: 22px 22px;
+  background-repeat: no-repeat;
+  animation: loader-anim 1.5s infinite;
+}
+
+@keyframes loader-anim {
+  0%   { background-position: 0 0, 0 100%, 100% 100%; }
+  25%  { background-position: 100% 0, 0 100%, 100% 100%; }
+  50%  { background-position: 100% 0, 0 0, 100% 100%; }
+  75%  { background-position: 100% 0, 0 0, 0 100%; }
+  100% { background-position: 100% 100%, 0 0, 0 100%; }
+}

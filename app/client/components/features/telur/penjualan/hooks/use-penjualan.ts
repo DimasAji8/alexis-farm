@@ -2,8 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchPenjualanList, createPenjualan, updatePenjualan, deletePenjualan } from "./api";
 import type { CreatePenjualanInput, UpdatePenjualanInput } from "../types";
 
-export function usePenjualanList() {
-  return useQuery({ queryKey: ["penjualan-telur"], queryFn: fetchPenjualanList, staleTime: 0 });
+export function usePenjualanList(kandangId?: string | null) {
+  return useQuery({
+    queryKey: ["penjualan-telur", kandangId],
+    queryFn: () => fetchPenjualanList(kandangId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!kandangId,
+  });
 }
 
 export function useCreatePenjualan() {

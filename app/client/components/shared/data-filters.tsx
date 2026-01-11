@@ -1,21 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Filter, X } from "lucide-react";
 
 export type FilterOption = { value: string; label: string };
 
 export type FilterConfig = {
   key: string;
   label: string;
-  type: "search" | "select";
+  type: "search" | "select" | "month";
   placeholder?: string;
   options?: FilterOption[];
 };
+
+const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 interface DataFiltersProps {
   config: FilterConfig[];
@@ -23,68 +25,170 @@ interface DataFiltersProps {
 }
 
 export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
-  const initialState = config.reduce((acc, f) => ({ ...acc, [f.key]: f.type === "select" ? "all" : "" }), {} as Record<string, string>);
-  const [filters, setFilters] = useState(initialState);
+  const initialized = useRef(false);
+  const [mounted, setMounted] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState("0");
+  const [currentYear, setCurrentYear] = useState("2026");
+  const [years, setYears] = useState<string[]>(["2026", "2025", "2024"]);
+
+  useEffect(() => {
+    const now = new Date();
+    setCurrentMonth(String(now.getMonth()));
+    setCurrentYear(String(now.getFullYear()));
+    setYears(Array.from({ length: 3 }, (_, i) => String(now.getFullYear() - i)));
+    setMounted(true);
+  }, []);
+
+  const getInitialState = () => {
+    return config.reduce((acc, f) => {
+      if (f.type === "month") {
+        acc[`${f.key}_month`] = currentMonth;
+        acc[`${f.key}_year`] = currentYear;
+      } else {
+        acc[f.key] = f.type === "select" ? "all" : "";
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  };
+
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [open, setOpen] = useState(false);
+
+  // Initialize filters after mount
+  useEffect(() => {
+    if (mounted && !initialized.current) {
+      const initial = getInitialState();
+      setFilters(initial);
+      emitChange(initial);
+      initialized.current = true;
+    }
+  }, [mounted, currentMonth, currentYear]);
+
+  const emitChange = (newFilters: Record<string, string>) => {
+    const output: Record<string, string | null> = {};
+    config.forEach((f) => {
+      if (f.type === "month") {
+        output[`${f.key}_month`] = newFilters[`${f.key}_month`];
+        output[`${f.key}_year`] = newFilters[`${f.key}_year`];
+      } else {
+        const v = newFilters[f.key];
+        output[f.key] = v === "all" || v === "" ? null : v;
+      }
+    });
+    onFilterChange(output);
+  };
 
   const handleChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    const output = Object.fromEntries(
-      Object.entries(newFilters).map(([k, v]) => [k, v === "all" || v === "" ? null : v])
-    );
-    onFilterChange(output);
+    emitChange(newFilters);
   };
 
   const clear = () => {
-    setFilters(initialState);
-    onFilterChange(Object.fromEntries(config.map((f) => [f.key, null])));
+    const initial = getInitialState();
+    setFilters(initial);
+    emitChange(initial);
   };
 
-  const hasActive = Object.entries(filters).some(([k, v]) => {
-    const cfg = config.find((c) => c.key === k);
-    return cfg?.type === "select" ? v !== "all" : v !== "";
-  });
+  // Count non-default filters
+  const activeCount = Object.entries(filters).filter(([k, v]) => {
+    const cfg = config.find((c) => c.key === k || k.startsWith(c.key + "_"));
+    if (!cfg) return false;
+    if (cfg.type === "month") {
+      if (k === `${cfg.key}_month`) return v !== currentMonth;
+      if (k === `${cfg.key}_year`) return v !== currentYear;
+    }
+    if (cfg.type === "select") return v !== "all";
+    return v !== "";
+  }).length;
+
+  // Build summary label
+  const getSummary = () => {
+    if (!mounted) return "Filter";
+    const parts: string[] = [];
+    config.forEach(f => {
+      if (f.type === "month") {
+        const m = MONTHS[Number(filters[`${f.key}_month`] ?? 0)];
+        const y = filters[`${f.key}_year`] ?? currentYear;
+        parts.push(`${m} ${y}`);
+      } else if (f.type === "select" && filters[f.key] !== "all") {
+        const opt = f.options?.find(o => o.value === filters[f.key]);
+        if (opt) parts.push(opt.label);
+      }
+    });
+    return parts.length > 0 ? parts.join(" · ") : "Filter";
+  };
+
+  if (!mounted) {
+    return (
+      <Button variant="outline" size="sm" className="h-9 gap-2">
+        <Filter className="h-4 w-4" />
+        <span className="max-w-[200px] truncate">Filter</span>
+      </Button>
+    );
+  }
 
   return (
-    <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-          {config.map((f) =>
-            f.type === "search" ? (
-              <div key={f.key} className="flex-1 space-y-1.5">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">{f.label}</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder={f.placeholder || "Cari..."}
-                    value={filters[f.key]}
-                    onChange={(e) => handleChange(f.key, e.target.value)}
-                    className="pl-9 text-sm"
-                  />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 gap-2">
+          <Filter className="h-4 w-4" />
+          <span className="max-w-[200px] truncate">{getSummary()}</span>
+          {activeCount > 0 && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="start">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Filter</span>
+            {activeCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clear} className="h-7 px-2 text-xs">
+                <X className="h-3 w-3 mr-1" />Reset
+              </Button>
+            )}
+          </div>
+          {config.map((f) => (
+            <div key={f.key} className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
+              {f.type === "month" ? (
+                <div className="flex gap-2">
+                  <Select value={filters[`${f.key}_month`]} onValueChange={(v) => handleChange(`${f.key}_month`, v)}>
+                    <SelectTrigger className="h-9 text-sm flex-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filters[`${f.key}_year`]} onValueChange={(v) => handleChange(`${f.key}_year`, v)}>
+                    <SelectTrigger className="h-9 text-sm w-24"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            ) : (
-              <div key={f.key} className="space-y-1.5 w-full sm:w-40">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">{f.label}</label>
+              ) : f.type === "search" ? (
+                <Input
+                  placeholder={f.placeholder || "Cari..."}
+                  value={filters[f.key]}
+                  onChange={(e) => handleChange(f.key, e.target.value)}
+                  className="h-9 text-sm"
+                />
+              ) : (
                 <Select value={filters[f.key]} onValueChange={(v) => handleChange(f.key, v)}>
-                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua</SelectItem>
-                    {f.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
+                    {f.options?.map((opt) => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-              </div>
-            )
-          )}
-          {hasActive && (
-            <Button variant="ghost" size="sm" onClick={clear} className="h-10 px-3 text-slate-500 dark:text-slate-400">
-              <X className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Reset</span>
-            </Button>
-          )}
+              )}
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      </PopoverContent>
+    </Popover>
   );
 }

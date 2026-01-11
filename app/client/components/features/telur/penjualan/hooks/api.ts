@@ -1,8 +1,9 @@
 import { apiClient } from "@/lib/api-client";
 import type { PenjualanTelur, CreatePenjualanInput, UpdatePenjualanInput } from "../types";
 
-export async function fetchPenjualanList(): Promise<PenjualanTelur[]> {
-  const response = await apiClient<PenjualanTelur[]>("/api/telur/penjualan");
+export async function fetchPenjualanList(kandangId?: string | null): Promise<PenjualanTelur[]> {
+  const params = kandangId ? `?kandangId=${kandangId}` : "";
+  const response = await apiClient<PenjualanTelur[]>(`/api/telur/penjualan${params}`);
   return response.data;
 }
 

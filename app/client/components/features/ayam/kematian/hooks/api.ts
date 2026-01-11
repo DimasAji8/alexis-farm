@@ -1,8 +1,9 @@
 import { apiClient } from "@/lib/api-client";
 import type { KematianAyam, CreateKematianInput, UpdateKematianInput } from "../types";
 
-export async function fetchKematianList(): Promise<KematianAyam[]> {
-  const response = await apiClient<KematianAyam[]>("/api/ayam/kematian");
+export async function fetchKematianList(kandangId?: string | null): Promise<KematianAyam[]> {
+  const params = kandangId ? `?kandangId=${kandangId}` : "";
+  const response = await apiClient<KematianAyam[]>(`/api/ayam/kematian${params}`);
   return response.data;
 }
 

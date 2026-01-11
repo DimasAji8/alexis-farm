@@ -39,7 +39,7 @@ export class TransaksiKeuanganService {
 
     return prisma.transaksiKeuangan.findMany({
       where,
-      orderBy: { tanggal: "desc" },
+      orderBy: { tanggal: "asc" },
     });
   }
 

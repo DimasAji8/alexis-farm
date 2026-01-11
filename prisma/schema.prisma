@@ -35,6 +35,8 @@ model Kandang {
   kematianRecords  KematianRecord[]
   pemakaianPakan   PemakaianPakan[]
   produksiTelur    ProduksiTelur[]
+  stockTelur       StockTelur[]
+  penjualanTelur   PenjualanTelur[]
 
   @@index([kode])
   @@index([status])
@@ -160,20 +162,24 @@ model ProduksiTelur {
 
 model StockTelur {
   id         String   @id @default(cuid()) @map("id_trx_stock_telur")
+  kandangId  String   @map("id_mst_kandang")
   tanggal    DateTime
   stockButir Int
   stockKg    Float
   keterangan String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  kandang    Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
 
+  @@unique([kandangId, tanggal])
   @@index([tanggal])
-  @@unique([tanggal])
+  @@index([kandangId])
   @@map("trx_stock_telur")
 }
 
 model PenjualanTelur {
   id             String   @id @default(cuid()) @map("id_trx_penjualan_telur")
+  kandangId      String   @map("id_mst_kandang")
   nomorTransaksi String   @unique
   tanggal        DateTime
   pembeli        String
@@ -191,9 +197,11 @@ model PenjualanTelur {
   updatedBy      String?  @map("updated_by")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  kandang        Kandang  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
 
   @@index([tanggal])
   @@index([pembeli])
+  @@index([kandangId])
   @@map("trx_penjualan_telur")
 }
 

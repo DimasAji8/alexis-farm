@@ -5,9 +5,10 @@ import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
 import type { CreateAyamMasukInput, UpdateAyamMasukInput } from "./ayam-masuk.validation";
 
 export class AyamMasukService {
-  static async getAll() {
+  static async getAll(kandangId?: string) {
     return prisma.ayamMasuk.findMany({
-      orderBy: { tanggal: "desc" },
+      where: kandangId ? { kandangId } : undefined,
+      orderBy: { tanggal: "asc" },
       include: { kandang: { select: { id: true, kode: true, nama: true } } },
     });
   }

@@ -6,9 +6,10 @@ import { StockTelurService } from "../stock/stock.service";
 import type { CreateProduksiTelurInput, UpdateProduksiTelurInput } from "./produksi.validation";
 
 export class ProduksiTelurService {
-  static async getAll() {
+  static async getAll(kandangId?: string) {
     return prisma.produksiTelur.findMany({
-      orderBy: [{ tanggal: "desc" }, { kandangId: "asc" }],
+      where: kandangId ? { kandangId } : undefined,
+      orderBy: [{ tanggal: "asc" }, { kandangId: "asc" }],
       include: {
         kandang: { select: { id: true, kode: true, nama: true, jumlahAyam: true } },
       },
@@ -55,8 +56,9 @@ export class ProduksiTelurService {
         },
       });
 
-      // Update stok telur global
+      // Update stok telur per kandang
       await StockTelurService.adjustStock({
+        kandangId: data.kandangId,
         tanggal: data.tanggal,
         deltaButir: totalButir,
         deltaKg: totalKg,
@@ -101,6 +103,7 @@ export class ProduksiTelurService {
 
       // revert stok lama
       await StockTelurService.adjustStock({
+        kandangId: existing.kandangId,
         tanggal: existing.tanggal,
         deltaButir: -existing.totalButir,
         deltaKg: -existing.totalKg,
@@ -108,6 +111,7 @@ export class ProduksiTelurService {
 
       // apply stok baru
       await StockTelurService.adjustStock({
+        kandangId: targetKandangId,
         tanggal: targetTanggal,
         deltaButir: newTotalButir,
         deltaKg: newTotalKg,

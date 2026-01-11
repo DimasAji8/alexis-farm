@@ -3,7 +3,7 @@ import { fetchUserList, createUser, deleteUser } from "./api";
 import type { CreateUserInput } from "../types";
 
 export function useUserList() {
-  return useQuery({ queryKey: ["users"], queryFn: fetchUserList, staleTime: 0 });
+  return useQuery({ queryKey: ["users"], queryFn: fetchUserList, staleTime: 5 * 60 * 1000 });
 }
 
 export function useCreateUser() {

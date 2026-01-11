@@ -8,9 +8,11 @@ import { StockTelurService } from "../stock/stock.service";
 import type { CreatePenjualanTelurInput, UpdatePenjualanTelurInput } from "./penjualan.validation";
 
 export class PenjualanTelurService {
-  static async getAll() {
+  static async getAll(kandangId?: string) {
     return prisma.penjualanTelur.findMany({
-      orderBy: { tanggal: "desc" },
+      where: kandangId ? { kandangId } : undefined,
+      orderBy: { tanggal: "asc" },
+      include: { kandang: { select: { id: true, kode: true, nama: true } } },
     });
   }
 
@@ -65,13 +67,13 @@ export class PenjualanTelurService {
     return prisma.$transaction(async (tx) => {
       const saldoAwalRecord = await tx.penjualanTelur.findFirst({
         where: { tanggal: { lt: data.tanggal } },
-        orderBy: { tanggal: "desc" },
+        orderBy: { tanggal: "asc" },
       });
       const saldoAwal = saldoAwalRecord?.saldoAkhir ?? 0;
       const saldoAkhir = saldoAwal + uangMasuk - uangKeluar;
 
       const stock = await tx.stockTelur.findUnique({
-        where: { tanggal: data.tanggal },
+        where: { kandangId_tanggal: { kandangId: data.kandangId, tanggal: data.tanggal } },
       });
 
       const currentKg = stock?.stockKg ?? 0;
@@ -83,9 +85,10 @@ export class PenjualanTelurService {
 
       const created = await tx.penjualanTelur.create({
         data: {
+          kandangId: data.kandangId,
           tanggal: data.tanggal,
           pembeli: data.pembeli ?? "",
-          jumlahButir: currentButir > 0 ? Math.min(currentButir, Math.round(data.beratKg * 16)) : 0, // perkiraan jika butir tersedia
+          jumlahButir: currentButir > 0 ? Math.min(currentButir, Math.round(data.beratKg * 16)) : 0,
           beratKg: data.beratKg,
           hargaPerKg: data.hargaPerKg,
           totalHarga,
@@ -100,8 +103,9 @@ export class PenjualanTelurService {
         },
       });
 
-      // Kurangi stok
+      // Kurangi stok per kandang
       await StockTelurService.adjustStock({
+        kandangId: data.kandangId,
         tanggal: data.tanggal,
         deltaButir: -created.jumlahButir,
         deltaKg: -data.beratKg,
@@ -127,6 +131,7 @@ export class PenjualanTelurService {
         throw new NotFoundError("Penjualan telur tidak ditemukan");
       }
 
+      const kandangId = data.kandangId ?? existing.kandangId;
       const tanggal = data.tanggal ?? existing.tanggal;
       const beratKg = data.beratKg ?? existing.beratKg;
       const hargaPerKg = data.hargaPerKg ?? existing.hargaPerKg;
@@ -137,29 +142,32 @@ export class PenjualanTelurService {
 
       const saldoAwalRecord = await tx.penjualanTelur.findFirst({
         where: { tanggal: { lt: tanggal }, NOT: { id } },
-        orderBy: { tanggal: "desc" },
+        orderBy: { tanggal: "asc" },
       });
       const saldoAwal = saldoAwalRecord?.saldoAkhir ?? 0;
       const saldoAkhir = saldoAwal + uangMasuk - uangKeluar;
 
       // kembalikan stok lama
       await StockTelurService.adjustStock({
+        kandangId: existing.kandangId,
         tanggal: existing.tanggal,
-        deltaButir: existing.jumlahButir * -1,
-        deltaKg: existing.beratKg * -1,
+        deltaButir: existing.jumlahButir,
+        deltaKg: existing.beratKg,
       });
 
-      const stockNew = await tx.stockTelur.findFirst({ where: { tanggal } });
+      const stockNew = await tx.stockTelur.findUnique({ 
+        where: { kandangId_tanggal: { kandangId, tanggal } } 
+      });
       const currentKg = stockNew?.stockKg ?? 0;
       if (currentKg < beratKg) {
         throw new ValidationError("Stok telur tidak cukup untuk penjualan ini");
       }
 
       const stockButir = stockNew?.stockButir ?? 0;
-      const jumlahButir =
-        stockButir > 0 ? Math.min(stockButir, Math.round(beratKg * 16)) : existing.jumlahButir;
+      const jumlahButir = stockButir > 0 ? Math.min(stockButir, Math.round(beratKg * 16)) : existing.jumlahButir;
 
       await StockTelurService.adjustStock({
+        kandangId,
         tanggal,
         deltaButir: -jumlahButir,
         deltaKg: -beratKg,
@@ -168,6 +176,7 @@ export class PenjualanTelurService {
       const updated = await tx.penjualanTelur.update({
         where: { id },
         data: {
+          kandangId,
           tanggal,
           pembeli: data.pembeli ?? existing.pembeli,
           jumlahButir,
@@ -206,6 +215,7 @@ export class PenjualanTelurService {
       }
 
       await StockTelurService.adjustStock({
+        kandangId: existing.kandangId,
         tanggal: existing.tanggal,
         deltaButir: existing.jumlahButir,
         deltaKg: existing.beratKg,

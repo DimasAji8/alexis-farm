@@ -6,9 +6,10 @@ import { PenjualanTelurService } from "./penjualan.service";
 import { createPenjualanTelurSchema } from "./penjualan.validation";
 
 export class PenjualanTelurController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await PenjualanTelurService.getAll();
+      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const data = await PenjualanTelurService.getAll(kandangId);
       return apiResponse(data, "Penjualan telur berhasil diambil");
     } catch (error) {
       return apiError(error);

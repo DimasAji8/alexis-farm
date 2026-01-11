@@ -10,7 +10,7 @@ import type {
 export class PengeluaranOperasionalService {
   static async getAll() {
     return prisma.pengeluaranOperasional.findMany({
-      orderBy: { tanggal: "desc" },
+      orderBy: { tanggal: "asc" },
     });
   }
 

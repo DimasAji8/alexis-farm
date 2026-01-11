@@ -7,20 +7,21 @@ import type { PenjualanTelur, CreatePenjualanInput } from "../types";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: CreatePenjualanInput) => void;
+  onSubmit: (data: Omit<CreatePenjualanInput, "kandangId">) => void;
   isLoading: boolean;
   penjualan?: PenjualanTelur | null;
   stokTersedia?: number;
 };
 
+type FormData = Omit<CreatePenjualanInput, "kandangId">;
+
 export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, penjualan, stokTersedia = 0 }: Props) {
   const isEdit = !!penjualan;
-  const maxKg = isEdit ? stokTersedia + penjualan.beratKg : stokTersedia;
 
-  const fields: FieldConfig<CreatePenjualanInput>[] = useMemo(() => [
+  const fields: FieldConfig<FormData>[] = useMemo(() => [
     { name: "tanggal", label: "Tanggal", type: "date", required: true },
     { name: "pembeli", label: "Pembeli", type: "text", placeholder: "Nama pembeli", required: true },
-    { name: "beratKg", label: `Berat (Kg) - Maks: ${maxKg.toLocaleString("id-ID")} kg`, type: "number", required: true, min: 0.1, max: maxKg, step: 0.1 },
+    { name: "beratKg", label: `Berat (Kg)`, type: "number", required: true, min: 0.1, step: 0.1 },
     { name: "hargaPerKg", label: "Harga per Kg (Rp)", type: "number", required: true, min: 1 },
     { name: "metodeBayar", label: "Metode Bayar", type: "select", options: [
       { value: "tunai", label: "Tunai" },
@@ -28,7 +29,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
       { value: "tempo", label: "Tempo" },
     ]},
     { name: "deskripsi", label: "Keterangan", type: "textarea", placeholder: "Keterangan (opsional)" },
-  ], [maxKg]);
+  ], []);
 
   const editData = penjualan ? {
     tanggal: penjualan.tanggal.split("T")[0],
@@ -40,7 +41,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
   } : null;
 
   return (
-    <FormDialog<CreatePenjualanInput>
+    <FormDialog<FormData>
       open={open}
       onOpenChange={onOpenChange}
       onSubmit={onSubmit}
