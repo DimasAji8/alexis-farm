@@ -13,7 +13,7 @@ import { styles } from "@/lib/styles";
 export type FieldConfig<T extends FieldValues> = {
   name: Path<T>;
   label: string;
-  type: "text" | "number" | "date" | "select" | "textarea";
+  type: "text" | "number" | "date" | "select" | "textarea" | "currency";
   placeholder?: string;
   required?: boolean | string;
   min?: number;
@@ -21,6 +21,13 @@ export type FieldConfig<T extends FieldValues> = {
   options?: { value: string; label: string }[];
   colSpan?: 1 | 2;
 };
+
+const formatCurrency = (value: string) => {
+  const num = value.replace(/\D/g, "");
+  return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseCurrency = (value: string) => Number(value.replace(/\./g, "")) || 0;
 
 type Props<T extends FieldValues> = {
   open: boolean;
@@ -51,7 +58,6 @@ export function FormDialog<T extends FieldValues>({
     const rules = {
       required: field.required === true ? `${field.label} wajib diisi` : field.required,
       ...(field.type === "number" && field.min !== undefined ? { min: { value: field.min, message: `Minimal ${field.min}` } } : {}),
-      ...(field.type === "number" ? { valueAsNumber: true } : {}),
     };
 
     if (field.type === "select") {
@@ -84,12 +90,57 @@ export function FormDialog<T extends FieldValues>({
       );
     }
 
+    if (field.type === "currency") {
+      return (
+        <Controller
+          name={field.name}
+          control={control}
+          rules={{ required: rules.required, min: field.min !== undefined ? { value: field.min, message: `Minimal ${field.min}` } : undefined }}
+          render={({ field: f }) => (
+            <>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder={field.placeholder}
+                className={error ? "border-red-500" : ""}
+                value={f.value ? formatCurrency(String(f.value)) : ""}
+                onChange={(e) => f.onChange(parseCurrency(e.target.value))}
+              />
+              {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+            </>
+          )}
+        />
+      );
+    }
+
+    if (field.type === "number") {
+      return (
+        <Controller
+          name={field.name}
+          control={control}
+          rules={{ required: rules.required, min: field.min !== undefined ? { value: field.min, message: `Minimal ${field.min}` } : undefined }}
+          render={({ field: f }) => (
+            <>
+              <Input
+                type="number"
+                min={field.min}
+                step={field.step ?? "any"}
+                placeholder={field.placeholder}
+                className={error ? "border-red-500" : ""}
+                value={f.value ?? ""}
+                onChange={(e) => f.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
+              />
+              {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+            </>
+          )}
+        />
+      );
+    }
+
     return (
       <>
         <Input
           type={field.type}
-          min={field.min}
-          step={field.step}
           placeholder={field.placeholder}
           className={error ? "border-red-500" : ""}
           {...register(field.name, rules)}

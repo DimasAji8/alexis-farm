@@ -1,45 +1,62 @@
-## Summary Pekerjaan 9-10 Jan 2026
+# Summary Perubahan - 11 Januari 2026
 
-### ✅ Yang Sudah Dikerjakan:
+## Fitur Kandang Switcher
+- Tambah `KandangSwitcher` di sidebar untuk memilih kandang aktif
+- Tambah `KandangProvider` untuk state management kandang yang dipilih
+- Tambah `KandangAutoSelect` untuk auto-select kandang pertama (fix mobile)
+- Tambah `KandangLoader` untuk loading animation saat pindah kandang
+- Semua data (ayam, telur, dll) difilter berdasarkan kandang yang dipilih
 
-1. Refactor Struktur Folder Features
-Semua folder feature sudah konsisten:
-feature/
-├── components/form-dialog.tsx
-├── hooks/api.ts, use-[feature].ts
-├── page/[feature]-page.tsx
-├── types.ts
-└── index.ts
+## Perubahan API Backend
+- Semua endpoint data menerima parameter `kandangId` untuk filter
+- Urutan data diubah dari `desc` ke `asc` (tanggal terlama dulu)
 
-- ayam/masuk, ayam/kematian
-- kandang, users, jenis-pakan
-- telur/produktivitas, telur/stok, telur/penjualan
+## Perubahan Stok Telur
+- Logic stok diubah ke **running total** (akumulatif)
+- Setiap record = snapshot stok di akhir hari itu
+- Script `scripts/recalculate-stock.ts` untuk recalculate data lama
+- Tampilan: Stok Awal (dari bulan sebelumnya), Stok Saat Ini
+- Tabel menampilkan kolom "Masuk" dari produktivitas
+- Satuan hanya kg (butir dihapus)
 
-2. Fitur Telur (Workflow Terintegrasi)
-- **Produktivitas** - Input produksi harian → otomatis tambah stok
-- **Stok Telur** - View-only, hasil produksi - penjualan
-- **Penjualan** - Transaksi keluar, validasi stok, update keuangan
-- Menu sudah ditambahkan di sidebar
+## Perubahan UI Halaman
+### Ayam Masuk & Kematian
+- Cards: 6 Bulan Terakhir, Bulan Ini, Ayam Hidup (dari data kandang)
+- Kolom kandang dihapus dari tabel (sudah jelas dari switcher)
 
-3. Perbaikan UI Produktivitas Telur
-- Tambah kolom & stat: % Bagus, Telur Rusak
-- Satuan di header kolom (butir, kg)
-- Alignment kolom: center untuk angka
-- Hapus card "Total Record"
-- Form number input tanpa default 0
+### Produktivitas Telur
+- Cards: Telur Bagus, Telur Rusak, % Bagus, Total Berat, Ayam Hidup
+- Kolom kandang dihapus dari tabel
 
-4. Perbaikan Global
-- Fix warning Image (height auto)
-- Fix warning Dialog (aria-describedby)
-- Teks tabel diperbesar & lebih tebal
-- Padding tabel konsisten (px-4)
+### Stok Telur
+- Cards: Stok Awal, Stok Saat Ini
+- Tabel: Tanggal, Masuk, Stok
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### Penjualan Telur
+- Kolom kandang dan harga/kg dihapus dari tabel
 
+## Komponen Baru
+- `Loader` - loading animation dengan overlay gelap/blur
+- `KandangSwitcher` - dropdown pilih kandang
+- `KandangLoader` - wrapper loader untuk pindah kandang
+- `KandangAutoSelect` - auto-select kandang pertama
+- `KandangOverview` - overview kandang di dashboard
 
-### 📋 Yang Perlu Dilanjutkan:
+## Fix Bugs
+- Hydration error di `DataFilters` (Date mismatch server/client)
+- Mobile: kandang tidak ter-select karena sidebar hidden
 
-1. Fitur Pakan - Pembelian, Pemakaian, Stok
-2. Fitur Keuangan - Transaksi, Pengeluaran, Laporan
-3. Dashboard - Ringkasan & grafik
-4. Improvement - Export data, filter tanggal range
+## Perubahan Schema Prisma
+- `StockTelur` dan `PenjualanTelur` punya relasi ke `Kandang`
+- Unique constraint `StockTelur`: `[kandangId, tanggal]`
+
+## File Baru
+- `app/client/components/common/kandang-switcher.tsx`
+- `app/client/components/common/kandang-loader.tsx`
+- `app/client/components/common/kandang-auto-select.tsx`
+- `app/client/components/common/kandang-overview.tsx`
+- `app/client/components/common/dashboard-header.tsx`
+- `app/client/components/ui/loader.tsx`
+- `app/client/components/ui/popover.tsx`
+- `hooks/use-selected-kandang.tsx`
+- `scripts/recalculate-stock.ts`

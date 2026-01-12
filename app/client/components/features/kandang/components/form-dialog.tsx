@@ -59,12 +59,12 @@ export function KandangFormDialog({ open, onOpenChange, onSubmit, isLoading, kan
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nama">Nama <span className="text-red-500">*</span></Label>
-              <Input id="nama" placeholder="Nama kandang" className={errors.nama ? "border-red-500 focus-visible:ring-red-500" : ""} {...register("nama")} />
+              <Input id="nama" placeholder="Contoh: Kandang Utara" className={errors.nama ? "border-red-500 focus-visible:ring-red-500" : ""} {...register("nama")} />
               {errors.nama && <p className="text-xs text-red-500">{errors.nama.message}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="lokasi">Lokasi</Label>
-              <Input id="lokasi" placeholder="Lokasi kandang (opsional)" {...register("lokasi")} />
+              <Input id="lokasi" placeholder="Contoh: Blok A" {...register("lokasi")} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>

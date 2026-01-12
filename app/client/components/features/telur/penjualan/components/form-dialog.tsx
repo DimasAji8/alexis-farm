@@ -21,8 +21,8 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
   const fields: FieldConfig<FormData>[] = useMemo(() => [
     { name: "tanggal", label: "Tanggal", type: "date", required: true },
     { name: "pembeli", label: "Pembeli", type: "text", placeholder: "Nama pembeli", required: true },
-    { name: "beratKg", label: `Berat (Kg)`, type: "number", required: true, min: 0.1, step: 0.1 },
-    { name: "hargaPerKg", label: "Harga per Kg (Rp)", type: "number", required: true, min: 1 },
+    { name: "beratKg", label: `Berat (Kg)`, type: "number", placeholder: "Contoh: 10.5", required: true, min: 0.1, step: 0.1 },
+    { name: "hargaPerKg", label: "Harga per Kg (Rp)", type: "currency", placeholder: "Contoh: 25.000", required: true, min: 1 },
     { name: "metodeBayar", label: "Metode Bayar", type: "select", options: [
       { value: "tunai", label: "Tunai" },
       { value: "transfer", label: "Transfer" },
@@ -48,7 +48,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
       isLoading={isLoading}
       title={isEdit ? "Edit Penjualan" : "Tambah Penjualan"}
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], pembeli: "", beratKg: 0, hargaPerKg: 0, metodeBayar: "tunai", deskripsi: "" }}
+      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
       editData={editData}
     />
   );

@@ -86,6 +86,8 @@ export function PenjualanTelurPage() {
     { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: (item) => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-20" /> },
     { key: "pembeli", header: "Pembeli", className: styles.table.cellSecondary, render: (item) => item.pembeli, skeleton: <Skeleton className="h-4 w-24" /> },
     { key: "beratKg", header: "Berat", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums`, render: (item) => `${item.beratKg.toLocaleString("id-ID")} kg`, skeleton: <Skeleton className="h-4 w-14 ml-auto" /> },
+    { key: "hargaPerKg", header: "Harga/Kg", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums`, render: (item) => formatCurrency(item.hargaPerKg), skeleton: <Skeleton className="h-4 w-20 ml-auto" /> },
+    { key: "metodeBayar", header: "Metode", className: styles.table.cellSecondary, render: (item) => item.metodeBayar ? item.metodeBayar.charAt(0).toUpperCase() + item.metodeBayar.slice(1) : "-", skeleton: <Skeleton className="h-4 w-16" /> },
     { key: "totalHarga", header: "Total", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400`, render: (item) => formatCurrency(item.totalHarga), skeleton: <Skeleton className="h-4 w-24 ml-auto" /> },
   ];
 

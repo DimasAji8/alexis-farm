@@ -17,7 +17,7 @@ type FormData = Omit<CreateKematianInput, "kandangId">;
 export function KematianFormDialog({ open, onOpenChange, onSubmit, isLoading, kematian }: Props) {
   const fields: FieldConfig<FormData>[] = useMemo(() => [
     { name: "tanggal", label: "Tanggal", type: "date", required: true },
-    { name: "jumlahMati", label: "Jumlah Mati", type: "number", required: true, min: 1 },
+    { name: "jumlahMati", label: "Jumlah Mati", type: "number", placeholder: "Contoh: 5", required: true, min: 1 },
     { name: "keterangan", label: "Keterangan", type: "textarea", placeholder: "Penyebab kematian (opsional)" },
   ], []);
 
@@ -35,7 +35,7 @@ export function KematianFormDialog({ open, onOpenChange, onSubmit, isLoading, ke
       isLoading={isLoading}
       title="Kematian Ayam"
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], jumlahMati: 0, keterangan: "" }}
+      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], jumlahMati: undefined as unknown as number, keterangan: "" }}
       editData={editData}
     />
   );

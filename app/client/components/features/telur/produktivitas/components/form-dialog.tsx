@@ -17,9 +17,9 @@ type FormData = Omit<CreateProduktivitasInput, "kandangId">;
 export function ProduktivitasFormDialog({ open, onOpenChange, onSubmit, isLoading, data }: Props) {
   const fields: FieldConfig<FormData>[] = useMemo(() => [
     { name: "tanggal", label: "Tanggal", type: "date", required: true },
-    { name: "jumlahBagusButir", label: "Telur Bagus (butir)", type: "number", required: true, min: 0 },
-    { name: "jumlahTidakBagusButir", label: "Telur Tidak Bagus", type: "number", min: 0 },
-    { name: "totalKg", label: "Total Berat (kg)", type: "number", min: 0, step: 0.01 },
+    { name: "jumlahBagusButir", label: "Telur Bagus (butir)", type: "number", placeholder: "Contoh: 150", required: true, min: 0 },
+    { name: "jumlahTidakBagusButir", label: "Telur Tidak Bagus", type: "number", placeholder: "Contoh: 10", min: 0 },
+    { name: "totalKg", label: "Total Berat (kg)", type: "number", placeholder: "Contoh: 9.5", min: 0, step: 0.01 },
     { name: "keterangan", label: "Keterangan", type: "textarea", placeholder: "Keterangan (opsional)", colSpan: 2 },
   ], []);
 

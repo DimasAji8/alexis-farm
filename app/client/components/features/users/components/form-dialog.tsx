@@ -47,12 +47,12 @@ export function UsersFormDialog({ open, onOpenChange, onSubmit, isLoading }: Pro
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="username">Username <span className="text-red-500">*</span></Label>
-              <Input id="username" placeholder="username" className={errors.username ? "border-red-500" : ""} {...register("username")} />
+              <Input id="username" placeholder="Contoh: john.doe" className={errors.username ? "border-red-500" : ""} {...register("username")} />
               {errors.username && <p className="text-xs text-red-500">{errors.username.message}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="name">Nama <span className="text-red-500">*</span></Label>
-              <Input id="name" placeholder="Nama lengkap" className={errors.name ? "border-red-500" : ""} {...register("name")} />
+              <Input id="name" placeholder="Contoh: John Doe" className={errors.name ? "border-red-500" : ""} {...register("name")} />
               {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
             </div>
             <div className="grid gap-2">

@@ -72,8 +72,9 @@ export class PenjualanTelurService {
       const saldoAwal = saldoAwalRecord?.saldoAkhir ?? 0;
       const saldoAkhir = saldoAwal + uangMasuk - uangKeluar;
 
-      const stock = await tx.stockTelur.findUnique({
-        where: { kandangId_tanggal: { kandangId: data.kandangId, tanggal: data.tanggal } },
+      const stock = await tx.stockTelur.findFirst({
+        where: { kandangId: data.kandangId, tanggal: { lte: data.tanggal } },
+        orderBy: { tanggal: "desc" },
       });
 
       const currentKg = stock?.stockKg ?? 0;

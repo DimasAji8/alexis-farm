@@ -59,7 +59,7 @@ export function JenisPakanFormDialog({ open, onOpenChange, onSubmit, isLoading, 
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nama">Nama <span className="text-red-500">*</span></Label>
-              <Input id="nama" placeholder="Nama pakan" className={errors.nama ? "border-red-500" : ""} {...register("nama")} />
+              <Input id="nama" placeholder="Contoh: Pakan Layer" className={errors.nama ? "border-red-500" : ""} {...register("nama")} />
               {errors.nama && <p className="text-xs text-red-500">{errors.nama.message}</p>}
             </div>
             <div className="grid gap-2">
