@@ -19,14 +19,14 @@ async function main() {
     update: {
       name: adminName,
       password: hashedPassword,
-      role: "admin",
+      role: "super_user",
       isActive: true,
     },
     create: {
       username: adminUsername,
       name: adminName,
       password: hashedPassword,
-      role: "admin",
+      role: "super_user",
       isActive: true,
     },
   });

@@ -15,6 +15,15 @@ export class PemakaianPakanController {
     }
   }
 
+  static async getById(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const data = await PemakaianPakanService.getById(params.id);
+      return apiResponse(data, "Pemakaian pakan berhasil diambil");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
+
   static async create(req: NextRequest) {
     try {
       const body = await req.json();
@@ -28,14 +37,19 @@ export class PemakaianPakanController {
 
   static async update(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-      const id = params.id;
-      if (!id) {
-        throw new Error("Parameter id wajib diisi");
-      }
       const body = await req.json();
       const validated = createPemakaianPakanSchema.partial().parse(body);
-      const data = await PemakaianPakanService.update(id, validated);
+      const data = await PemakaianPakanService.update(params.id, validated);
       return apiResponse(data, "Pemakaian pakan berhasil diperbarui");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
+
+  static async delete(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      await PemakaianPakanService.delete(params.id);
+      return apiResponse(null, "Pemakaian pakan berhasil dihapus");
     } catch (error) {
       return apiError(error);
     }

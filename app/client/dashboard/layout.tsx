@@ -9,7 +9,7 @@ import { KandangSwitcher } from "@/components/common/kandang-switcher";
 import { KandangLoader } from "@/components/common/kandang-loader";
 import { KandangAutoSelect } from "@/components/common/kandang-auto-select";
 import { KandangProvider } from "@/hooks/use-selected-kandang";
-import { dashboardNavItems } from "@/app/client/lib/navigation";
+import { dashboardNavItems, filterNavByRole } from "@/app/client/lib/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,8 @@ export default async function DashboardLayout({
   const session = await auth();
   const userName = session?.user?.name ?? session?.user?.username ?? "User";
   const userRole = session?.user?.role ?? "staff";
+  
+  const filteredNavItems = filterNavByRole(dashboardNavItems, userRole);
 
   const initials =
     userName
@@ -76,7 +78,7 @@ export default async function DashboardLayout({
             <SidebarGroup>
               <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Menu</SidebarGroupLabel>
               <SidebarGroupContent>
-                <DashboardSidebarNav items={dashboardNavItems} />
+                <DashboardSidebarNav items={filteredNavItems} />
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>

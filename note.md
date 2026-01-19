@@ -1,62 +1,109 @@
-# Summary Perubahan - 11 Januari 2026
+# Modul Pakan (Global) - Rincian Konsep dan Pekerjaan
 
-## Fitur Kandang Switcher
-- Tambah `KandangSwitcher` di sidebar untuk memilih kandang aktif
-- Tambah `KandangProvider` untuk state management kandang yang dipilih
-- Tambah `KandangAutoSelect` untuk auto-select kandang pertama (fix mobile)
-- Tambah `KandangLoader` untuk loading animation saat pindah kandang
-- Semua data (ayam, telur, dll) difilter berdasarkan kandang yang dipilih
+## Konsep Utama
+- Stok pakan bersifat **global (gudang pusat)**, bukan per kandang.
+- Pemakaian pakan dicatat **per kandang**.
+- Stok **tidak diinput manual**. Stok dihitung dari pembelian (masuk) dan pemakaian (keluar).
 
-## Perubahan API Backend
-- Semua endpoint data menerima parameter `kandangId` untuk filter
-- Urutan data diubah dari `desc` ke `asc` (tanggal terlama dulu)
+## Alur Data
+1) **Pembelian Pakan (Masuk / Batch)**
+   - Input: tanggalBeli, jenisPakanId, jumlahKg, hargaPerKg, keterangan.
+   - Sistem buat **batch** dan set:
+     - totalHarga = jumlahKg * hargaPerKg
+     - sisaStokKg = jumlahKg
+   - Stok gudang = sum semua sisaStokKg.
 
-## Perubahan Stok Telur
-- Logic stok diubah ke **running total** (akumulatif)
-- Setiap record = snapshot stok di akhir hari itu
-- Script `scripts/recalculate-stock.ts` untuk recalculate data lama
-- Tampilan: Stok Awal (dari bulan sebelumnya), Stok Saat Ini
-- Tabel menampilkan kolom "Masuk" dari produktivitas
-- Satuan hanya kg (butir dihapus)
+2) **Pemakaian Pakan (Keluar, per kandang)**
+   - Input: tanggalPakai, kandangId, jenisPakanId, jumlahKg, keterangan.
+   - Sistem memilih batch **FIFO** (tanggalBeli ASC, sisaStokKg > 0).
 
-## Perubahan UI Halaman
-### Ayam Masuk & Kematian
-- Cards: 6 Bulan Terakhir, Bulan Ini, Ayam Hidup (dari data kandang)
-- Kolom kandang dihapus dari tabel (sudah jelas dari switcher)
+   ### FIFO (header + detail)
+   - Header = 1 transaksi user.
+   - Detail = alokasi batch FIFO (bisa lebih dari 1 batch).
+   - Lebih rapi untuk audit dan pelacakan sisa batch.
 
-### Produktivitas Telur
-- Cards: Telur Bagus, Telur Rusak, % Bagus, Total Berat, Ayam Hidup
-- Kolom kandang dihapus dari tabel
+3) **Rekap Pakan (Bulanan)**
+   - Ringkasan per jenis pakan:
+     - Stok awal, masuk, keluar, stok akhir
+     - Total biaya pemakaian
+     - Harga rata-rata (weighted)
+   - Rekap per kandang:
+     - Total pemakaian per kandang
+     - Biaya per kandang
+     - Rata-rata pemakaian harian
 
-### Stok Telur
-- Cards: Stok Awal, Stok Saat Ini
-- Tabel: Tanggal, Masuk, Stok
+---
 
-### Penjualan Telur
-- Kolom kandang dan harga/kg dihapus dari tabel
+## Rincian Backend
+### A. Pembelian Pakan
+- Endpoint:
+  - GET /api/pakan/pembelian
+  - POST /api/pakan/pembelian
+  - PUT /api/pakan/pembelian/{id}
+- Validasi:
+  - jumlahKg > 0
+  - hargaPerKg > 0
+- Efek:
+  - Buat batch (sisaStokKg = jumlahKg)
+  - totalHarga dihitung otomatis
 
-## Komponen Baru
-- `Loader` - loading animation dengan overlay gelap/blur
-- `KandangSwitcher` - dropdown pilih kandang
-- `KandangLoader` - wrapper loader untuk pindah kandang
-- `KandangAutoSelect` - auto-select kandang pertama
-- `KandangOverview` - overview kandang di dashboard
+### B. Pemakaian Pakan (FIFO)
+- Endpoint:
+  - GET /api/pakan/pemakaian
+  - POST /api/pakan/pemakaian
+  - PUT /api/pakan/pemakaian/{id}
+- Validasi:
+  - jumlahKg > 0
+  - stok global harus cukup
+- FIFO:
+  - Ambil batch paling lama (tanggalBeli ASC)
+  - Alokasikan ke detail FIFO (bisa split otomatis)
+- Efek:
+  - Kurangi sisaStokKg batch
+  - totalBiaya dihitung otomatis
 
-## Fix Bugs
-- Hydration error di `DataFilters` (Date mismatch server/client)
-- Mobile: kandang tidak ter-select karena sidebar hidden
+### C. Rekap Pakan
+- Endpoint:
+  - GET /api/pakan/rekap?bulan=YYYY-MM
+- Output:
+  - Per jenis pakan + per kandang + (opsional) harian
 
-## Perubahan Schema Prisma
-- `StockTelur` dan `PenjualanTelur` punya relasi ke `Kandang`
-- Unique constraint `StockTelur`: `[kandangId, tanggal]`
+### D. Keputusan DB (FIFO)
+- **Wajib migrasi (header + detail)**
+  - Tambah table: trx_pemakaian_pakan_header
+  - Tambah table: trx_pemakaian_pakan_detail
+  - Migrasi data lama ke header+detail
 
-## File Baru
-- `app/client/components/common/kandang-switcher.tsx`
-- `app/client/components/common/kandang-loader.tsx`
-- `app/client/components/common/kandang-auto-select.tsx`
-- `app/client/components/common/kandang-overview.tsx`
-- `app/client/components/common/dashboard-header.tsx`
-- `app/client/components/ui/loader.tsx`
-- `app/client/components/ui/popover.tsx`
-- `hooks/use-selected-kandang.tsx`
-- `scripts/recalculate-stock.ts`
+---
+
+## Rincian Frontend
+### A. Halaman Pembelian Pakan
+- Form:
+  - tanggalBeli, jenisPakan, jumlahKg, hargaPerKg, keterangan
+- Tabel:
+  - tanggal, jenis, jumlahKg, harga/kg, total, sisa, keterangan
+- Filter:
+  - bulan, jenis pakan
+
+### B. Halaman Pemakaian Pakan
+- Form (tanpa pilih batch):
+  - tanggalPakai, kandang, jenisPakan, jumlahKg, keterangan
+- Info tambahan:
+  - tampilkan stok global tersisa
+  - tampilkan harga/kg yang dipakai (auto dari FIFO)
+- Tabel:
+  - tanggal, kandang, jenis, jumlahKg, totalBiaya, detail batch FIFO
+
+### C. Halaman Rekap Pakan
+- KPI:
+  - total masuk, keluar, stok akhir
+  - rata-rata harga/kg
+- Tabel rekap per jenis
+- Tab rekap per kandang
+- Grafik harian (opsional)
+
+---
+
+## Catatan Keputusan
+- FIFO pemakaian **wajib** menggunakan header + detail (tanpa opsi lain).
+    

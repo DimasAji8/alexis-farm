@@ -12,6 +12,7 @@ import {
   Wheat,
   Bird,
   Egg,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +44,7 @@ const iconMap: Record<SidebarNavItem["icon"], LucideIcon> = {
   users: Users,
   ayam: Bird,
   telur: Egg,
+  pakan: ShoppingCart,
 };
 
 const activeButtonClassName =
@@ -64,7 +66,13 @@ export function DashboardSidebarNav({
   className?: string;
 }) {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const isPathActive = (href: string) => {
     if (href === "/client/dashboard") {
@@ -162,7 +170,7 @@ export function DashboardSidebarNav({
                             "bg-black text-white focus:bg-black focus:text-white"
                         )}
                       >
-                        <Link href={child.href}>{child.title}</Link>
+                        <Link href={child.href} onClick={handleLinkClick}>{child.title}</Link>
                       </DropdownMenuItem>
                     );
                   })}
@@ -215,7 +223,7 @@ export function DashboardSidebarNav({
                         isActive={childActive}
                         className={activeSubButtonClassName}
                       >
-                        <Link href={child.href}>{child.title}</Link>
+                        <Link href={child.href} onClick={handleLinkClick}>{child.title}</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   );
@@ -240,7 +248,7 @@ export function DashboardSidebarNav({
                 activeButtonClassName
               )}
             >
-              <Link href={item.href}>
+              <Link href={item.href} onClick={handleLinkClick}>
                 <Icon className="shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">
                   {item.title}

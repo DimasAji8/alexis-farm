@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-
 import { JenisPakanController } from "./index";
 
 export async function GET() {

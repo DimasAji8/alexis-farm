@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
-
-import { RekapPakanController } from "./rekap.controller";
+import { RekapPakanController } from "./index";
 
 export async function GET(req: NextRequest) {
-  return RekapPakanController.get(req);
+  return RekapPakanController.getRekapBulanan(req);
 }

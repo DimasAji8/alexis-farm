@@ -1,4 +1,2 @@
-export * from "./jenis-pakan.controller";
-export * from "./jenis-pakan.service";
-export * from "./jenis-pakan.validation";
-export * from "./jenis-pakan.types";
+export { JenisPakanController } from "./jenis-pakan.controller";
+export { JenisPakanService } from "./jenis-pakan.service";

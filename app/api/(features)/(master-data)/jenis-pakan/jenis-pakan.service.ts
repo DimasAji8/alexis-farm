@@ -1,5 +1,4 @@
 import { prisma } from "@/app/api/db/prisma";
-
 import { requireRole } from "@/app/api/shared/utils/auth-guard";
 import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan.validation";
@@ -7,14 +6,12 @@ import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan
 export class JenisPakanService {
   static async getAll() {
     return prisma.jenisPakan.findMany({
-      orderBy: { kode: "asc" },
+      where: { isActive: true },
+      orderBy: { nama: "asc" },
     });
   }
 
   static async getById(id: string) {
-    if (!id) {
-      throw new ValidationError("ID jenis pakan tidak valid");
-    }
     const jenisPakan = await prisma.jenisPakan.findUnique({ where: { id } });
     if (!jenisPakan) {
       throw new NotFoundError("Jenis pakan tidak ditemukan");
@@ -22,45 +19,57 @@ export class JenisPakanService {
     return jenisPakan;
   }
 
-  static async getByKode(kode: string) {
-    return prisma.jenisPakan.findUnique({ where: { kode } });
-  }
-
   static async create(data: CreateJenisPakanInput) {
-    await requireRole(["super_user", "staff"]);
-    const existing = await this.getByKode(data.kode);
+    const userId = await requireRole(["super_user", "staff"]);
+    
+    const existing = await prisma.jenisPakan.findUnique({ where: { kode: data.kode } });
     if (existing) {
       throw new ValidationError("Kode pakan sudah digunakan");
     }
 
-    return prisma.jenisPakan.create({ data });
+    return prisma.jenisPakan.create({
+      data: {
+        ...data,
+        createdBy: userId,
+      },
+    });
   }
 
   static async update(id: string, data: UpdateJenisPakanInput) {
-    await requireRole(["super_user", "staff"]);
-    await this.getById(id);
+    const userId = await requireRole(["super_user", "staff"]);
+    
+    const existing = await prisma.jenisPakan.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundError("Jenis pakan tidak ditemukan");
+    }
 
-    if (data.kode) {
-      const duplicate = await prisma.jenisPakan.findFirst({
-        where: {
-          kode: data.kode,
-          NOT: { id },
-        },
-      });
+    if (data.kode && data.kode !== existing.kode) {
+      const duplicate = await prisma.jenisPakan.findUnique({ where: { kode: data.kode } });
       if (duplicate) {
-        throw new Error("Kode pakan sudah digunakan");
+        throw new ValidationError("Kode pakan sudah digunakan");
       }
     }
 
     return prisma.jenisPakan.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        updatedBy: userId,
+      },
     });
   }
 
   static async delete(id: string) {
-    await requireRole(["super_user", "staff"]);
-    await this.getById(id);
-    return prisma.jenisPakan.delete({ where: { id } });
+    await requireRole(["super_user"]);
+    
+    const existing = await prisma.jenisPakan.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundError("Jenis pakan tidak ditemukan");
+    }
+
+    return prisma.jenisPakan.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 }

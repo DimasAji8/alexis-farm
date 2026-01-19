@@ -31,12 +31,12 @@ model Kandang {
   keterangan       String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  ayamMasukRecords AyamMasuk[]
-  kematianRecords  KematianRecord[]
-  pemakaianPakan   PemakaianPakan[]
-  produksiTelur    ProduksiTelur[]
-  stockTelur       StockTelur[]
-  penjualanTelur   PenjualanTelur[]
+  ayamMasukRecords     AyamMasuk[]
+  kematianRecords      KematianRecord[]
+  pemakaianPakanHeader PemakaianPakanHeader[]
+  produksiTelur        ProduksiTelur[]
+  stockTelur           StockTelur[]
+  penjualanTelur       PenjualanTelur[]
 
   @@index([kode])
   @@index([status])
@@ -46,16 +46,18 @@ model Kandang {
 
 
 model JenisPakan {
-  id             String           @id @default(cuid()) @map("id_mst_jenis_pakan")
-  kode           String           @unique
+  id             String                   @id @default(cuid()) @map("id_mst_jenis_pakan")
+  kode           String                   @unique
   nama           String
-  satuan         String           @default("KG")
+  satuan         String                   @default("KG")
   keterangan     String?
-  isActive       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  pemakaianPakan PemakaianPakan[]
+  isActive       Boolean                  @default(true)
+  createdBy      String?                  @map("created_by")
+  updatedBy      String?                  @map("updated_by")
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
   pembelianPakan PembelianPakan[]
+  pemakaianPakan PemakaianPakanHeader[]
 
   @@index([kode])
   @@map("mst_jenis_pakan")
@@ -107,36 +109,51 @@ model PembelianPakan {
   updatedBy      String?          @map("updated_by")
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
-  pemakaianPakan PemakaianPakan[]
   jenisPakan     JenisPakan       @relation(fields: [jenisPakanId], references: [id])
+  details        PemakaianPakanDetail[]
 
   @@index([jenisPakanId])
   @@index([tanggalBeli])
   @@map("trx_pembelian_pakan")
 }
 
-model PemakaianPakan {
-  id               String         @id @default(cuid()) @map("id_trx_pemakaian_pakan")
-  kandangId        String         @map("id_mst_kandang")
-  jenisPakanId     String         @map("id_mst_jenis_pakan")
-  pembelianPakanId String         @map("id_trx_pembelian_pakan")
-  tanggalPakai     DateTime
-  jumlahKg         Float
-  hargaPerKg       Float
-  totalBiaya       Float
-  keterangan       String?
-  createdBy        String?        @map("created_by")
-  updatedBy        String?        @map("updated_by")
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  jenisPakan       JenisPakan     @relation(fields: [jenisPakanId], references: [id])
-  kandang          Kandang        @relation(fields: [kandangId], references: [id], onDelete: Cascade)
-  pembelianPakan   PembelianPakan @relation(fields: [pembelianPakanId], references: [id])
+model PemakaianPakanHeader {
+  id           String                   @id @default(cuid()) @map("id_trx_pemakaian_pakan_header")
+  kandangId    String                   @map("id_mst_kandang")
+  jenisPakanId String                   @map("id_mst_jenis_pakan")
+  tanggalPakai DateTime
+  jumlahKg     Float
+  totalBiaya   Float
+  keterangan   String?
+  createdBy    String?                  @map("created_by")
+  updatedBy    String?                  @map("updated_by")
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  kandang      Kandang                  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
+  jenisPakan   JenisPakan               @relation(fields: [jenisPakanId], references: [id])
+  details      PemakaianPakanDetail[]
 
   @@index([kandangId])
   @@index([jenisPakanId])
   @@index([tanggalPakai])
-  @@map("trx_pemakaian_pakan")
+  @@map("trx_pemakaian_pakan_header")
+}
+
+model PemakaianPakanDetail {
+  id               String                @id @default(cuid()) @map("id_trx_pemakaian_pakan_detail")
+  headerId         String                @map("id_trx_pemakaian_pakan_header")
+  pembelianPakanId String                @map("id_trx_pembelian_pakan")
+  jumlahKg         Float
+  hargaPerKg       Float
+  totalBiaya       Float
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  header           PemakaianPakanHeader  @relation(fields: [headerId], references: [id], onDelete: Cascade)
+  pembelianPakan   PembelianPakan        @relation(fields: [pembelianPakanId], references: [id])
+
+  @@index([headerId])
+  @@index([pembelianPakanId])
+  @@map("trx_pemakaian_pakan_detail")
 }
 
 model ProduksiTelur {

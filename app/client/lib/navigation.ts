@@ -5,11 +5,15 @@ export type SidebarNavIcon =
   | "jenisPakan"
   | "users"
   | "ayam"
-  | "telur";
+  | "telur"
+  | "pakan";
+
+export type UserRole = "super_user" | "manager" | "staff";
 
 export type SidebarNavChild = {
   title: string;
   href: string;
+  roles?: UserRole[];
 };
 
 export type SidebarNavItem = {
@@ -17,6 +21,7 @@ export type SidebarNavItem = {
   icon: SidebarNavIcon;
   href?: string;
   children?: SidebarNavChild[];
+  roles?: UserRole[];
 };
 
 export const dashboardNavItems: SidebarNavItem[] = [
@@ -54,12 +59,33 @@ export const dashboardNavItems: SidebarNavItem[] = [
       {
         title: "Penjualan",
         href: "/client/dashboard/telur/penjualan",
+        roles: ["super_user", "manager"], // Staff tidak bisa akses penjualan
+      },
+    ],
+  },
+  {
+    title: "Pakan",
+    icon: "pakan",
+    children: [
+      {
+        title: "Pembelian Pakan",
+        href: "/client/dashboard/pakan/pembelian",
+      },
+      {
+        title: "Pemakaian Pakan",
+        href: "/client/dashboard/pakan/pemakaian",
+      },
+      {
+        title: "Rekap Pakan",
+        href: "/client/dashboard/pakan/rekap",
+        roles: ["super_user", "manager"], // Hanya owner & manager bisa lihat rekap
       },
     ],
   },
   {
     title: "Master Data",
     icon: "masterData",
+    roles: ["super_user", "manager"], // Hanya owner & manager bisa akses master data
     children: [
       {
         title: "Kandang",
@@ -72,7 +98,23 @@ export const dashboardNavItems: SidebarNavItem[] = [
       {
         title: "Pengguna",
         href: "/client/dashboard/master-data/users",
+        roles: ["super_user"], // Hanya owner
       },
     ],
   },
 ];
+
+export function filterNavByRole(items: SidebarNavItem[], userRole: string): SidebarNavItem[] {
+  return items
+    .filter(item => !item.roles || item.roles.includes(userRole as UserRole))
+    .map(item => {
+      if (item.children) {
+        const filteredChildren = item.children.filter(
+          child => !child.roles || child.roles.includes(userRole as UserRole)
+        );
+        return { ...item, children: filteredChildren };
+      }
+      return item;
+    })
+    .filter(item => !item.children || item.children.length > 0);
+}
