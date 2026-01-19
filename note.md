@@ -106,4 +106,33 @@
 
 ## Catatan Keputusan
 - FIFO pemakaian **wajib** menggunakan header + detail (tanpa opsi lain).
+
+---
+
+## Progress Pekerjaan
+
+### 19 Januari 2026
+**Backend:**
+- ✅ Fix bug transaction di pemakaian service (getById dipanggil di dalam transaction)
+- ✅ Update useApiList hook untuk auto-fetch data saat mount
+
+**Frontend:**
+- ✅ Update form pembelian pakan: field hargaPerKg menggunakan format currency (1000 → 1.000)
+- ✅ Hapus default value 0 di semua field number (form kosong saat pertama dibuka)
+- ✅ Update FormDialog shared component untuk handle empty number field
+- ✅ Redesign halaman pemakaian pakan:
+  - Tambah stats card (Total Pemakaian, Rata-rata Per Hari)
+  - Tambah filter (Bulan, Kandang, Jenis Pakan)
+  - Tambah pagination
+  - Hapus kolom biaya (fokus ke data operasional)
+  - Hapus detail batch dari tabel (terlalu teknis)
+  - Ganti alert dengan toast notification
+- ✅ Update stats pembelian pakan: stats card sekarang responsive terhadap filter aktif
+- ✅ Konsistensi stats card: semua halaman dengan filter sekarang stats-nya mengikuti data yang difilter
+
+**UI/UX Improvements:**
+- Stats card di pembelian pakan: Total Pembelian Bulan Ini, Rata-rata Harga/Kg, Total Stok
+- Stats card di pemakaian pakan: Total Pemakaian, Rata-rata Per Hari (keduanya responsive terhadap filter)
+- Semua input currency menggunakan format ribuan (1.000, 15.000, dst)
+- Placeholder yang lebih informatif di semua form number
     

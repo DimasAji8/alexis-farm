@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/client/components/ui/button";
-import { Input } from "@/app/client/components/ui/input";
-import { Label } from "@/app/client/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/client/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/client/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/client/components/ui/tabs";
-import { Skeleton } from "@/app/client/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function RekapPakanPage() {
   const [bulan, setBulan] = useState(new Date().toISOString().slice(0, 7));
@@ -23,129 +24,118 @@ export default function RekapPakanPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Rekap Pakan</h1>
+    <section className="space-y-4 sm:space-y-6">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Rekap Pakan</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Laporan pemakaian dan stok pakan</p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <Label>Bulan</Label>
-              <Input type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} />
-            </div>
-            <Button onClick={fetchRekap} disabled={loading}>
-              {loading ? "Loading..." : "Tampilkan Rekap"}
-            </Button>
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
+          <div className="flex-1">
+            <Label htmlFor="bulan">Bulan</Label>
+            <Input id="bulan" type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} className="mt-2" />
           </div>
-        </CardContent>
+          <Button onClick={fetchRekap} disabled={loading} className="w-full sm:w-auto">
+            {loading ? "Loading..." : "Tampilkan Rekap"}
+          </Button>
+        </div>
       </Card>
 
       {loading ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
               <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-4 w-24" />
-                </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
+                  <Skeleton className="h-4 w-24 mb-2" />
                   <Skeleton className="h-8 w-32" />
                 </CardContent>
               </Card>
             ))}
           </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
         </div>
       ) : !data ? (
         <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-muted-foreground">
-              <p>Pilih bulan dan klik "Tampilkan Rekap" untuk melihat data</p>
-            </div>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <p>Pilih bulan dan klik "Tampilkan Rekap" untuk melihat data</p>
           </CardContent>
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Total Masuk</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{data.summary.totalMasuk.toFixed(2)} Kg</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="border-emerald-200 dark:border-emerald-800">
+              <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/30 dark:to-emerald-900/20">
+                <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Total Masuk</p>
+                <p className="text-xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-2">{data.summary.totalMasuk.toFixed(0)} Kg</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Total Keluar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{data.summary.totalKeluar.toFixed(2)} Kg</p>
+            <Card className="border-blue-200 dark:border-blue-800">
+              <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/30 dark:to-blue-900/20">
+                <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Total Keluar</p>
+                <p className="text-xl sm:text-3xl font-bold text-blue-700 dark:text-blue-400 mt-2">{data.summary.totalKeluar.toFixed(0)} Kg</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Total Biaya</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Rp {data.summary.totalBiaya.toLocaleString("id-ID")}</p>
+            <Card className="border-purple-200 dark:border-purple-800">
+              <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/30 dark:to-purple-900/20">
+                <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Total Biaya</p>
+                <p className="text-xl sm:text-3xl font-bold text-purple-700 dark:text-purple-400 mt-2">{formatCurrency(data.summary.totalBiaya)}</p>
               </CardContent>
             </Card>
           </div>
 
-          <Tabs defaultValue="jenis">
-            <TabsList>
-              <TabsTrigger value="jenis">Per Jenis Pakan</TabsTrigger>
+          <Tabs defaultValue="jenis" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="jenis">Per Jenis</TabsTrigger>
               <TabsTrigger value="kandang">Per Kandang</TabsTrigger>
             </TabsList>
 
             <TabsContent value="jenis">
               <Card>
-                <CardHeader>
-                  <CardTitle>Rekap Per Jenis Pakan</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Rekap Per Jenis Pakan</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
                   {data.rekapPerJenis.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Tidak ada data untuk periode ini</p>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Jenis Pakan</TableHead>
-                          <TableHead>Stok Awal</TableHead>
-                          <TableHead>Masuk</TableHead>
-                          <TableHead>Keluar</TableHead>
-                          <TableHead>Stok Akhir</TableHead>
-                          <TableHead>Total Biaya</TableHead>
-                          <TableHead>Harga Rata-rata</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.rekapPerJenis.map((item: any) => (
-                          <TableRow key={item.jenisPakan.id}>
-                            <TableCell>{item.jenisPakan.nama}</TableCell>
-                            <TableCell>{item.stokAwal.toFixed(2)}</TableCell>
-                            <TableCell>{item.masuk.toFixed(2)}</TableCell>
-                            <TableCell>{item.keluar.toFixed(2)}</TableCell>
-                            <TableCell>{item.stokAkhir.toFixed(2)}</TableCell>
-                            <TableCell>Rp {item.totalBiaya.toLocaleString("id-ID")}</TableCell>
-                            <TableCell>Rp {item.hargaRataRata.toLocaleString("id-ID")}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="space-y-3">
+                      {data.rekapPerJenis.map((item: any) => (
+                        <Card key={item.jenisPakan.id} className="border-l-4 border-l-emerald-500">
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold text-lg mb-4">{item.jenisPakan.nama}</h3>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Stok Awal</span>
+                                <span className="font-semibold">{item.stokAwal.toFixed(0)} Kg</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Masuk</span>
+                                <span className="font-semibold text-emerald-600">{item.masuk.toFixed(0)} Kg</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Keluar</span>
+                                <span className="font-semibold text-blue-600">{item.keluar.toFixed(0)} Kg</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Stok Akhir</span>
+                                <span className="font-semibold">{item.stokAkhir.toFixed(0)} Kg</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Total Biaya</span>
+                                <span className="font-semibold">{formatCurrency(item.totalBiaya)}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2">
+                                <span className="text-sm text-muted-foreground">Harga Rata-rata</span>
+                                <span className="font-semibold">{formatCurrency(item.hargaRataRata)}/Kg</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -153,35 +143,38 @@ export default function RekapPakanPage() {
 
             <TabsContent value="kandang">
               <Card>
-                <CardHeader>
-                  <CardTitle>Rekap Per Kandang</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Rekap Per Kandang</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
                   {data.rekapPerKandang.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Tidak ada data untuk periode ini</p>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Kandang</TableHead>
-                          <TableHead>Total Pemakaian (Kg)</TableHead>
-                          <TableHead>Total Biaya</TableHead>
-                          <TableHead>Rata-rata Harian (Kg)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.rekapPerKandang.map((item: any) => (
-                          <TableRow key={item.kandang.id}>
-                            <TableCell>{item.kandang.nama}</TableCell>
-                            <TableCell>{item.totalPemakaian.toFixed(2)}</TableCell>
-                            <TableCell>Rp {item.totalBiaya.toLocaleString("id-ID")}</TableCell>
-                            <TableCell>{item.rataRataHarian.toFixed(2)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="space-y-3">
+                      {data.rekapPerKandang.map((item: any) => (
+                        <Card key={item.kandang.id} className="border-l-4 border-l-blue-500">
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold text-lg mb-4">{item.kandang.nama}</h3>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Total Pemakaian</span>
+                                <span className="font-semibold">{item.totalPemakaian.toFixed(0)} Kg</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2 border-b">
+                                <span className="text-sm text-muted-foreground">Total Biaya</span>
+                                <span className="font-semibold">{formatCurrency(item.totalBiaya)}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-2">
+                                <span className="text-sm text-muted-foreground">Rata-rata Harian</span>
+                                <span className="font-semibold">{item.rataRataHarian.toFixed(1)} Kg/hari</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -189,6 +182,6 @@ export default function RekapPakanPage() {
           </Tabs>
         </>
       )}
-    </div>
+    </section>
   );
 }

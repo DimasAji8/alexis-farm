@@ -96,7 +96,7 @@ export default function PemakaianPakanPage() {
     { key: "tanggal", header: "Tanggal", className: "font-medium", render: (item) => formatDate(item.tanggalPakai) },
     { key: "kandang", header: "Kandang", render: (item) => item.kandang.nama },
     { key: "jenis", header: "Jenis Pakan", render: (item) => item.jenisPakan.nama },
-    { key: "jumlah", header: "Jumlah", className: "text-right", render: (item) => `${item.jumlahKg} Kg` },
+    { key: "jumlah", header: "Jumlah", headerClassName: "text-center", className: "text-center", render: (item) => `${item.jumlahKg} Kg` },
   ];
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
@@ -145,7 +145,7 @@ export default function PemakaianPakanPage() {
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
-        <DataTable data={paginatedData} columns={columns} isLoading={loading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} />
+        <DataTable data={paginatedData} columns={columns} isLoading={loading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} showActions={false} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
