@@ -1,138 +1,86 @@
-# Modul Pakan (Global) - Rincian Konsep dan Pekerjaan
+## Instruksi Detail Tambahan (yang belum diimplementasi)
+Catatan: bagian ini hanya memuat kebutuhan baru. Hal yang sudah ada di code tidak ditulis ulang.
 
-## Konsep Utama
-- Stok pakan bersifat **global (gudang pusat)**, bukan per kandang.
-- Pemakaian pakan dicatat **per kandang**.
-- Stok **tidak diinput manual**. Stok dihitung dari pembelian (masuk) dan pemakaian (keluar).
+### A. Menu Pemakaian Pakan - Tambahan
+1) Info stok global per jenis pakan (di form tambah)
+   - Tujuan: user tahu stok tersisa sebelum input.
+   - Data: total sisa stok = sum `sisaStokKg` semua batch pembelian untuk jenis pakan terpilih.
+   - Trigger: update saat jenis pakan berubah dan setelah transaksi sukses.
+   - UI: teks kecil di bawah select jenis pakan, contoh "Stok tersedia: 160 Kg".
+   - Validasi UI: jika stok < jumlah input, tampilkan error dan disable tombol simpan.
 
-## Alur Data
-1) **Pembelian Pakan (Masuk / Batch)**
-   - Input: tanggalBeli, jenisPakanId, jumlahKg, hargaPerKg, keterangan.
-   - Sistem buat **batch** dan set:
-     - totalHarga = jumlahKg * hargaPerKg
-     - sisaStokKg = jumlahKg
-   - Stok gudang = sum semua sisaStokKg.
+2) Preview harga rata-rata FIFO (di form tambah)
+   - Tujuan: user tahu estimasi Rp/kg untuk pemakaian yang akan disimpan.
+   - Hitung simulasi FIFO tanpa menyimpan ke DB.
+   - Data batch: pembelian pakan jenis terpilih dengan `sisaStokKg > 0` urut `tanggalBeli ASC`.
+   - Algoritma singkat:
+     - sisa = jumlahKgInput
+     - totalBiayaSimulasi = 0
+     - for batch: ambil = min(sisa, batch.sisaStokKg), totalBiayaSimulasi += ambil * batch.hargaPerKg, sisa -= ambil
+     - hargaRata2Simulasi = totalBiayaSimulasi / jumlahKgInput
+   - UI: tampilkan "Estimasi harga rata-rata: Rp X/Kg".
 
-2) **Pemakaian Pakan (Keluar, per kandang)**
-   - Input: tanggalPakai, kandangId, jenisPakanId, jumlahKg, keterangan.
-   - Sistem memilih batch **FIFO** (tanggalBeli ASC, sisaStokKg > 0).
+3) Kolom biaya per transaksi (opsional, jika ingin mendekati sheet)
+   - Tambah kolom "Total Biaya (Rp)" di tabel pemakaian.
+   - Nilai: `totalBiaya` dari header pemakaian.
+   - Format: `Rp 1.000` (locale id-ID).
+   - (Opsional) kolom "Harga rata-rata (Rp/Kg)" = totalBiaya / jumlahKg.
 
-   ### FIFO (header + detail)
-   - Header = 1 transaksi user.
-   - Detail = alokasi batch FIFO (bisa lebih dari 1 batch).
-   - Lebih rapi untuk audit dan pelacakan sisa batch.
+4) Ringkasan biaya bulanan (opsional)
+   - Tambah stat "Total Biaya Bulan Terpilih" = sum totalBiaya dari data terfilter.
+   - Tambah stat "Total Pemakaian Bulan Terpilih (Kg)" = sum jumlahKg dari data terfilter.
 
-3) **Rekap Pakan (Bulanan)**
-   - Ringkasan per jenis pakan:
-     - Stok awal, masuk, keluar, stok akhir
-     - Total biaya pemakaian
-     - Harga rata-rata (weighted)
-   - Rekap per kandang:
-     - Total pemakaian per kandang
-     - Biaya per kandang
-     - Rata-rata pemakaian harian
+### B. Menu Rekap Pakan - Tambahan
+1) Rincian stok harian per jenis pakan (mirip sheet gambar 1)
+   - Filter: bulan (wajib), jenis pakan (wajib).
+   - Output per tanggal:
+     - Tanggal
+     - Harga/Kg (pilih salah satu definisi, konsisten):
+       a) Harga rata-rata konsumsi hari itu = keluarRp / keluarKg (jika keluar > 0)
+       b) Atau harga rata-rata stok akhir = stokAkhirRp / stokAkhirKg (jika stokAkhirKg > 0)
+     - Stok Awal (Kg)
+     - Masuk (Kg, Rp)
+     - Keluar (Kg, Rp)
+     - Stok Akhir (Kg, Rp)
+   - Rumus kuantitas:
+     - stokAwalKg(hari-1) = stokAkhirKg(hari-1)
+     - masukKg = total pembelian pada tanggal tsb
+     - keluarKg = total pemakaian pada tanggal tsb
+     - stokAkhirKg = stokAwalKg + masukKg - keluarKg
+   - Rumus rupiah:
+     - masukRp = sum totalHarga pembelian tanggal tsb
+     - keluarRp = sum totalBiaya pemakaian tanggal tsb
+     - stokAkhirRp = sum (sisaKgBatch * hargaPerKgBatch) setelah transaksi hari tsb
 
----
+2) Cara hitung stokAkhirRp (wajib FIFO historical)
+   - Bangun daftar batch pembelian sebelum bulan + dalam bulan (urut tanggalBeli ASC).
+   - Simulasikan konsumsi FIFO dari semua pemakaian (urut tanggalPakai ASC).
+   - Agar bisa tampil per hari:
+     - Loop tanggal dari awal bulan sampai akhir bulan.
+     - Pada tiap tanggal:
+       - Tambahkan batch pembelian hari itu ke daftar batch.
+       - Kurangi batch via pemakaian hari itu (FIFO).
+       - Hitung stokAkhirRp = sum sisaKg * hargaPerKg.
+   - Catatan: jangan pakai `sisaStokKg` yang ada di DB sebagai historical, karena nilainya adalah stok saat ini.
 
-## Rincian Backend
-### A. Pembelian Pakan
-- Endpoint:
-  - GET /api/pakan/pembelian
-  - POST /api/pakan/pembelian
-  - PUT /api/pakan/pembelian/{id}
-- Validasi:
-  - jumlahKg > 0
-  - hargaPerKg > 0
-- Efek:
-  - Buat batch (sisaStokKg = jumlahKg)
-  - totalHarga dihitung otomatis
+3) Ringkasan konsumsi ayam (mirip blok "Konsumsi Pakan Ayam" di sheet)
+   - Data dasar:
+     - totalKeluarBulan = summary.totalKeluar
+     - totalBiayaBulan = summary.totalBiaya
+     - totalAyam = sum kandang.jumlahAyam (atau input manual jika ingin akurat per periode)
+     - jumlahHariBulan = total hari dalam bulan
+   - Output:
+     - Konsumsi/bulan (Kg) = totalKeluarBulan
+     - Konsumsi/hari (Kg) = totalKeluarBulan / jumlahHariBulan
+     - Konsumsi/ekor (Kg) = totalKeluarBulan / totalAyam
+     - Konsumsi/ekor (Gram) = (totalKeluarBulan * 1000) / totalAyam
+     - Rp konsumsi = totalBiayaBulan
+     - Rp/Kg konsumsi = totalBiayaBulan / totalKeluarBulan (jika totalKeluarBulan > 0)
+   - UI: tampilkan sebagai kartu ringkas di bawah summary.
+   - Jika totalAyam = 0, tampilkan "-" dan jangan divide by zero.
 
-### B. Pemakaian Pakan (FIFO)
-- Endpoint:
-  - GET /api/pakan/pemakaian
-  - POST /api/pakan/pemakaian
-  - PUT /api/pakan/pemakaian/{id}
-- Validasi:
-  - jumlahKg > 0
-  - stok global harus cukup
-- FIFO:
-  - Ambil batch paling lama (tanggalBeli ASC)
-  - Alokasikan ke detail FIFO (bisa split otomatis)
-- Efek:
-  - Kurangi sisaStokKg batch
-  - totalBiaya dihitung otomatis
-
-### C. Rekap Pakan
-- Endpoint:
-  - GET /api/pakan/rekap?bulan=YYYY-MM
-- Output:
-  - Per jenis pakan + per kandang + (opsional) harian
-
-### D. Keputusan DB (FIFO)
-- **Wajib migrasi (header + detail)**
-  - Tambah table: trx_pemakaian_pakan_header
-  - Tambah table: trx_pemakaian_pakan_detail
-  - Migrasi data lama ke header+detail
-
----
-
-## Rincian Frontend
-### A. Halaman Pembelian Pakan
-- Form:
-  - tanggalBeli, jenisPakan, jumlahKg, hargaPerKg, keterangan
-- Tabel:
-  - tanggal, jenis, jumlahKg, harga/kg, total, sisa, keterangan
-- Filter:
-  - bulan, jenis pakan
-
-### B. Halaman Pemakaian Pakan
-- Form (tanpa pilih batch):
-  - tanggalPakai, kandang, jenisPakan, jumlahKg, keterangan
-- Info tambahan:
-  - tampilkan stok global tersisa
-  - tampilkan harga/kg yang dipakai (auto dari FIFO)
-- Tabel:
-  - tanggal, kandang, jenis, jumlahKg, totalBiaya, detail batch FIFO
-
-### C. Halaman Rekap Pakan
-- KPI:
-  - total masuk, keluar, stok akhir
-  - rata-rata harga/kg
-- Tabel rekap per jenis
-- Tab rekap per kandang
-- Grafik harian (opsional)
-
----
-
-## Catatan Keputusan
-- FIFO pemakaian **wajib** menggunakan header + detail (tanpa opsi lain).
-
----
-
-## Progress Pekerjaan
-
-### 19 Januari 2026
-**Backend:**
-- ✅ Fix bug transaction di pemakaian service (getById dipanggil di dalam transaction)
-- ✅ Update useApiList hook untuk auto-fetch data saat mount
-
-**Frontend:**
-- ✅ Update form pembelian pakan: field hargaPerKg menggunakan format currency (1000 → 1.000)
-- ✅ Hapus default value 0 di semua field number (form kosong saat pertama dibuka)
-- ✅ Update FormDialog shared component untuk handle empty number field
-- ✅ Redesign halaman pemakaian pakan:
-  - Tambah stats card (Total Pemakaian, Rata-rata Per Hari)
-  - Tambah filter (Bulan, Kandang, Jenis Pakan)
-  - Tambah pagination
-  - Hapus kolom biaya (fokus ke data operasional)
-  - Hapus detail batch dari tabel (terlalu teknis)
-  - Ganti alert dengan toast notification
-- ✅ Update stats pembelian pakan: stats card sekarang responsive terhadap filter aktif
-- ✅ Konsistensi stats card: semua halaman dengan filter sekarang stats-nya mengikuti data yang difilter
-
-**UI/UX Improvements:**
-- Stats card di pembelian pakan: Total Pembelian Bulan Ini, Rata-rata Harga/Kg, Total Stok
-- Stats card di pemakaian pakan: Total Pemakaian, Rata-rata Per Hari (keduanya responsive terhadap filter)
-- Semua input currency menggunakan format ribuan (1.000, 15.000, dst)
-- Placeholder yang lebih informatif di semua form number
+4) Nilai stok akhir per jenis (Rp) (opsional)
+   - Untuk tiap jenis pakan pada rekap per jenis:
+     - stokAkhirRp = sum sisa batch (kg * hargaPerKg) pada akhir bulan (hasil simulasi FIFO).
+   - Tampilkan sebagai kolom tambahan di rekap per jenis.
     

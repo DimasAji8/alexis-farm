@@ -6,14 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useApiList } from "@/hooks/use-api";
 
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+};
 
 export default function RekapPakanPage() {
   const [bulan, setBulan] = useState(new Date().toISOString().slice(0, 7));
   const [data, setData] = useState<any>(null);
+  const [dataHarian, setDataHarian] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedJenisPakan, setSelectedJenisPakan] = useState("");
+
+  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan");
+  const { data: kandang = [] } = useApiList<any>("/api/kandang");
 
   const fetchRekap = async () => {
     setLoading(true);
@@ -22,6 +33,22 @@ export default function RekapPakanPage() {
     if (json.success) setData(json.data);
     setLoading(false);
   };
+
+  const fetchRekapHarian = async (jenisPakanId: string) => {
+    setLoading(true);
+    const res = await fetch(`/api/pakan/rekap?type=harian&bulan=${bulan}&jenisPakanId=${jenisPakanId}`);
+    const json = await res.json();
+    if (json.success) setDataHarian(json.data);
+    setLoading(false);
+  };
+
+  const handleJenisPakanChange = (value: string) => {
+    setSelectedJenisPakan(value);
+    if (value) fetchRekapHarian(value);
+  };
+
+  const totalAyam = kandang.reduce((sum: number, k: any) => sum + (k.jumlahAyam || 0), 0);
+  const jumlahHari = bulan ? new Date(parseInt(bulan.split("-")[0]), parseInt(bulan.split("-")[1]), 0).getDate() : 30;
 
   return (
     <section className="space-y-4 sm:space-y-6">
@@ -84,13 +111,47 @@ export default function RekapPakanPage() {
             </Card>
           </div>
 
-          <Tabs defaultValue="jenis" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="jenis">Per Jenis</TabsTrigger>
+          {/* Konsumsi Ayam */}
+          {totalAyam > 0 && data.summary.totalKeluar > 0 && (
+            <Card className="border-amber-200 dark:border-amber-800">
+              <CardHeader className="p-4 sm:p-6 pb-3">
+                <CardTitle className="text-base sm:text-lg">Konsumsi Pakan Ayam ({totalAyam} ekor)</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 pt-0">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Konsumsi/Bulan</p>
+                    <p className="text-lg font-semibold">{data.summary.totalKeluar.toFixed(2)} Kg</p>
+                    <p className="text-sm text-muted-foreground">{formatCurrency(data.summary.totalBiaya)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Konsumsi/Hari</p>
+                    <p className="text-lg font-semibold">{(data.summary.totalKeluar / jumlahHari).toFixed(2)} Kg</p>
+                    <p className="text-sm text-muted-foreground">{formatCurrency(data.summary.totalBiaya / jumlahHari)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Konsumsi/Ekor</p>
+                    <p className="text-lg font-semibold">{(data.summary.totalKeluar / totalAyam).toFixed(3)} Kg</p>
+                    <p className="text-lg font-semibold text-amber-600">{((data.summary.totalKeluar * 1000) / totalAyam).toFixed(1)} gram</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Rp/Kg Konsumsi</p>
+                    <p className="text-lg font-semibold">{formatCurrency(data.summary.totalBiaya / data.summary.totalKeluar)}</p>
+                    <p className="text-sm text-muted-foreground">Rp/ekor: {formatCurrency(data.summary.totalBiaya / totalAyam)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Tabs defaultValue="bulanan" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="bulanan">Bulanan</TabsTrigger>
+              <TabsTrigger value="harian">Harian</TabsTrigger>
               <TabsTrigger value="kandang">Per Kandang</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="jenis">
+            <TabsContent value="bulanan">
               <Card>
                 <CardHeader className="p-4 sm:p-6">
                   <CardTitle className="text-base sm:text-lg">Rekap Per Jenis Pakan</CardTitle>
@@ -106,35 +167,107 @@ export default function RekapPakanPage() {
                         <Card key={item.jenisPakan.id} className="border-l-4 border-l-emerald-500">
                           <CardContent className="p-4">
                             <h3 className="font-semibold text-lg mb-4">{item.jenisPakan.nama}</h3>
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center py-2 border-b">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Stok Awal</span>
-                                <span className="font-semibold">{item.stokAwal.toFixed(0)} Kg</span>
+                                <p className="font-semibold">{item.stokAwal.toFixed(0)} Kg</p>
                               </div>
-                              <div className="flex justify-between items-center py-2 border-b">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Masuk</span>
-                                <span className="font-semibold text-emerald-600">{item.masuk.toFixed(0)} Kg</span>
+                                <p className="font-semibold text-emerald-600">{item.masuk.toFixed(0)} Kg</p>
                               </div>
-                              <div className="flex justify-between items-center py-2 border-b">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Keluar</span>
-                                <span className="font-semibold text-blue-600">{item.keluar.toFixed(0)} Kg</span>
+                                <p className="font-semibold text-blue-600">{item.keluar.toFixed(0)} Kg</p>
                               </div>
-                              <div className="flex justify-between items-center py-2 border-b">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Stok Akhir</span>
-                                <span className="font-semibold">{item.stokAkhir.toFixed(0)} Kg</span>
+                                <p className="font-semibold">{item.stokAkhir.toFixed(0)} Kg</p>
                               </div>
-                              <div className="flex justify-between items-center py-2 border-b">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Total Biaya</span>
-                                <span className="font-semibold">{formatCurrency(item.totalBiaya)}</span>
+                                <p className="font-semibold">{formatCurrency(item.totalBiaya)}</p>
                               </div>
-                              <div className="flex justify-between items-center py-2">
+                              <div className="py-2">
                                 <span className="text-sm text-muted-foreground">Harga Rata-rata</span>
-                                <span className="font-semibold">{formatCurrency(item.hargaRataRata)}/Kg</span>
+                                <p className="font-semibold">{formatCurrency(item.hargaRataRata)}/Kg</p>
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="harian">
+              <Card>
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <CardTitle className="text-base sm:text-lg">Rincian Stok Harian</CardTitle>
+                    <div className="w-full sm:w-64">
+                      <Select value={selectedJenisPakan} onValueChange={handleJenisPakanChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih jenis pakan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {jenisPakan.map((jp: any) => (
+                            <SelectItem key={jp.id} value={jp.id}>{jp.nama}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  {!dataHarian ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Pilih jenis pakan untuk melihat rincian harian</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="p-2 text-left">Tanggal</th>
+                            <th className="p-2 text-right">Harga/Kg</th>
+                            <th className="p-2 text-right">Stok Awal</th>
+                            <th className="p-2 text-right">Masuk (Kg)</th>
+                            <th className="p-2 text-right">Keluar (Kg)</th>
+                            <th className="p-2 text-right">Keluar (Rp)</th>
+                            <th className="p-2 text-right">Stok Akhir</th>
+                            <th className="p-2 text-right">Stok Akhir (Rp)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dataHarian.dataHarian.map((row: any, idx: number) => (
+                            <tr key={idx} className="border-b hover:bg-muted/50">
+                              <td className="p-2">{formatDate(row.tanggal)}</td>
+                              <td className="p-2 text-right">{row.hargaPerKg > 0 ? formatCurrency(row.hargaPerKg) : "-"}</td>
+                              <td className="p-2 text-right">{row.stokAwalKg.toFixed(0)}</td>
+                              <td className="p-2 text-right text-emerald-600">{row.masukKg > 0 ? row.masukKg.toFixed(0) : "-"}</td>
+                              <td className="p-2 text-right text-blue-600">{row.keluarKg > 0 ? row.keluarKg.toFixed(0) : "-"}</td>
+                              <td className="p-2 text-right">{row.keluarRp > 0 ? formatCurrency(row.keluarRp) : "-"}</td>
+                              <td className="p-2 text-right font-medium">{row.stokAkhirKg.toFixed(0)}</td>
+                              <td className="p-2 text-right">{formatCurrency(row.stokAkhirRp)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-amber-50 dark:bg-amber-900/20 font-semibold">
+                          <tr>
+                            <td className="p-2">TOTAL</td>
+                            <td className="p-2 text-right">{formatCurrency(dataHarian.summary.rataRataHargaPerKg)}</td>
+                            <td className="p-2"></td>
+                            <td className="p-2 text-right">{dataHarian.summary.totalMasukKg.toFixed(0)}</td>
+                            <td className="p-2 text-right">{dataHarian.summary.totalKeluarKg.toFixed(0)}</td>
+                            <td className="p-2 text-right">{formatCurrency(dataHarian.summary.totalKeluarRp)}</td>
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
                   )}
                 </CardContent>

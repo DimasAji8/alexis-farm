@@ -2,6 +2,129 @@ import { prisma } from "@/app/api/db/prisma";
 import { ValidationError } from "@/app/api/shared/utils/errors";
 
 export class RekapPakanService {
+  static async getRekapHarian(bulan: string, jenisPakanId: string) {
+    const [tahun, bulanNum] = bulan.split("-").map(Number);
+    if (!tahun || !bulanNum || bulanNum < 1 || bulanNum > 12) {
+      throw new ValidationError("Format bulan tidak valid (gunakan YYYY-MM)");
+    }
+
+    const startDate = new Date(tahun, bulanNum - 1, 1);
+    const endDate = new Date(tahun, bulanNum, 0, 23, 59, 59);
+    const jumlahHari = new Date(tahun, bulanNum, 0).getDate();
+
+    // Ambil semua batch pembelian sebelum dan selama bulan
+    const batchesPembelian = await prisma.pembelianPakan.findMany({
+      where: { jenisPakanId, tanggalBeli: { lte: endDate } },
+      orderBy: { tanggalBeli: "asc" },
+    });
+
+    // Ambil semua pemakaian selama bulan
+    const pemakaianBulanIni = await prisma.pemakaianPakanHeader.findMany({
+      where: {
+        jenisPakanId,
+        tanggalPakai: { gte: startDate, lte: endDate },
+      },
+      include: { details: true },
+      orderBy: { tanggalPakai: "asc" },
+    });
+
+    // Simulasi FIFO untuk tracking stok harian
+    const batchTracking = batchesPembelian.map(b => ({
+      ...b,
+      sisaKg: b.tanggalBeli < startDate ? b.jumlahKg : 0,
+    }));
+
+    // Kurangi dengan pemakaian sebelum bulan
+    const pemakaianSebelum = await prisma.pemakaianPakanHeader.findMany({
+      where: { jenisPakanId, tanggalPakai: { lt: startDate } },
+      include: { details: true },
+      orderBy: { tanggalPakai: "asc" },
+    });
+
+    for (const pemakaian of pemakaianSebelum) {
+      for (const detail of pemakaian.details) {
+        const batch = batchTracking.find(b => b.id === detail.pembelianPakanId);
+        if (batch) batch.sisaKg -= detail.jumlahKg;
+      }
+    }
+
+    const stokAwal = batchTracking.reduce((sum, b) => sum + b.sisaKg, 0);
+    const stokAwalRp = batchTracking.reduce((sum, b) => sum + (b.sisaKg * b.hargaPerKg), 0);
+
+    // Build data harian
+    const dataHarian = [];
+    let stokAwalHari = stokAwal;
+    let stokAwalRpHari = stokAwalRp;
+
+    for (let hari = 1; hari <= jumlahHari; hari++) {
+      const tanggal = new Date(tahun, bulanNum - 1, hari);
+      const tanggalStr = tanggal.toISOString().split("T")[0];
+
+      // Pembelian hari ini
+      const pembelianHariIni = batchesPembelian.filter(
+        b => b.tanggalBeli.toISOString().split("T")[0] === tanggalStr
+      );
+      const masukKg = pembelianHariIni.reduce((sum, b) => sum + b.jumlahKg, 0);
+      const masukRp = pembelianHariIni.reduce((sum, b) => sum + b.totalHarga, 0);
+
+      // Tambahkan batch baru ke tracking
+      for (const batch of pembelianHariIni) {
+        const existing = batchTracking.find(b => b.id === batch.id);
+        if (existing) existing.sisaKg += batch.jumlahKg;
+      }
+
+      // Pemakaian hari ini
+      const pemakaianHariIni = pemakaianBulanIni.filter(
+        p => p.tanggalPakai.toISOString().split("T")[0] === tanggalStr
+      );
+      const keluarKg = pemakaianHariIni.reduce((sum, p) => sum + p.jumlahKg, 0);
+      const keluarRp = pemakaianHariIni.reduce((sum, p) => sum + p.totalBiaya, 0);
+
+      // Kurangi batch via FIFO
+      for (const pemakaian of pemakaianHariIni) {
+        for (const detail of pemakaian.details) {
+          const batch = batchTracking.find(b => b.id === detail.pembelianPakanId);
+          if (batch) batch.sisaKg -= detail.jumlahKg;
+        }
+      }
+
+      const stokAkhirKg = batchTracking.reduce((sum, b) => sum + b.sisaKg, 0);
+      const stokAkhirRp = batchTracking.reduce((sum, b) => sum + (b.sisaKg * b.hargaPerKg), 0);
+
+      // Harga rata-rata hari ini (dari pemakaian)
+      const hargaPerKg = keluarKg > 0 ? keluarRp / keluarKg : 0;
+
+      dataHarian.push({
+        tanggal: tanggalStr,
+        hargaPerKg,
+        stokAwalKg: stokAwalHari,
+        stokAwalRp: stokAwalRpHari,
+        masukKg,
+        masukRp,
+        keluarKg,
+        keluarRp,
+        stokAkhirKg,
+        stokAkhirRp,
+      });
+
+      stokAwalHari = stokAkhirKg;
+      stokAwalRpHari = stokAkhirRp;
+    }
+
+    return {
+      periode: bulan,
+      jenisPakanId,
+      dataHarian,
+      summary: {
+        totalMasukKg: dataHarian.reduce((sum, d) => sum + d.masukKg, 0),
+        totalMasukRp: dataHarian.reduce((sum, d) => sum + d.masukRp, 0),
+        totalKeluarKg: dataHarian.reduce((sum, d) => sum + d.keluarKg, 0),
+        totalKeluarRp: dataHarian.reduce((sum, d) => sum + d.keluarRp, 0),
+        rataRataHargaPerKg: dataHarian.reduce((sum, d) => sum + d.keluarRp, 0) / dataHarian.reduce((sum, d) => sum + d.keluarKg, 0),
+      },
+    };
+  }
+
   static async getRekapBulanan(bulan: string) {
     const [tahun, bulanNum] = bulan.split("-").map(Number);
     if (!tahun || !bulanNum || bulanNum < 1 || bulanNum > 12) {

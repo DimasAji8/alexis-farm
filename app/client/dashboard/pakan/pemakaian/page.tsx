@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { Pagination } from "@/components/shared/pagination";
 import { useApiList } from "@/hooks/use-api";
+import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -25,20 +26,47 @@ const formatDate = (value?: string) => {
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function PemakaianPakanPage() {
+  const { selectedKandangId } = useSelectedKandang();
   const { data, loading, refetch } = useApiList<any>("/api/pakan/pemakaian");
   const { data: kandang = [] } = useApiList<any>("/api/kandang");
   const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan");
+  const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
   
   const [filters, setFilters] = useState<Record<string, string | null>>({ bulan: null, kandangId: null, jenisPakanId: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    kandangId: "",
     jenisPakanId: "",
     tanggalPakai: new Date().toISOString().split("T")[0],
     jumlahKg: "",
     keterangan: "",
   });
+
+  const stokInfo = useMemo(() => {
+    if (!form.jenisPakanId) return null;
+    const batches = pembelian.filter((p: any) => p.jenisPakanId === form.jenisPakanId && p.sisaStokKg > 0);
+    const totalStok = batches.reduce((sum: number, b: any) => sum + b.sisaStokKg, 0);
+    return { totalStok, batches };
+  }, [form.jenisPakanId, pembelian]);
+
+  const hargaPreview = useMemo(() => {
+    if (!form.jenisPakanId || !form.jumlahKg || !stokInfo) return null;
+    const jumlah = parseFloat(form.jumlahKg);
+    if (isNaN(jumlah) || jumlah <= 0) return null;
+    
+    let sisa = jumlah;
+    let totalBiaya = 0;
+    const sortedBatches = [...stokInfo.batches].sort((a, b) => new Date(a.tanggalBeli).getTime() - new Date(b.tanggalBeli).getTime());
+    
+    for (const batch of sortedBatches) {
+      if (sisa <= 0) break;
+      const ambil = Math.min(sisa, batch.sisaStokKg);
+      totalBiaya += ambil * batch.hargaPerKg;
+      sisa -= ambil;
+    }
+    
+    return sisa > 0 ? null : totalBiaya / jumlah;
+  }, [form.jenisPakanId, form.jumlahKg, stokInfo]);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
     { key: "bulan", label: "Bulan", type: "month" },
@@ -79,17 +107,28 @@ export default function PemakaianPakanPage() {
     const dataToCalculate = filteredData.length > 0 ? filteredData : data || [];
     
     const totalPemakaian = dataToCalculate.reduce((sum: number, item: any) => sum + item.jumlahKg, 0);
+    const totalBiaya = dataToCalculate.reduce((sum: number, item: any) => sum + (item.totalBiaya || 0), 0);
     
-    // Hitung rata-rata per hari berdasarkan range tanggal di data yang difilter
-    const dates = dataToCalculate.map((item: any) => new Date(item.tanggalPakai).getTime());
     const uniqueDays = new Set(dataToCalculate.map((item: any) => new Date(item.tanggalPakai).toDateString())).size;
-    const rataRataPerHari = uniqueDays > 0 ? totalPemakaian / uniqueDays : 0;
+    const rataRataPerHariKg = uniqueDays > 0 ? totalPemakaian / uniqueDays : 0;
+    const rataRataPerHariGram = rataRataPerHariKg * 1000;
+    const rataRataBiayaHarian = uniqueDays > 0 ? totalBiaya / uniqueDays : 0;
+    
+    // Hitung total ayam berdasarkan kandang yang difilter atau semua kandang
+    const kandangToCount = filters.kandangId 
+      ? kandang.filter((k: any) => k.id === filters.kandangId)
+      : kandang;
+    const totalAyam = kandangToCount.reduce((sum: number, k: any) => sum + (k.jumlahAyam || 0), 0);
+    
+    const rataRataPerAyamGram = totalAyam > 0 ? (totalPemakaian * 1000) / totalAyam : 0;
     
     return [
-      { label: "Total Pemakaian", value: `${totalPemakaian.toFixed(0)} Kg`, color: "emerald" },
-      { label: "Rata-rata Per Hari", value: `${rataRataPerHari.toFixed(1)} Kg`, color: "blue" },
+      { label: "Rata-rata Harian", value: `${rataRataPerHariKg.toFixed(2)} Kg`, color: "emerald" },
+      { label: "Rata-rata Harian", value: `${rataRataPerHariGram.toFixed(0)} gram`, color: "emerald" },
+      { label: "Rata-rata Per Ayam", value: `${rataRataPerAyamGram.toFixed(1)} gram`, color: "blue" },
+      { label: "Rata-rata Biaya Harian", value: formatCurrency(rataRataBiayaHarian), color: "purple" },
     ];
-  }, [data, filteredData]);
+  }, [data, filteredData, kandang, filters.kandangId]);
 
   const columns: ColumnDef<any>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: "text-muted-foreground", render: (_, i) => i + 1 },
@@ -106,10 +145,15 @@ export default function PemakaianPakanPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedKandangId) {
+      toast.error("Pilih kandang terlebih dahulu");
+      return;
+    }
     const res = await fetch("/api/pakan/pemakaian", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        kandangId: selectedKandangId,
         ...form,
         jumlahKg: parseFloat(form.jumlahKg),
       }),
@@ -120,7 +164,6 @@ export default function PemakaianPakanPage() {
       setOpen(false);
       refetch();
       setForm({
-        kandangId: "",
         jenisPakanId: "",
         tanggalPakai: new Date().toISOString().split("T")[0],
         jumlahKg: "",
@@ -157,19 +200,6 @@ export default function PemakaianPakanPage() {
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="kandangId">Kandang <span className="text-red-500">*</span></Label>
-                <Select value={form.kandangId} onValueChange={(v) => setForm({ ...form, kandangId: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih kandang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kandang.map((k: any) => (
-                      <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="jenisPakanId">Jenis Pakan <span className="text-red-500">*</span></Label>
                 <Select value={form.jenisPakanId} onValueChange={(v) => setForm({ ...form, jenisPakanId: v })}>
                   <SelectTrigger>
@@ -181,6 +211,11 @@ export default function PemakaianPakanPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {stokInfo && (
+                  <p className="text-xs text-muted-foreground">
+                    Stok tersedia: <span className="font-medium">{stokInfo.totalStok.toFixed(1)} Kg</span>
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="tanggalPakai">Tanggal Pakai <span className="text-red-500">*</span></Label>
@@ -189,6 +224,11 @@ export default function PemakaianPakanPage() {
               <div className="grid gap-2">
                 <Label htmlFor="jumlahKg">Jumlah (Kg) <span className="text-red-500">*</span></Label>
                 <Input id="jumlahKg" type="number" step="0.01" placeholder="Contoh: 50" value={form.jumlahKg} onChange={(e) => setForm({ ...form, jumlahKg: e.target.value })} />
+                {hargaPreview && (
+                  <p className="text-xs text-muted-foreground">
+                    Estimasi harga rata-rata: <span className="font-medium">{formatCurrency(hargaPreview)}/Kg</span>
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="keterangan">Keterangan</Label>
