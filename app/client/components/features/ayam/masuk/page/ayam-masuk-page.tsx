@@ -138,7 +138,7 @@ export function AyamMasukPage() {
       <DataStats stats={stats} columns={3} />
       <DataFilters config={filterConfig} onFilterChange={f => { setFilters(f); setCurrentPage(1); }} />
 
-      <Card className={styles.card.table}>
+      <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} onDelete={item => { setSelected(item); setDeleteOpen(true); }} getRowKey={item => item.id} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>

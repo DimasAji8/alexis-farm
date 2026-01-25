@@ -78,13 +78,13 @@ export function PembelianPakanPage() {
   }, [data, filteredData]);
 
   const columns: ColumnDef<PembelianPakan>[] = [
-    { key: "no", header: "No", headerClassName: "w-12", className: "text-muted-foreground", render: (_, i) => i + 1 },
-    { key: "tanggal", header: "Tanggal", className: "font-medium", render: (item) => formatDate(item.tanggalBeli) },
-    { key: "jenis", header: "Jenis Pakan", render: (item) => item.jenisPakan.nama },
-    { key: "jumlah", header: "Jumlah", headerClassName: "hidden sm:table-cell", className: "hidden sm:table-cell text-right", render: (item) => `${item.jumlahKg} Kg` },
-    { key: "harga", header: "Harga/Kg", headerClassName: "hidden md:table-cell", className: "hidden md:table-cell text-right", render: (item) => formatCurrency(item.hargaPerKg) },
-    { key: "total", header: "Total", headerClassName: "hidden lg:table-cell", className: "hidden lg:table-cell text-right", render: (item) => formatCurrency(item.totalHarga) },
-    { key: "sisa", header: "Sisa", className: "text-right", render: (item) => `${item.sisaStokKg} Kg` },
+    { key: "no", header: "No", headerClassName: "w-12 text-center", className: "text-center text-muted-foreground", render: (_, i) => i + 1 },
+    { key: "tanggal", header: "Tanggal", headerClassName: "text-center", className: "text-center", render: (item) => formatDate(item.tanggalBeli) },
+    { key: "jenis", header: "Jenis Pakan", headerClassName: "text-center", className: "text-center", render: (item) => item.jenisPakan.nama },
+    { key: "jumlah", header: "Jumlah", headerClassName: "hidden sm:table-cell text-center", className: "hidden sm:table-cell text-center", render: (item) => `${item.jumlahKg} Kg` },
+    { key: "harga", header: "Harga/Kg", headerClassName: "hidden md:table-cell text-center", className: "hidden md:table-cell text-center", render: (item) => formatCurrency(item.hargaPerKg) },
+    { key: "total", header: "Total", headerClassName: "hidden lg:table-cell text-center", className: "hidden lg:table-cell text-center", render: (item) => formatCurrency(item.totalHarga) },
+    { key: "sisa", header: "Sisa", headerClassName: "text-center", className: "text-center", render: (item) => `${item.sisaStokKg} Kg` },
   ];
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
@@ -120,7 +120,7 @@ export function PembelianPakanPage() {
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
-        <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} />
+        <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} showActions={false} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 

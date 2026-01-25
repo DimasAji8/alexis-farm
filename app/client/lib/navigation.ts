@@ -53,13 +53,18 @@ export const dashboardNavItems: SidebarNavItem[] = [
         href: "/client/dashboard/telur/produktivitas",
       },
       {
+        title: "Penjualan",
+        href: "/client/dashboard/telur/penjualan",
+        roles: ["super_user", "manager"], // Staff tidak bisa akses penjualan
+      },
+      {
         title: "Stok Telur",
         href: "/client/dashboard/telur/stok",
       },
       {
-        title: "Penjualan",
-        href: "/client/dashboard/telur/penjualan",
-        roles: ["super_user", "manager"], // Staff tidak bisa akses penjualan
+        title: "Rekap Telur",
+        href: "/client/dashboard/telur/rekap",
+        roles: ["super_user", "manager"],
       },
     ],
   },

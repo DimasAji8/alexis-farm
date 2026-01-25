@@ -23,8 +23,9 @@ const navItems = [
   { label: "Ayam Masuk", href: "/ayam/masuk" },
   { label: "Kematian", href: "/ayam/kematian" },
   { label: "Produktivitas", href: "/telur/produktivitas" },
-  { label: "Stok Telur", href: "/telur/stok" },
   { label: "Penjualan", href: "/telur/penjualan" },
+  { label: "Stok Telur", href: "/telur/stok" },
+  { label: "Rekap Telur", href: "/telur/rekap" },
 ];
 
 export function KandangHeader({ kandang }: Props) {

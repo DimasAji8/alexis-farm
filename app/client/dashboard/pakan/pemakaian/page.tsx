@@ -108,34 +108,28 @@ export default function PemakaianPakanPage() {
     
     const totalPemakaian = dataToCalculate.reduce((sum: number, item: any) => sum + item.jumlahKg, 0);
     const totalBiaya = dataToCalculate.reduce((sum: number, item: any) => sum + (item.totalBiaya || 0), 0);
+    const totalTransaksi = dataToCalculate.length;
     
-    const uniqueDays = new Set(dataToCalculate.map((item: any) => new Date(item.tanggalPakai).toDateString())).size;
-    const rataRataPerHariKg = uniqueDays > 0 ? totalPemakaian / uniqueDays : 0;
-    const rataRataPerHariGram = rataRataPerHariKg * 1000;
-    const rataRataBiayaHarian = uniqueDays > 0 ? totalBiaya / uniqueDays : 0;
-    
-    // Hitung total ayam berdasarkan kandang yang difilter atau semua kandang
     const kandangToCount = filters.kandangId 
       ? kandang.filter((k: any) => k.id === filters.kandangId)
       : kandang;
     const totalAyam = kandangToCount.reduce((sum: number, k: any) => sum + (k.jumlahAyam || 0), 0);
-    
-    const rataRataPerAyamGram = totalAyam > 0 ? (totalPemakaian * 1000) / totalAyam : 0;
+    const biayaPerEkor = totalAyam > 0 ? totalBiaya / totalAyam : 0;
     
     return [
-      { label: "Rata-rata Harian", value: `${rataRataPerHariKg.toFixed(2)} Kg`, color: "emerald" },
-      { label: "Rata-rata Harian", value: `${rataRataPerHariGram.toFixed(0)} gram`, color: "emerald" },
-      { label: "Rata-rata Per Ayam", value: `${rataRataPerAyamGram.toFixed(1)} gram`, color: "blue" },
-      { label: "Rata-rata Biaya Harian", value: formatCurrency(rataRataBiayaHarian), color: "purple" },
+      { label: "Total Pemakaian", value: `${totalPemakaian.toFixed(1)} Kg`, color: "blue" },
+      { label: "Total Biaya", value: formatCurrency(totalBiaya), color: "emerald" },
+      { label: "Biaya Per Ekor", value: formatCurrency(biayaPerEkor), color: "purple" },
+      { label: "Jumlah Transaksi", value: totalTransaksi.toString(), color: "amber" },
     ];
   }, [data, filteredData, kandang, filters.kandangId]);
 
   const columns: ColumnDef<any>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: "text-muted-foreground", render: (_, i) => i + 1 },
-    { key: "tanggal", header: "Tanggal", className: "font-medium", render: (item) => formatDate(item.tanggalPakai) },
-    { key: "kandang", header: "Kandang", render: (item) => item.kandang.nama },
+    { key: "tanggal", header: "Tanggal", render: (item) => formatDate(item.tanggalPakai) },
     { key: "jenis", header: "Jenis Pakan", render: (item) => item.jenisPakan.nama },
-    { key: "jumlah", header: "Jumlah", headerClassName: "text-center", className: "text-center", render: (item) => `${item.jumlahKg} Kg` },
+    { key: "jumlah", header: "Jumlah", headerClassName: "text-right", className: "text-right", render: (item) => `${item.jumlahKg} Kg` },
+    { key: "biaya", header: "Biaya", headerClassName: "text-right", className: "text-right", render: (item) => formatCurrency(item.totalBiaya || 0) },
   ];
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);

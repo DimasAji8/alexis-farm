@@ -15,7 +15,11 @@ export function useCreateProduktivitas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateProduktivitasInput) => createProduktivitas(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["produktivitas-telur"] }); qc.invalidateQueries({ queryKey: ["stock-telur"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["produktivitas-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["stok-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["rekap-telur-harian"] }); 
+    },
   });
 }
 
@@ -23,6 +27,10 @@ export function useUpdateProduktivitas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProduktivitasInput }) => updateProduktivitas(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["produktivitas-telur"] }); qc.invalidateQueries({ queryKey: ["stock-telur"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["produktivitas-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["stok-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["rekap-telur-harian"] }); 
+    },
   });
 }

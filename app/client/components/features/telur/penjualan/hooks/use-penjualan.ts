@@ -15,7 +15,11 @@ export function useCreatePenjualan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreatePenjualanInput) => createPenjualan(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); qc.invalidateQueries({ queryKey: ["stok-telur"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["stok-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["rekap-telur-harian"] }); 
+    },
   });
 }
 
@@ -23,7 +27,11 @@ export function useUpdatePenjualan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePenjualanInput }) => updatePenjualan(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); qc.invalidateQueries({ queryKey: ["stok-telur"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["stok-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["rekap-telur-harian"] }); 
+    },
   });
 }
 
@@ -31,6 +39,10 @@ export function useDeletePenjualan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deletePenjualan(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); qc.invalidateQueries({ queryKey: ["stok-telur"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["penjualan-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["stok-telur"] }); 
+      qc.invalidateQueries({ queryKey: ["rekap-telur-harian"] }); 
+    },
   });
 }

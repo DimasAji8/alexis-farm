@@ -14,6 +14,7 @@ import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 import { useStokTelurList } from "../hooks/use-stok-telur";
 import { useProduktivitasList } from "../../produktivitas/hooks/use-produktivitas";
+import { usePenjualanList } from "../../penjualan/hooks/use-penjualan";
 import type { StokTelur } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -32,6 +33,7 @@ export function StokTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data, isLoading, isError, error, refetch } = useStokTelurList(selectedKandangId);
   const { data: produksiData } = useProduktivitasList(selectedKandangId);
+  const { data: penjualanData } = usePenjualanList(selectedKandangId);
   const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -45,6 +47,18 @@ export function StokTelurPage() {
     }
     return map;
   }, [produksiData]);
+
+  // Map penjualan by tanggal untuk lookup cepat
+  const penjualanByDate = useMemo(() => {
+    if (!penjualanData) return new Map<string, number>();
+    const map = new Map<string, number>();
+    for (const p of penjualanData) {
+      const dateKey = new Date(p.tanggal).toISOString().split("T")[0];
+      const current = map.get(dateKey) || 0;
+      map.set(dateKey, current + p.beratKg);
+    }
+    return map;
+  }, [penjualanData]);
 
   const { filteredData, stats, latestStock } = useMemo(() => {
     if (!data || data.length === 0) return { filteredData: [], stats: [], latestStock: null };
@@ -98,6 +112,11 @@ export function StokTelurPage() {
       const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
       const masuk = produksiByDate.get(dateKey) ?? 0;
       return masuk > 0 ? `+${masuk.toLocaleString("id-ID")} kg` : "-";
+    }, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
+    { key: "keluar", header: "Keluar", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums text-rose-600`, render: (item) => {
+      const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
+      const keluar = penjualanByDate.get(dateKey) ?? 0;
+      return keluar > 0 ? `-${keluar.toLocaleString("id-ID")} kg` : "-";
     }, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
     { key: "stockKg", header: "Stok", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium`, render: (item) => `${item.stockKg.toLocaleString("id-ID")} kg`, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
   ];
@@ -164,7 +183,7 @@ export function StokTelurPage() {
       <DataStats stats={stats} columns={2} />
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
-      <Card className={styles.card.table}>
+      <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} getRowKey={(item) => item.id} showActions={false} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>

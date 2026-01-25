@@ -79,20 +79,22 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-slate-800 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-700">
-            {columns.map((col) => (
-              <TableHead key={col.key} className={`font-semibold text-white text-xs sm:text-sm ${col.headerClassName || ""}`}>
-                {col.header}
-              </TableHead>
-            ))}
-            {showActions && <TableHead className="font-semibold text-white w-12 text-center">Aksi</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>{renderRows()}</TableBody>
-      </Table>
+    <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: '600px' }}>
+      <div className="flex-1 overflow-auto">
+        <Table>
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow className="bg-slate-900 hover:bg-slate-900 dark:bg-slate-800 dark:hover:bg-slate-800 border-b-0">
+              {columns.map((col) => (
+                <TableHead key={col.key} className={`font-medium text-white text-xs sm:text-sm ${col.headerClassName || ""}`}>
+                  {col.header}
+                </TableHead>
+              ))}
+              {showActions && <TableHead className="font-medium text-white w-12 text-center">Aksi</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>{renderRows()}</TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
