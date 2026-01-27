@@ -24,7 +24,7 @@ export function ProduktivitasFormDialog({ open, onOpenChange, onSubmit, isLoadin
   ], []);
 
   const editData = data ? {
-    tanggal: data.tanggal.split("T")[0],
+    tanggal: data.tanggal,
     jumlahBagusButir: data.jumlahBagusButir,
     jumlahTidakBagusButir: data.jumlahTidakBagusButir,
     totalKg: data.totalKg,
@@ -39,7 +39,7 @@ export function ProduktivitasFormDialog({ open, onOpenChange, onSubmit, isLoadin
       isLoading={isLoading}
       title="Produktivitas Telur"
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], jumlahBagusButir: undefined as unknown as number, jumlahTidakBagusButir: undefined as unknown as number, totalKg: undefined as unknown as number, keterangan: "" }}
+      defaultValues={{ tanggal: new Date(), jumlahBagusButir: undefined as unknown as number, jumlahTidakBagusButir: undefined as unknown as number, totalKg: undefined as unknown as number, keterangan: "" }}
       editData={editData}
       columns={2}
     />

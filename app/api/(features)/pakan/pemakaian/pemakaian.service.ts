@@ -19,6 +19,60 @@ export class PemakaianPakanService {
     });
   }
 
+  static async getDailySummary(kandangId: string, tanggal: string) {
+    // Get all jenis pakan
+    const jenisPakan = await prisma.jenisPakan.findMany({
+      select: { id: true, kode: true, nama: true },
+      orderBy: { nama: "asc" },
+    });
+
+    // Get stok tersedia per jenis pakan
+    const stokPerJenis = await Promise.all(
+      jenisPakan.map(async (jp) => {
+        const stok = await prisma.pembelianPakan.aggregate({
+          where: { jenisPakanId: jp.id, sisaStokKg: { gt: 0 } },
+          _sum: { sisaStokKg: true },
+        });
+        return { jenisPakanId: jp.id, stok: stok._sum.sisaStokKg || 0 };
+      })
+    );
+
+    // Get pemakaian hari ini per jenis pakan
+    const pemakaianHariIni = await prisma.pemakaianPakanHeader.groupBy({
+      by: ["jenisPakanId"],
+      where: {
+        kandangId,
+        tanggalPakai: { gte: new Date(tanggal), lt: new Date(new Date(tanggal).getTime() + 86400000) },
+      },
+      _sum: { jumlahKg: true, totalBiaya: true },
+    });
+
+    // Combine data
+    const perJenisPakan = jenisPakan.map((jp) => {
+      const stok = stokPerJenis.find((s) => s.jenisPakanId === jp.id);
+      const pemakaian = pemakaianHariIni.find((p) => p.jenisPakanId === jp.id);
+      return {
+        id: jp.id,
+        kode: jp.kode,
+        nama: jp.nama,
+        stokTersedia: stok?.stok || 0,
+        pemakaianHariIni: pemakaian?._sum.jumlahKg || 0,
+      };
+    });
+
+    // Calculate totals
+    const totalStok = perJenisPakan.reduce((sum, item) => sum + item.stokTersedia, 0);
+    const totalPemakaian = perJenisPakan.reduce((sum, item) => sum + item.pemakaianHariIni, 0);
+    const totalBiaya = pemakaianHariIni.reduce((sum, item) => sum + (item._sum.totalBiaya || 0), 0);
+
+    return {
+      totalStok,
+      totalPemakaian,
+      totalBiaya,
+      perJenisPakan,
+    };
+  }
+
   static async getById(id: string) {
     const pemakaian = await prisma.pemakaianPakanHeader.findUnique({
       where: { id },

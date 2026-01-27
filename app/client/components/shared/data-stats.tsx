@@ -23,10 +23,10 @@ const colors: Record<string, { bg: string; text: string; border: string }> = {
 };
 
 const gridCols: Record<number, string> = {
-  2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-2 sm:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5",
+  2: "grid-cols-1 sm:grid-cols-2",
+  3: "grid-cols-1 sm:grid-cols-3",
+  4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+  5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5",
 };
 
 export function DataStats({ stats, columns }: DataStatsProps) {
@@ -37,7 +37,7 @@ export function DataStats({ stats, columns }: DataStatsProps) {
       {stats.map((stat, i) => {
         const c = colors[stat.color];
         return (
-          <Card key={i} className={`${c.border} shadow-sm`}>
+          <Card key={i} className={`${c.border} shadow-sm border dark:border-slate-700`}>
             <CardContent className={`p-4 sm:p-6 bg-gradient-to-br ${c.bg}`}>
               <div className="space-y-2">
                 <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">{stat.label}</p>

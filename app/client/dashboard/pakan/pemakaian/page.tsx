@@ -1,46 +1,45 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
-import { Pagination } from "@/components/shared/pagination";
 import { useApiList } from "@/hooks/use-api";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
-
-const ITEMS_PER_PAGE = 10;
-
-const formatDate = (value?: string) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-};
+import { cn } from "@/lib/utils";
 
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function PemakaianPakanPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const { data, loading, refetch } = useApiList<any>("/api/pakan/pemakaian");
-  const { data: kandang = [] } = useApiList<any>("/api/kandang");
   const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan");
   const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
   
-  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan: null, kandangId: null, jenisPakanId: null });
-  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     jenisPakanId: "",
-    tanggalPakai: new Date().toISOString().split("T")[0],
     jumlahKg: "",
     keterangan: "",
   });
+
+  // Fetch daily summary from backend
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const summaryUrl = selectedKandangId 
+    ? `/api/pakan/pemakaian?type=daily-summary&kandangId=${selectedKandangId}&tanggal=${selectedDateStr}`
+    : null;
+  const { data: summary, loading, refetch } = useApiList<any>(summaryUrl);
 
   const stokInfo = useMemo(() => {
     if (!form.jenisPakanId) return null;
@@ -68,74 +67,54 @@ export default function PemakaianPakanPage() {
     return sisa > 0 ? null : totalBiaya / jumlah;
   }, [form.jenisPakanId, form.jumlahKg, stokInfo]);
 
-  const filterConfig: FilterConfig[] = useMemo(() => [
-    { key: "bulan", label: "Bulan", type: "month" },
-    { 
-      key: "kandangId", 
-      label: "Kandang", 
-      type: "select", 
-      placeholder: "Semua Kandang",
-      options: kandang.map((k: any) => ({ value: k.id, label: k.nama }))
-    },
-    { 
-      key: "jenisPakanId", 
-      label: "Jenis Pakan", 
-      type: "select", 
-      placeholder: "Semua Jenis",
-      options: jenisPakan.map((jp: any) => ({ value: jp.id, label: jp.nama }))
-    },
-  ], [kandang, jenisPakan]);
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item: any) => {
-      const matchKandang = !filters.kandangId || item.kandangId === filters.kandangId;
-      const matchJenisPakan = !filters.jenisPakanId || item.jenisPakanId === filters.jenisPakanId;
-      
-      let matchBulan = true;
-      if (filters.bulan) {
-        const itemDate = new Date(item.tanggalPakai);
-        const [year, month] = filters.bulan.split("-");
-        matchBulan = itemDate.getFullYear() === parseInt(year) && (itemDate.getMonth() + 1) === parseInt(month);
-      }
-      
-      return matchKandang && matchJenisPakan && matchBulan;
-    });
-  }, [data, filters]);
-
   const stats: StatItem[] = useMemo(() => {
-    const dataToCalculate = filteredData.length > 0 ? filteredData : data || [];
-    
-    const totalPemakaian = dataToCalculate.reduce((sum: number, item: any) => sum + item.jumlahKg, 0);
-    const totalBiaya = dataToCalculate.reduce((sum: number, item: any) => sum + (item.totalBiaya || 0), 0);
-    const totalTransaksi = dataToCalculate.length;
-    
-    const kandangToCount = filters.kandangId 
-      ? kandang.filter((k: any) => k.id === filters.kandangId)
-      : kandang;
-    const totalAyam = kandangToCount.reduce((sum: number, k: any) => sum + (k.jumlahAyam || 0), 0);
-    const biayaPerEkor = totalAyam > 0 ? totalBiaya / totalAyam : 0;
-    
-    return [
-      { label: "Total Pemakaian", value: `${totalPemakaian.toFixed(1)} Kg`, color: "blue" },
-      { label: "Total Biaya", value: formatCurrency(totalBiaya), color: "emerald" },
-      { label: "Biaya Per Ekor", value: formatCurrency(biayaPerEkor), color: "purple" },
-      { label: "Jumlah Transaksi", value: totalTransaksi.toString(), color: "amber" },
+    if (!summary || !summary.totalStok) return [
+      { label: "Total Stok Tersedia", value: "0 Kg", color: "blue" },
+      { label: "Pemakaian Hari Ini", value: "0 Kg", color: "emerald" },
+      { label: "Total Biaya Hari Ini", value: formatCurrency(0), color: "amber" },
     ];
-  }, [data, filteredData, kandang, filters.kandangId]);
+
+    return [
+      { label: "Total Stok Tersedia", value: `${(summary.totalStok || 0).toFixed(1)} Kg`, color: "blue" },
+      { label: "Pemakaian Hari Ini", value: `${(summary.totalPemakaian || 0).toFixed(1)} Kg`, color: "emerald" },
+      { label: "Total Biaya Hari Ini", value: formatCurrency(summary.totalBiaya || 0), color: "amber" },
+    ];
+  }, [summary]);
 
   const columns: ColumnDef<any>[] = [
-    { key: "no", header: "No", headerClassName: "w-12", className: "text-muted-foreground", render: (_, i) => i + 1 },
-    { key: "tanggal", header: "Tanggal", render: (item) => formatDate(item.tanggalPakai) },
-    { key: "jenis", header: "Jenis Pakan", render: (item) => item.jenisPakan.nama },
-    { key: "jumlah", header: "Jumlah", headerClassName: "text-right", className: "text-right", render: (item) => `${item.jumlahKg} Kg` },
-    { key: "biaya", header: "Biaya", headerClassName: "text-right", className: "text-right", render: (item) => formatCurrency(item.totalBiaya || 0) },
+    { 
+      key: "jenisPakan", 
+      header: "Jenis Pakan",
+      className: "font-medium",
+      render: (item) => item.nama
+    },
+    { 
+      key: "kode", 
+      header: "Kode",
+      className: "font-medium text-muted-foreground",
+      render: (item) => item.kode
+    },
+    { 
+      key: "stokTersedia", 
+      header: "Stok Tersedia", 
+      headerClassName: "text-right", 
+      className: "text-right font-medium", 
+      render: (item) => (
+        <span className="text-blue-600">{item.stokTersedia.toFixed(1)} Kg</span>
+      )
+    },
+    { 
+      key: "pemakaianHariIni", 
+      header: "Pemakaian Hari Ini", 
+      headerClassName: "text-right", 
+      className: "text-right font-medium", 
+      render: (item) => (
+        <span className={item.pemakaianHariIni > 0 ? "text-emerald-600" : "text-muted-foreground"}>
+          {item.pemakaianHariIni.toFixed(1)} Kg
+        </span>
+      )
+    },
   ];
-
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const handleFilterChange = (f: Record<string, string | null>) => { setFilters(f); setCurrentPage(1); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +127,7 @@ export default function PemakaianPakanPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         kandangId: selectedKandangId,
+        tanggalPakai: format(selectedDate, "yyyy-MM-dd"),
         ...form,
         jumlahKg: parseFloat(form.jumlahKg),
       }),
@@ -159,7 +139,6 @@ export default function PemakaianPakanPage() {
       refetch();
       setForm({
         jenisPakanId: "",
-        tanggalPakai: new Date().toISOString().split("T")[0],
         jumlahKg: "",
         keterangan: "",
       });
@@ -173,17 +152,36 @@ export default function PemakaianPakanPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Pemakaian Pakan</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Kelola data pemakaian pakan</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Monitor pemakaian pakan harian</p>
         </div>
-        <Button onClick={() => setOpen(true)} size="sm"><Plus className="h-4 w-4 mr-2" />Tambah</Button>
+        <Button onClick={() => setOpen(true)} size="sm"><Plus className="h-4 w-4 mr-2" />Tambah Pemakaian</Button>
       </div>
 
-      <DataStats stats={stats} columns={2} />
-      <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
+      <DataStats stats={stats} columns={3} />
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Data Pemakaian</h2>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {selectedDate ? format(selectedDate, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus />
+          </PopoverContent>
+        </Popover>
+      </div>
 
       <Card className="p-4 sm:p-6">
-        <DataTable data={paginatedData} columns={columns} isLoading={loading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} showActions={false} />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        <DataTable 
+          data={summary?.perJenisPakan || []} 
+          columns={columns} 
+          isLoading={loading} 
+          getRowKey={(item) => item.id} 
+          showActions={false} 
+        />
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -210,10 +208,6 @@ export default function PemakaianPakanPage() {
                     Stok tersedia: <span className="font-medium">{stokInfo.totalStok.toFixed(1)} Kg</span>
                   </p>
                 )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="tanggalPakai">Tanggal Pakai <span className="text-red-500">*</span></Label>
-                <Input id="tanggalPakai" type="date" value={form.tanggalPakai} onChange={(e) => setForm({ ...form, tanggalPakai: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="jumlahKg">Jumlah (Kg) <span className="text-red-500">*</span></Label>

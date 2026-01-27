@@ -22,7 +22,7 @@ export function KematianFormDialog({ open, onOpenChange, onSubmit, isLoading, ke
   ], []);
 
   const editData = kematian ? {
-    tanggal: kematian.tanggal.split("T")[0],
+    tanggal: kematian.tanggal,
     jumlahMati: kematian.jumlahMati,
     keterangan: kematian.keterangan || "",
   } : null;
@@ -35,7 +35,7 @@ export function KematianFormDialog({ open, onOpenChange, onSubmit, isLoading, ke
       isLoading={isLoading}
       title="Kematian Ayam"
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], jumlahMati: undefined as unknown as number, keterangan: "" }}
+      defaultValues={{ tanggal: new Date(), jumlahMati: undefined as unknown as number, keterangan: "" }}
       editData={editData}
     />
   );

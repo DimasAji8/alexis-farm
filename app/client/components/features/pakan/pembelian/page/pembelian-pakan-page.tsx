@@ -94,7 +94,13 @@ export function PembelianPakanPage() {
   const handleAdd = () => setFormOpen(true);
 
   const handleFormSubmit = (formData: CreatePembelianPakanInput) => {
-    createMutation.mutate(formData, {
+    const payload = {
+      ...formData,
+      tanggalBeli: formData.tanggalBeli instanceof Date 
+        ? formData.tanggalBeli.toISOString().split("T")[0] 
+        : formData.tanggalBeli
+    };
+    createMutation.mutate(payload, {
       onSuccess: () => { toast.success("Pembelian pakan berhasil ditambahkan"); setFormOpen(false); },
       onError: (err) => toast.error(err.message || "Gagal menambahkan"),
     });

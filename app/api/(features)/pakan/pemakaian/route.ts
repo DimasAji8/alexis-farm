@@ -2,7 +2,14 @@ import { NextRequest } from "next/server";
 
 import { PemakaianPakanController } from "./index";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
+  
+  if (type === "daily-summary") {
+    return PemakaianPakanController.getDailySummary(req);
+  }
+  
   return PemakaianPakanController.getAll();
 }
 

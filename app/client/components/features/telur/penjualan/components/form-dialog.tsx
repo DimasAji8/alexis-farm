@@ -32,7 +32,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
   ], []);
 
   const editData = penjualan ? {
-    tanggal: penjualan.tanggal.split("T")[0],
+    tanggal: penjualan.tanggal,
     pembeli: penjualan.pembeli,
     beratKg: penjualan.beratKg,
     hargaPerKg: penjualan.hargaPerKg,
@@ -48,7 +48,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
       isLoading={isLoading}
       title={isEdit ? "Edit Penjualan" : "Tambah Penjualan"}
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
+      defaultValues={{ tanggal: new Date(), pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
       editData={editData}
     />
   );

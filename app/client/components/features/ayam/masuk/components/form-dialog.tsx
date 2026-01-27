@@ -20,13 +20,13 @@ export function AyamMasukFormDialog({ open, onOpenChange, onSubmit, isLoading, d
     { name: "jumlahAyam", label: "Jumlah Ayam", type: "number", placeholder: "Contoh: 100", required: true, min: 1 },
   ], []);
 
-  const editData = data ? { tanggal: data.tanggal.split("T")[0], jumlahAyam: data.jumlahAyam } : null;
+  const editData = data ? { tanggal: data.tanggal, jumlahAyam: data.jumlahAyam } : null;
 
   return (
     <FormDialog<FormData>
       open={open} onOpenChange={onOpenChange} onSubmit={onSubmit} isLoading={isLoading}
       title="Ayam Masuk" fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split("T")[0], jumlahAyam: undefined as unknown as number }}
+      defaultValues={{ tanggal: new Date(), jumlahAyam: undefined as unknown as number }}
       editData={editData}
     />
   );

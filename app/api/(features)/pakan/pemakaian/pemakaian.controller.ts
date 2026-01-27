@@ -15,6 +15,23 @@ export class PemakaianPakanController {
     }
   }
 
+  static async getDailySummary(req: NextRequest) {
+    try {
+      const { searchParams } = new URL(req.url);
+      const kandangId = searchParams.get("kandangId");
+      const tanggal = searchParams.get("tanggal");
+
+      if (!kandangId || !tanggal) {
+        throw new Error("kandangId dan tanggal wajib diisi");
+      }
+
+      const data = await PemakaianPakanService.getDailySummary(kandangId, tanggal);
+      return apiResponse(data, "Summary berhasil diambil");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
+
   static async getById(req: NextRequest, { params }: { params: { id: string } }) {
     try {
       const data = await PemakaianPakanService.getById(params.id);

@@ -63,7 +63,7 @@ export function DataTable<T>({
     if (isLoading) return renderSkeletonRows();
     if (data.length === 0) return renderEmptyRow();
     return data.map((item, index) => (
-      <TableRow key={getRowKey(item)}>
+      <TableRow key={getRowKey(item)} className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700">
         {columns.map((col) => (
           <TableCell key={col.key} className={col.className}>
             {col.render(item, startIndex + index)}
@@ -79,11 +79,11 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: '600px' }}>
+    <div className="flex flex-col rounded-lg overflow-hidden bg-white dark:bg-slate-800/50" style={{ height: '600px' }}>
       <div className="flex-1 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10">
-            <TableRow className="bg-slate-900 hover:bg-slate-900 dark:bg-slate-800 dark:hover:bg-slate-800 border-b-0">
+            <TableRow className="bg-slate-900 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-700 border-b-2 border-slate-600">
               {columns.map((col) => (
                 <TableHead key={col.key} className={`font-medium text-white text-xs sm:text-sm ${col.headerClassName || ""}`}>
                   {col.header}
