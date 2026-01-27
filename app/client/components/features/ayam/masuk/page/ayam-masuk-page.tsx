@@ -18,6 +18,7 @@ import { useKandangList } from "@/components/features/kandang/hooks/use-kandang"
 
 import { AyamMasukFormDialog } from "../components/form-dialog";
 import { useAyamMasukList, useCreateAyamMasuk, useUpdateAyamMasuk, useDeleteAyamMasuk } from "../hooks/use-ayam-masuk";
+import { useApi } from "@/hooks/use-api";
 import type { AyamMasuk, CreateAyamMasukInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -48,6 +49,27 @@ export function AyamMasukPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<AyamMasuk | null>(null);
 
+  const summaryParams = useMemo(() => {
+    const params: Record<string, string> = { type: "summary" };
+    if (selectedKandangId) params.kandangId = selectedKandangId;
+    if (filters.bulan_month != null && filters.bulan_year != null) {
+      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
+    }
+    return params;
+  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+
+  const summaryUrl = useMemo(() => {
+    const params = new URLSearchParams(summaryParams);
+    return `/api/ayam/masuk?${params.toString()}`;
+  }, [summaryParams]);
+
+  const { data: summaryData } = useApi<{
+    totalMasuk: number;
+    totalMasukBulanIni: number;
+    rataRataPerHari: number;
+    totalTransaksi: number;
+  }>(summaryUrl);
+
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter(item => {
@@ -62,24 +84,13 @@ export function AyamMasukPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!data) return [];
-    const now = new Date();
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    
-    const last6MonthsTotal = data.filter(item => new Date(item.tanggal) >= sixMonthsAgo)
-      .reduce((sum, item) => sum + item.jumlahAyam, 0);
-    
-    const thisMonthTotal = data.filter(item => {
-      const d = new Date(item.tanggal);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).reduce((sum, item) => sum + item.jumlahAyam, 0);
-    
+    const s = summaryData ?? { totalMasuk: 0, totalMasukBulanIni: 0, rataRataPerHari: 0, totalTransaksi: 0 };
     return [
-      { label: "6 Bulan Terakhir", value: last6MonthsTotal.toLocaleString("id-ID"), color: "emerald" },
-      { label: "Bulan Ini", value: thisMonthTotal.toLocaleString("id-ID"), color: "blue" },
+      { label: "Total Masuk", value: (s.totalMasuk ?? 0).toLocaleString("id-ID"), color: "emerald" },
+      { label: "Bulan Ini", value: (s.totalMasukBulanIni ?? 0).toLocaleString("id-ID"), color: "blue" },
       { label: "Ayam Hidup", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
-  }, [data, currentKandang]);
+  }, [summaryData, currentKandang]);
 
   const columns: ColumnDef<AyamMasuk>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },

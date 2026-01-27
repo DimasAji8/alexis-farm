@@ -8,7 +8,16 @@ import { createPenjualanTelurSchema } from "./penjualan.validation";
 export class PenjualanTelurController {
   static async getAll(req: NextRequest) {
     try {
-      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const { searchParams } = req.nextUrl;
+      const type = searchParams.get("type");
+      const kandangId = searchParams.get("kandangId") || undefined;
+      
+      if (type === "summary" && kandangId) {
+        const bulan = searchParams.get("bulan") || undefined;
+        const data = await PenjualanTelurService.getSummary(kandangId, bulan);
+        return apiResponse(data, "Summary berhasil diambil");
+      }
+      
       const data = await PenjualanTelurService.getAll(kandangId);
       return apiResponse(data, "Penjualan telur berhasil diambil");
     } catch (error) {

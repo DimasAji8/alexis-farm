@@ -16,6 +16,36 @@ export class KematianAyamService {
     });
   }
 
+  static async getSummary(kandangId: string, bulan?: string) {
+    const where: any = { kandangId };
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+    }
+
+    const data = await prisma.kematianRecord.findMany({ where });
+    const allData = await prisma.kematianRecord.findMany({ where: { kandangId } });
+    const kandang = await prisma.kandang.findUnique({ where: { id: kandangId } });
+    
+    const totalKematian = allData.reduce((sum, item) => sum + item.jumlahMati, 0);
+    const totalKematianBulanIni = data.reduce((sum, item) => sum + item.jumlahMati, 0);
+    const jumlahAyamSekarang = kandang?.jumlahAyam || 0;
+    const totalAyamAwal = jumlahAyamSekarang + totalKematian;
+    const persentaseKematian = totalAyamAwal > 0 ? (totalKematian / totalAyamAwal) * 100 : 0;
+    const jumlahHari = data.length;
+    const rataRataPerHari = jumlahHari > 0 ? totalKematianBulanIni / jumlahHari : 0;
+
+    return {
+      totalKematian,
+      totalKematianBulanIni,
+      persentaseKematian: parseFloat(persentaseKematian.toFixed(2)),
+      rataRataPerHari: parseFloat(rataRataPerHari.toFixed(1)),
+    };
+  }
+
   static async create(data: CreateKematianAyamInput) {
     const userId = await requireRole(["super_user", "staff"]);
     return prisma.$transaction(async (tx) => {

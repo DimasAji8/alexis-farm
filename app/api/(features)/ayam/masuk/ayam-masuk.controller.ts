@@ -8,7 +8,16 @@ import { createAyamMasukSchema } from "./ayam-masuk.validation";
 export class AyamMasukController {
   static async getAll(req: NextRequest) {
     try {
-      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const { searchParams } = req.nextUrl;
+      const type = searchParams.get("type");
+      const kandangId = searchParams.get("kandangId") || undefined;
+      
+      if (type === "summary" && kandangId) {
+        const bulan = searchParams.get("bulan") || undefined;
+        const data = await AyamMasukService.getSummary(kandangId, bulan);
+        return apiResponse(data, "Summary berhasil diambil");
+      }
+      
       const data = await AyamMasukService.getAll(kandangId);
       return apiResponse(data, "Riwayat ayam masuk berhasil diambil");
     } catch (error) {

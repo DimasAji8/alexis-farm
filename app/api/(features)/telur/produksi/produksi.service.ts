@@ -16,6 +16,51 @@ export class ProduksiTelurService {
     });
   }
 
+  static async getSummary(kandangId: string, bulan?: string) {
+    // Build where clause
+    const where: any = { kandangId };
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+    }
+
+    // Get filtered data
+    const data = await prisma.produksiTelur.findMany({
+      where,
+      include: {
+        kandang: { select: { jumlahAyam: true } },
+      },
+    });
+
+    // Calculate summary
+    const totalBagus = data.reduce((sum, item) => sum + item.jumlahBagusButir, 0);
+    const totalTidakBagus = data.reduce((sum, item) => sum + item.jumlahTidakBagusButir, 0);
+    const totalButir = totalBagus + totalTidakBagus;
+    const totalKg = data.reduce((sum, item) => sum + item.totalKg, 0);
+    
+    // Calculate rata-rata harian
+    const jumlahHari = data.length;
+    const rataRataHarian = jumlahHari > 0 ? totalButir / jumlahHari : 0;
+    
+    // Calculate persentase hen-day (jika ada data jumlah ayam)
+    const jumlahAyam = data[0]?.kandang.jumlahAyam || 0;
+    const persentaseHenDay = jumlahAyam > 0 && jumlahHari > 0 
+      ? (totalButir / (jumlahAyam * jumlahHari)) * 100 
+      : 0;
+
+    return {
+      totalBagus,
+      totalTidakBagus,
+      totalButir,
+      totalKg,
+      rataRataHarian: Math.round(rataRataHarian),
+      persentaseHenDay: parseFloat(persentaseHenDay.toFixed(1)),
+    };
+  }
+
   static async create(data: CreateProduksiTelurInput) {
     const userId = await requireRole(["super_user", "manager", "staff"]);
     return prisma.$transaction(async (tx) => {

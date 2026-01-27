@@ -8,7 +8,16 @@ import { createKematianAyamSchema } from "./kematian-ayam.validation";
 export class KematianAyamController {
   static async getAll(req: NextRequest) {
     try {
-      const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
+      const { searchParams } = req.nextUrl;
+      const type = searchParams.get("type");
+      const kandangId = searchParams.get("kandangId") || undefined;
+      
+      if (type === "summary" && kandangId) {
+        const bulan = searchParams.get("bulan") || undefined;
+        const data = await KematianAyamService.getSummary(kandangId, bulan);
+        return apiResponse(data, "Summary berhasil diambil");
+      }
+      
       const data = await KematianAyamService.getAll(kandangId);
       return apiResponse(data, "Riwayat kematian ayam berhasil diambil");
     } catch (error) {

@@ -14,6 +14,49 @@ export class PembelianPakanService {
     });
   }
 
+  static async getSummary(bulan?: string, jenisPakanId?: string) {
+    // Build where clause
+    const where: any = {};
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggalBeli = { gte: startDate, lte: endDate };
+    }
+    
+    if (jenisPakanId) {
+      where.jenisPakanId = jenisPakanId;
+    }
+
+    // Get filtered data
+    const data = await prisma.pembelianPakan.findMany({
+      where,
+      include: {
+        jenisPakan: { select: { id: true, kode: true, nama: true } },
+      },
+    });
+
+    // Calculate summary
+    const totalPembelian = data.reduce((sum, item) => sum + item.totalHarga, 0);
+    const rataRataHargaPerKg = data.length > 0 
+      ? data.reduce((sum, item) => sum + item.hargaPerKg, 0) / data.length 
+      : 0;
+    
+    // Get total stok (all data, not filtered)
+    const allData = await prisma.pembelianPakan.findMany();
+    const totalStok = allData.reduce((sum, item) => sum + item.sisaStokKg, 0);
+    
+    const totalTransaksi = data.length;
+
+    return {
+      totalPembelian,
+      rataRataHargaPerKg: Math.round(rataRataHargaPerKg),
+      totalStok,
+      totalTransaksi,
+    };
+  }
+
   static async getById(id: string) {
     const pembelian = await prisma.pembelianPakan.findUnique({
       where: { id },

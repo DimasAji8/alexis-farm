@@ -10,6 +10,7 @@ import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { Plus } from "lucide-react";
 
+import { useApiList } from "@/hooks/use-api";
 import { useJenisPakanList } from "@/components/features/jenis-pakan/hooks/use-jenis-pakan";
 import { PembelianPakanFormDialog } from "../components/form-dialog";
 import { PembelianPakanSkeleton } from "../components/pembelian-pakan-skeleton";
@@ -33,6 +34,10 @@ export function PembelianPakanPage() {
   const [filters, setFilters] = useState<Record<string, string | null>>({ bulan: null, jenisPakanId: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
+
+  // Fetch summary from backend
+  const summaryUrl = `/api/pakan/pembelian?type=summary${filters.bulan ? `&bulan=${filters.bulan}` : ""}${filters.jenisPakanId ? `&jenisPakanId=${filters.jenisPakanId}` : ""}`;
+  const { data: summary } = useApiList<any>(summaryUrl);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
     { key: "bulan", label: "Bulan", type: "month" },
@@ -62,20 +67,18 @@ export function PembelianPakanPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const dataToCalculate = filteredData.length > 0 ? filteredData : data || [];
-    
-    const totalPembelian = dataToCalculate.reduce((sum, item) => sum + item.totalHarga, 0);
-    const rataRataHarga = dataToCalculate.length > 0 
-      ? dataToCalculate.reduce((sum, item) => sum + item.hargaPerKg, 0) / dataToCalculate.length 
-      : 0;
-    const totalStok = (data || []).reduce((sum, item) => sum + item.sisaStokKg, 0);
+    if (!summary) return [
+      { label: "Total Pembelian", value: formatCurrency(0), color: "emerald" },
+      { label: "Rata-rata Harga/Kg", value: formatCurrency(0), color: "blue" },
+      { label: "Total Stok", value: "0 Kg", color: "purple" },
+    ];
     
     return [
-      { label: "Total Pembelian", value: formatCurrency(totalPembelian), color: "emerald" },
-      { label: "Rata-rata Harga/Kg", value: formatCurrency(Math.round(rataRataHarga)), color: "blue" },
-      { label: "Total Stok", value: `${totalStok.toFixed(0)} Kg`, color: "purple" },
+      { label: "Total Pembelian", value: formatCurrency(summary.totalPembelian || 0), color: "emerald" },
+      { label: "Rata-rata Harga/Kg", value: formatCurrency(summary.rataRataHargaPerKg || 0), color: "blue" },
+      { label: "Total Stok", value: `${(summary.totalStok || 0).toFixed(0)} Kg`, color: "purple" },
     ];
-  }, [data, filteredData]);
+  }, [summary]);
 
   const columns: ColumnDef<PembelianPakan>[] = [
     { key: "no", header: "No", headerClassName: "w-12 text-center", className: "text-center text-muted-foreground", render: (_, i) => i + 1 },

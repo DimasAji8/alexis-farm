@@ -6,8 +6,18 @@ import { PembelianPakanService } from "./pembelian.service";
 import { createPembelianPakanSchema } from "./pembelian.validation";
 
 export class PembelianPakanController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
+      const { searchParams } = new URL(req.url);
+      const type = searchParams.get("type");
+      
+      if (type === "summary") {
+        const bulan = searchParams.get("bulan") || undefined;
+        const jenisPakanId = searchParams.get("jenisPakanId") || undefined;
+        const data = await PembelianPakanService.getSummary(bulan, jenisPakanId);
+        return apiResponse(data, "Summary berhasil diambil");
+      }
+      
       const data = await PembelianPakanService.getAll();
       return apiResponse(data, "Pembelian pakan berhasil diambil");
     } catch (error) {

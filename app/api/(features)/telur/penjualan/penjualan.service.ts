@@ -16,6 +16,42 @@ export class PenjualanTelurService {
     });
   }
 
+  static async getSummary(kandangId: string, bulan?: string) {
+    const where: any = { kandangId };
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+    }
+
+    const data = await prisma.penjualanTelur.findMany({ where });
+    
+    const totalPenjualan = data.reduce((sum, item) => sum + item.totalHarga, 0);
+    const totalBeratKg = data.reduce((sum, item) => sum + item.beratKg, 0);
+    const rataRataHargaPerKg = totalBeratKg > 0 ? totalPenjualan / totalBeratKg : 0;
+    const totalTransaksi = data.length;
+    
+    // Get stok tersedia
+    const stok = await prisma.stockTelur.findFirst({
+      where: { kandangId },
+      orderBy: { tanggal: "desc" },
+      select: { stockButir: true, stockKg: true },
+    });
+
+    return {
+      totalPenjualan,
+      totalBeratKg,
+      rataRataHargaPerKg: Math.round(rataRataHargaPerKg),
+      totalTransaksi,
+      stokTersedia: {
+        butir: stok?.stockButir || 0,
+        kg: stok?.stockKg || 0,
+      },
+    };
+  }
+
   private static async syncKeuangan(
     tx: Parameters<typeof prisma.$transaction>[0] extends (arg: infer T) => any ? T : never,
     penjualanId: string,

@@ -16,7 +16,7 @@ import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 import { PenjualanFormDialog } from "../components/form-dialog";
 import { usePenjualanList, useCreatePenjualan, useUpdatePenjualan, useDeletePenjualan } from "../hooks/use-penjualan";
-import { useStokTelurList } from "../../stok/hooks/use-stok-telur";
+import { useApi } from "@/hooks/use-api";
 import type { PenjualanTelur, CreatePenjualanInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -37,7 +37,6 @@ const filterConfig: FilterConfig[] = [
 export function PenjualanTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId);
-  const { data: stokData } = useStokTelurList(selectedKandangId);
   const createMutation = useCreatePenjualan();
   const updateMutation = useUpdatePenjualan();
   const deleteMutation = useDeletePenjualan();
@@ -48,12 +47,27 @@ export function PenjualanTelurPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<PenjualanTelur | null>(null);
 
-  const stokTersedia = useMemo(() => {
-    if (!stokData || stokData.length === 0) return { butir: 0, kg: 0 };
-    const totalButir = stokData.reduce((sum, s) => sum + s.stockButir, 0);
-    const totalKg = stokData.reduce((sum, s) => sum + s.stockKg, 0);
-    return { butir: totalButir, kg: totalKg };
-  }, [stokData]);
+  const summaryParams = useMemo(() => {
+    const params: Record<string, string> = { type: "summary" };
+    if (selectedKandangId) params.kandangId = selectedKandangId;
+    if (filters.bulan_month != null && filters.bulan_year != null) {
+      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
+    }
+    return params;
+  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+
+  const summaryUrl = useMemo(() => {
+    const params = new URLSearchParams(summaryParams);
+    return `/api/telur/penjualan?${params.toString()}`;
+  }, [summaryParams]);
+
+  const { data: summaryData } = useApi<{
+    totalPenjualan: number;
+    totalBeratKg: number;
+    rataRataHargaPerKg: number;
+    totalTransaksi: number;
+    stokTersedia: number;
+  }>(summaryUrl);
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -70,16 +84,14 @@ export function PenjualanTelurPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const d = filteredData || [];
-    const totalPenjualan = d.reduce((s, i) => s + i.totalHarga, 0);
-    const totalKg = d.reduce((s, i) => s + i.beratKg, 0);
+    const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: 0 };
     return [
-      { label: "Stok Tersedia", value: `${stokTersedia.kg.toLocaleString("id-ID")} kg`, color: stokTersedia.kg > 0 ? "blue" : "rose" },
-      { label: "Total Penjualan", value: formatCurrency(totalPenjualan), color: "emerald" },
-      { label: "Total Terjual", value: `${totalKg.toLocaleString("id-ID")} kg`, color: "amber" },
-      { label: "Jumlah Transaksi", value: d.length, color: "slate" },
+      { label: "Stok Tersedia", value: `${(s.stokTersedia ?? 0).toLocaleString("id-ID")} kg`, color: (s.stokTersedia ?? 0) > 0 ? "blue" : "rose" },
+      { label: "Total Penjualan", value: formatCurrency(s.totalPenjualan ?? 0), color: "emerald" },
+      { label: "Total Terjual", value: `${(s.totalBeratKg ?? 0).toLocaleString("id-ID")} kg`, color: "amber" },
+      { label: "Jumlah Transaksi", value: s.totalTransaksi ?? 0, color: "slate" },
     ];
-  }, [filteredData, stokTersedia]);
+  }, [summaryData]);
 
   const columns: ColumnDef<PenjualanTelur>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },
@@ -160,12 +172,12 @@ export function PenjualanTelurPage() {
           <h1 className={styles.pageHeader.title}>Penjualan Telur</h1>
           <p className={styles.pageHeader.description}>Catat transaksi penjualan telur.</p>
         </div>
-        <Button onClick={handleAdd} className={styles.button.primary} disabled={stokTersedia.kg <= 0}>
+        <Button onClick={handleAdd} className={styles.button.primary} disabled={(summaryData?.stokTersedia ?? 0) <= 0}>
           <Plus className="mr-2 h-4 w-4" />Tambah Penjualan
         </Button>
       </div>
 
-      {stokTersedia.kg <= 0 && (
+      {(summaryData?.stokTersedia ?? 0) <= 0 && (
         <Card className="p-4 border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
           <div className="flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
@@ -184,7 +196,7 @@ export function PenjualanTelurPage() {
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
-      <PenjualanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} penjualan={selected} stokTersedia={stokTersedia.kg} />
+      <PenjualanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} penjualan={selected} stokTersedia={summaryData?.stokTersedia ?? 0} />
       <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} isLoading={deleteMutation.isPending} title="Hapus Transaksi" description={`Hapus transaksi ${selected?.nomorTransaksi}? Stok ${selected?.beratKg} kg akan dikembalikan.`} />
     </section>
   );

@@ -14,6 +14,7 @@ import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
+import { useApi } from "@/hooks/use-api";
 
 import { ProduktivitasFormDialog } from "../components/form-dialog";
 import { useProduktivitasList, useCreateProduktivitas, useUpdateProduktivitas } from "../hooks/use-produktivitas";
@@ -45,6 +46,19 @@ export function ProduktivitasPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
 
+  // Fetch summary from backend
+  const summaryUrl = selectedKandangId && filters.bulan
+    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${filters.bulan}`
+    : null;
+  const { data: summary } = useApi<{
+    totalBagus: number;
+    totalTidakBagus: number;
+    totalButir: number;
+    totalKg: number;
+    rataRataHarian: number;
+    persentaseHenDay: number;
+  }>(summaryUrl || "");
+
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter((item) => {
@@ -59,20 +73,26 @@ export function ProduktivitasPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const d = filteredData || [];
-    const totalBagus = d.reduce((sum, item) => sum + item.jumlahBagusButir, 0);
-    const totalTidakBagus = d.reduce((sum, item) => sum + item.jumlahTidakBagusButir, 0);
-    const totalButir = totalBagus + totalTidakBagus;
-    const persentaseBagus = totalButir > 0 ? ((totalBagus / totalButir) * 100).toFixed(1) : "0";
-    const totalKg = d.reduce((sum, item) => sum + item.totalKg, 0);
-    return [
-      { label: "Telur Bagus", value: totalBagus.toLocaleString("id-ID") + " butir", color: "emerald" },
-      { label: "Telur Rusak", value: totalTidakBagus.toLocaleString("id-ID") + " butir", color: "rose" },
-      { label: "% Bagus", value: persentaseBagus + "%", color: "blue" },
-      { label: "Total Berat", value: totalKg.toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " kg", color: "amber" },
+    if (!summary) return [
+      { label: "Telur Bagus", value: "0 butir", color: "emerald" },
+      { label: "Telur Rusak", value: "0 butir", color: "rose" },
+      { label: "% Bagus", value: "0%", color: "blue" },
+      { label: "Total Berat", value: "0 kg", color: "amber" },
       { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
-  }, [filteredData, currentKandang]);
+    
+    const persentaseBagus = summary.totalButir > 0 
+      ? ((summary.totalBagus / summary.totalButir) * 100).toFixed(1) 
+      : "0";
+    
+    return [
+      { label: "Telur Bagus", value: (summary.totalBagus || 0).toLocaleString("id-ID") + " butir", color: "emerald" },
+      { label: "Telur Rusak", value: (summary.totalTidakBagus || 0).toLocaleString("id-ID") + " butir", color: "rose" },
+      { label: "% Bagus", value: persentaseBagus + "%", color: "blue" },
+      { label: "Total Berat", value: (summary.totalKg || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " kg", color: "amber" },
+      { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
+    ];
+  }, [summary, currentKandang]);
 
   const columns: ColumnDef<ProduktivitasTelur>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },

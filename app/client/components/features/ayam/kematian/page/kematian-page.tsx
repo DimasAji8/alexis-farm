@@ -17,6 +17,7 @@ import { useKandangList } from "@/components/features/kandang/hooks/use-kandang"
 
 import { KematianFormDialog } from "../components/form-dialog";
 import { useKematianList, useCreateKematian, useUpdateKematian, useDeleteKematian } from "../hooks/use-kematian";
+import { useApi } from "@/hooks/use-api";
 import type { KematianAyam, CreateKematianInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -47,6 +48,27 @@ export function KematianPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<KematianAyam | null>(null);
 
+  const summaryParams = useMemo(() => {
+    const params: Record<string, string> = { type: "summary" };
+    if (selectedKandangId) params.kandangId = selectedKandangId;
+    if (filters.bulan_month != null && filters.bulan_year != null) {
+      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
+    }
+    return params;
+  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+
+  const summaryUrl = useMemo(() => {
+    const params = new URLSearchParams(summaryParams);
+    return `/api/ayam/kematian?${params.toString()}`;
+  }, [summaryParams]);
+
+  const { data: summaryData } = useApi<{
+    totalKematian: number;
+    totalKematianBulanIni: number;
+    persentaseKematian: number;
+    rataRataPerHari: number;
+  }>(summaryUrl);
+
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter((item) => {
@@ -61,24 +83,13 @@ export function KematianPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!data) return [];
-    const now = new Date();
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    
-    const last6MonthsTotal = data.filter(item => new Date(item.tanggal) >= sixMonthsAgo)
-      .reduce((sum, item) => sum + item.jumlahMati, 0);
-    
-    const thisMonthTotal = data.filter(item => {
-      const d = new Date(item.tanggal);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).reduce((sum, item) => sum + item.jumlahMati, 0);
-    
+    const s = summaryData ?? { totalKematian: 0, totalKematianBulanIni: 0, persentaseKematian: 0, rataRataPerHari: 0 };
     return [
-      { label: "6 Bulan Terakhir", value: last6MonthsTotal.toLocaleString("id-ID"), color: "rose" },
-      { label: "Bulan Ini", value: thisMonthTotal.toLocaleString("id-ID"), color: "amber" },
+      { label: "Total Kematian", value: (s.totalKematian ?? 0).toLocaleString("id-ID"), color: "rose" },
+      { label: "Bulan Ini", value: (s.totalKematianBulanIni ?? 0).toLocaleString("id-ID"), color: "amber" },
       { label: "Ayam Hidup", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
-  }, [data, currentKandang]);
+  }, [summaryData, currentKandang]);
 
   const columns: ColumnDef<KematianAyam>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },

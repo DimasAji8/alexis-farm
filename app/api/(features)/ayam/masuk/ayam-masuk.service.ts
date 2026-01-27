@@ -13,6 +13,33 @@ export class AyamMasukService {
     });
   }
 
+  static async getSummary(kandangId: string, bulan?: string) {
+    const where: any = { kandangId };
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+    }
+
+    const data = await prisma.ayamMasuk.findMany({ where });
+    const allData = await prisma.ayamMasuk.findMany({ where: { kandangId } });
+    
+    const totalMasuk = allData.reduce((sum, item) => sum + item.jumlahAyam, 0);
+    const totalMasukBulanIni = data.reduce((sum, item) => sum + item.jumlahAyam, 0);
+    const jumlahHari = data.length;
+    const rataRataPerHari = jumlahHari > 0 ? totalMasukBulanIni / jumlahHari : 0;
+    const totalTransaksi = data.length;
+
+    return {
+      totalMasuk,
+      totalMasukBulanIni,
+      rataRataPerHari: parseFloat(rataRataPerHari.toFixed(1)),
+      totalTransaksi,
+    };
+  }
+
   static async create(data: CreateAyamMasukInput) {
     const userId = await requireRole(["super_user", "staff"]);
     return prisma.$transaction(async (tx) => {
