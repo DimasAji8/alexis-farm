@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +18,6 @@ import { useKandangList } from "@/components/features/kandang/hooks/use-kandang"
 
 import { KematianFormDialog } from "../components/form-dialog";
 import { useKematianList, useCreateKematian, useUpdateKematian, useDeleteKematian } from "../hooks/use-kematian";
-import { useApi } from "@/hooks/use-api";
 import type { KematianAyam, CreateKematianInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -62,12 +62,12 @@ export function KematianPage() {
     return `/api/ayam/kematian?${params.toString()}`;
   }, [summaryParams]);
 
-  const { data: summaryData } = useApi<{
-    totalKematian: number;
-    totalKematianBulanIni: number;
-    persentaseKematian: number;
-    rataRataPerHari: number;
-  }>(summaryUrl);
+  const { data: summaryData } = useQuery({
+    queryKey: ["kematian-summary", summaryParams],
+    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!selectedKandangId,
+  });
 
   const filteredData = useMemo(() => {
     if (!data) return [];

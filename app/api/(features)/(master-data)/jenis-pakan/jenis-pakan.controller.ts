@@ -4,9 +4,15 @@ import { JenisPakanService } from "./jenis-pakan.service";
 import { createJenisPakanSchema } from "./jenis-pakan.validation";
 
 export class JenisPakanController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await JenisPakanService.getAll();
+      const { searchParams } = new URL(req.url);
+      const activeOnly = searchParams.get("active") === "true";
+      
+      const data = activeOnly 
+        ? await JenisPakanService.getActive()
+        : await JenisPakanService.getAll();
+        
       return apiResponse(data, "Jenis pakan berhasil diambil");
     } catch (error) {
       return apiError(error);

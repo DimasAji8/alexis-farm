@@ -23,7 +23,7 @@ const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function PemakaianPakanPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan");
+  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan?active=true");
   const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -70,13 +70,13 @@ export default function PemakaianPakanPage() {
   const stats: StatItem[] = useMemo(() => {
     if (!summary || !summary.totalStok) return [
       { label: "Total Stok Tersedia", value: "0 Kg", color: "blue" },
-      { label: "Pemakaian Hari Ini", value: "0 Kg", color: "emerald" },
+      { label: "Pemakaian Hari Ini", value: "0 Kg", color: "emerald", highlight: true },
       { label: "Total Biaya Hari Ini", value: formatCurrency(0), color: "amber" },
     ];
 
     return [
       { label: "Total Stok Tersedia", value: `${(summary.totalStok || 0).toFixed(1)} Kg`, color: "blue" },
-      { label: "Pemakaian Hari Ini", value: `${(summary.totalPemakaian || 0).toFixed(1)} Kg`, color: "emerald" },
+      { label: "Pemakaian Hari Ini", value: `${(summary.totalPemakaian || 0).toFixed(1)} Kg`, color: "emerald", highlight: true },
       { label: "Total Biaya Hari Ini", value: formatCurrency(summary.totalBiaya || 0), color: "amber" },
     ];
   }, [summary]);
@@ -95,23 +95,23 @@ export default function PemakaianPakanPage() {
       render: (item) => item.kode
     },
     { 
+      key: "pemakaianHariIni", 
+      header: "Pemakaian Hari Ini", 
+      headerClassName: "text-right", 
+      className: "text-right font-semibold", 
+      render: (item) => (
+        <span className={item.pemakaianHariIni > 0 ? "text-emerald-600 bg-emerald-50 px-2 py-1 rounded" : "text-muted-foreground"}>
+          {item.pemakaianHariIni.toFixed(1)} Kg
+        </span>
+      )
+    },
+    { 
       key: "stokTersedia", 
       header: "Stok Tersedia", 
       headerClassName: "text-right", 
       className: "text-right font-medium", 
       render: (item) => (
         <span className="text-blue-600">{item.stokTersedia.toFixed(1)} Kg</span>
-      )
-    },
-    { 
-      key: "pemakaianHariIni", 
-      header: "Pemakaian Hari Ini", 
-      headerClassName: "text-right", 
-      className: "text-right font-medium", 
-      render: (item) => (
-        <span className={item.pemakaianHariIni > 0 ? "text-emerald-600" : "text-muted-foreground"}>
-          {item.pemakaianHariIni.toFixed(1)} Kg
-        </span>
       )
     },
   ];

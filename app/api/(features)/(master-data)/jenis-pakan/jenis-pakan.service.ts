@@ -6,6 +6,12 @@ import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan
 export class JenisPakanService {
   static async getAll() {
     return prisma.jenisPakan.findMany({
+      orderBy: { nama: "asc" },
+    });
+  }
+
+  static async getActive() {
+    return prisma.jenisPakan.findMany({
       where: { isActive: true },
       orderBy: { nama: "asc" },
     });

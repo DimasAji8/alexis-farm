@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,6 @@ import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 import { PenjualanFormDialog } from "../components/form-dialog";
 import { usePenjualanList, useCreatePenjualan, useUpdatePenjualan, useDeletePenjualan } from "../hooks/use-penjualan";
-import { useApi } from "@/hooks/use-api";
 import type { PenjualanTelur, CreatePenjualanInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -61,13 +61,12 @@ export function PenjualanTelurPage() {
     return `/api/telur/penjualan?${params.toString()}`;
   }, [summaryParams]);
 
-  const { data: summaryData } = useApi<{
-    totalPenjualan: number;
-    totalBeratKg: number;
-    rataRataHargaPerKg: number;
-    totalTransaksi: number;
-    stokTersedia: number;
-  }>(summaryUrl);
+  const { data: summaryData } = useQuery({
+    queryKey: ["penjualan-telur-summary", summaryParams],
+    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!selectedKandangId,
+  });
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -84,9 +83,10 @@ export function PenjualanTelurPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: 0 };
+    const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: { kg: 0, butir: 0 } };
+    const stokKg = typeof s.stokTersedia === 'object' ? s.stokTersedia.kg : s.stokTersedia;
     return [
-      { label: "Stok Tersedia", value: `${(s.stokTersedia ?? 0).toLocaleString("id-ID")} kg`, color: (s.stokTersedia ?? 0) > 0 ? "blue" : "rose" },
+      { label: "Stok Tersedia", value: `${(stokKg ?? 0).toLocaleString("id-ID")} kg`, color: (stokKg ?? 0) > 0 ? "blue" : "rose" },
       { label: "Total Penjualan", value: formatCurrency(s.totalPenjualan ?? 0), color: "emerald" },
       { label: "Total Terjual", value: `${(s.totalBeratKg ?? 0).toLocaleString("id-ID")} kg`, color: "amber" },
       { label: "Jumlah Transaksi", value: s.totalTransaksi ?? 0, color: "slate" },

@@ -51,14 +51,29 @@ export class RekapPakanService {
     const stokAwal = batchTracking.reduce((sum, b) => sum + b.sisaKg, 0);
     const stokAwalRp = batchTracking.reduce((sum, b) => sum + (b.sisaKg * b.hargaPerKg), 0);
 
-    // Build data harian
+    // Build data harian - only for dates with transactions
     const dataHarian = [];
+    const tanggalSet = new Set<string>();
+    
+    // Collect dates with transactions
+    batchesPembelian.forEach(b => {
+      const tgl = b.tanggalBeli.toISOString().split("T")[0];
+      const date = new Date(tgl);
+      if (date >= startDate && date <= endDate) {
+        tanggalSet.add(tgl);
+      }
+    });
+    
+    pemakaianBulanIni.forEach(p => {
+      tanggalSet.add(p.tanggalPakai.toISOString().split("T")[0]);
+    });
+    
+    const sortedDates = Array.from(tanggalSet).sort();
+    
     let stokAwalHari = stokAwal;
     let stokAwalRpHari = stokAwalRp;
 
-    for (let hari = 1; hari <= jumlahHari; hari++) {
-      const tanggal = new Date(tahun, bulanNum - 1, hari);
-      const tanggalStr = tanggal.toISOString().split("T")[0];
+    for (const tanggalStr of sortedDates) {
 
       // Pembelian hari ini
       const pembelianHariIni = batchesPembelian.filter(
@@ -111,6 +126,18 @@ export class RekapPakanService {
       stokAwalRpHari = stokAkhirRp;
     }
 
+    // Get kandang stats for per-bird calculations
+    const kandangList = await prisma.kandang.findMany({ where: { status: "aktif" } });
+    const totalAyam = kandangList.reduce((sum, k) => sum + (k.jumlahAyam || 0), 0);
+    
+    const totalKeluarKg = dataHarian.reduce((sum, d) => sum + d.keluarKg, 0);
+    const totalKeluarRp = dataHarian.reduce((sum, d) => sum + d.keluarRp, 0);
+    const konsumsiPerHari = totalKeluarKg / jumlahHari;
+    const konsumsiPerEkor = totalAyam > 0 ? totalKeluarKg / totalAyam : 0;
+    const konsumsiPerEkorGram = konsumsiPerEkor * 1000;
+    const biayaPerKg = totalKeluarKg > 0 ? totalKeluarRp / totalKeluarKg : 0;
+    const biayaPerEkor = totalAyam > 0 ? totalKeluarRp / totalAyam : 0;
+
     return {
       periode: bulan,
       jenisPakanId,
@@ -118,9 +145,13 @@ export class RekapPakanService {
       summary: {
         totalMasukKg: dataHarian.reduce((sum, d) => sum + d.masukKg, 0),
         totalMasukRp: dataHarian.reduce((sum, d) => sum + d.masukRp, 0),
-        totalKeluarKg: dataHarian.reduce((sum, d) => sum + d.keluarKg, 0),
-        totalKeluarRp: dataHarian.reduce((sum, d) => sum + d.keluarRp, 0),
-        rataRataHargaPerKg: dataHarian.reduce((sum, d) => sum + d.keluarRp, 0) / dataHarian.reduce((sum, d) => sum + d.keluarKg, 0),
+        totalKeluarKg,
+        totalKeluarRp,
+        konsumsiPerHari,
+        konsumsiPerEkor,
+        konsumsiPerEkorGram,
+        biayaPerKg,
+        biayaPerEkor,
       },
     };
   }

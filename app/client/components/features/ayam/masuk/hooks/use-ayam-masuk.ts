@@ -15,7 +15,11 @@ export function useCreateAyamMasuk() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateAyamMasukInput) => createAyamMasuk(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); qc.invalidateQueries({ queryKey: ["kandang"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk-summary"] }); 
+      qc.invalidateQueries({ queryKey: ["kandang"] }); 
+    },
   });
 }
 
@@ -23,7 +27,11 @@ export function useUpdateAyamMasuk() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAyamMasukInput }) => updateAyamMasuk(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); qc.invalidateQueries({ queryKey: ["kandang"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk-summary"] }); 
+      qc.invalidateQueries({ queryKey: ["kandang"] }); 
+    },
   });
 }
 
@@ -31,6 +39,10 @@ export function useDeleteAyamMasuk() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteAyamMasuk(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); qc.invalidateQueries({ queryKey: ["kandang"] }); },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk"] }); 
+      qc.invalidateQueries({ queryKey: ["ayam-masuk-summary"] }); 
+      qc.invalidateQueries({ queryKey: ["kandang"] }); 
+    },
   });
 }

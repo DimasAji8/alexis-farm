@@ -2,8 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchJenisPakanList, createJenisPakan, updateJenisPakan, deleteJenisPakan } from "./api";
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "../types";
 
-export function useJenisPakanList() {
-  return useQuery({ queryKey: ["jenis-pakan"], queryFn: fetchJenisPakanList, staleTime: 5 * 60 * 1000 });
+export function useJenisPakanList(activeOnly = false) {
+  return useQuery({ 
+    queryKey: ["jenis-pakan", activeOnly ? "active" : "all"], 
+    queryFn: () => fetchJenisPakanList(activeOnly), 
+    staleTime: 5 * 60 * 1000 
+  });
 }
 
 export function useCreateJenisPakan() {

@@ -42,7 +42,7 @@ interface Props {
 }
 
 export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoading }: Props) {
-  const { data: jenisPakan } = useJenisPakanList();
+  const { data: jenisPakan } = useJenisPakanList(true);
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { jenisPakanId: "", tanggalBeli: new Date(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },

@@ -39,19 +39,23 @@ export class PembelianPakanService {
 
     // Calculate summary
     const totalPembelian = data.reduce((sum, item) => sum + item.totalHarga, 0);
-    const rataRataHargaPerKg = data.length > 0 
-      ? data.reduce((sum, item) => sum + item.hargaPerKg, 0) / data.length 
-      : 0;
     
     // Get total stok (all data, not filtered)
     const allData = await prisma.pembelianPakan.findMany();
     const totalStok = allData.reduce((sum, item) => sum + item.sisaStokKg, 0);
     
+    // Count unique jenis pakan with stock > 0
+    const jenisPakanAktif = await prisma.pembelianPakan.groupBy({
+      by: ['jenisPakanId'],
+      where: { sisaStokKg: { gt: 0 } },
+      _count: true,
+    });
+    
     const totalTransaksi = data.length;
 
     return {
       totalPembelian,
-      rataRataHargaPerKg: Math.round(rataRataHargaPerKg),
+      jumlahJenisPakanAktif: jenisPakanAktif.length,
       totalStok,
       totalTransaksi,
     };

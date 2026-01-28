@@ -16,10 +16,13 @@ export default function RekapPakanPage() {
   });
   const [jenisPakanId, setJenisPakanId] = useState<string>("");
 
-  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan");
-  const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
-  const { data: pemakaian = [] } = useApiList<any>("/api/pakan/pemakaian");
-  const { data: kandang = [] } = useApiList<any>("/api/kandang");
+  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan?active=true");
+
+  // Fetch rekap from backend
+  const rekapUrl = jenisPakanId 
+    ? `/api/pakan/rekap?type=harian&bulan=${bulan}&jenisPakanId=${jenisPakanId}`
+    : null;
+  const { data: rekap, loading } = useApiList<any>(rekapUrl);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
     { key: "bulan", label: "Bulan", type: "month" },
@@ -32,106 +35,26 @@ export default function RekapPakanPage() {
     },
   ], [jenisPakan]);
 
-  const filteredData = useMemo(() => {
-    // Jika jenis pakan belum dipilih, return empty
-    if (!jenisPakanId) return [];
-    
-    const [year, month] = bulan.split("-").map(Number);
-    
-    // Filter pembelian dan pemakaian berdasarkan bulan dan jenis pakan
-    const filteredPembelian = pembelian.filter((item: any) => {
-      const date = new Date(item.tanggalBeli);
-      const matchBulan = date.getFullYear() === year && (date.getMonth() + 1) === month;
-      return matchBulan && item.jenisPakanId === jenisPakanId;
-    });
-
-    const filteredPemakaian = pemakaian.filter((item: any) => {
-      const date = new Date(item.tanggalPakai);
-      const matchBulan = date.getFullYear() === year && (date.getMonth() + 1) === month;
-      return matchBulan && item.jenisPakanId === jenisPakanId;
-    });
-
-    // Hitung stok awal bulan
-    const pembelianSebelum = pembelian.filter((item: any) => {
-      const date = new Date(item.tanggalBeli);
-      return date < new Date(year, month - 1, 1) && item.jenisPakanId === jenisPakanId;
-    });
-    
-    const pemakaianSebelum = pemakaian.filter((item: any) => {
-      const date = new Date(item.tanggalPakai);
-      return date < new Date(year, month - 1, 1) && item.jenisPakanId === jenisPakanId;
-    });
-
-    const stokAwalBulan = pembelianSebelum.reduce((sum: number, p: any) => sum + p.jumlahKg, 0) - 
-                          pemakaianSebelum.reduce((sum: number, p: any) => sum + p.jumlahKg, 0);
-
-    // Gabungkan semua tanggal unik
-    const allDates = new Set<string>();
-    filteredPembelian.forEach((p: any) => allDates.add(p.tanggalBeli));
-    filteredPemakaian.forEach((p: any) => allDates.add(p.tanggalPakai));
-
-    let stokBerjalan = stokAwalBulan;
-
-    return Array.from(allDates).sort().map(tanggal => {
-      const beli = filteredPembelian.filter((p: any) => p.tanggalBeli === tanggal);
-      const pakai = filteredPemakaian.filter((p: any) => p.tanggalPakai === tanggal);
-
-      const masukKg = beli.reduce((sum: number, b: any) => sum + b.jumlahKg, 0);
-      const masukRp = beli.reduce((sum: number, b: any) => sum + b.totalHarga, 0);
-      const keluarKg = pakai.reduce((sum: number, p: any) => sum + p.jumlahKg, 0);
-      const keluarRp = pakai.reduce((sum: number, p: any) => sum + (p.totalBiaya || 0), 0);
-      
-      stokBerjalan = stokBerjalan + masukKg - keluarKg;
-      
-      // Harga per kg dari pembelian (jika ada pembelian hari ini)
-      const hargaPerKg = masukKg > 0 ? masukRp / masukKg : 0;
-
-      return {
-        tanggal,
-        jenisPakan: pakai[0]?.jenisPakan?.nama || beli[0]?.jenisPakan?.nama || "-",
-        hargaPerKg,
-        stokAwalKg: stokAwalBulan, // Stok awal bulan (tetap)
-        masukKg,
-        masukRp,
-        keluarKg,
-        keluarRp,
-        stokAkhirKg: stokBerjalan, // Stok akhir yang berubah
-      };
-    });
-  }, [bulan, jenisPakanId, pembelian, pemakaian]);
-
-  const { summary, stats } = useMemo(() => {
-    const totalMasuk = filteredData.reduce((sum, d) => sum + d.masukKg, 0);
-    const totalKeluar = filteredData.reduce((sum, d) => sum + d.keluarKg, 0);
-    const totalBiaya = filteredData.reduce((sum, d) => sum + d.keluarRp, 0);
-    
-    // Hitung total ayam
-    const totalAyam = kandang.reduce((sum: number, k: any) => sum + (k.jumlahAyam || 0), 0);
-    
-    // Hitung jumlah hari dalam bulan
-    const [year, month] = bulan.split("-").map(Number);
-    const jumlahHari = new Date(year, month, 0).getDate();
-    
-    // Konsumsi per bulan, hari, dan ekor
-    const konsumsiPerBulan = totalKeluar;
-    const konsumsiPerHari = totalKeluar / jumlahHari;
-    const konsumsiPerEkor = totalAyam > 0 ? totalKeluar / totalAyam : 0;
-    const konsumsiPerEkorGram = konsumsiPerEkor * 1000;
-    const biayaPerKg = totalKeluar > 0 ? totalBiaya / totalKeluar : 0;
-    const biayaPerEkor = totalAyam > 0 ? totalBiaya / totalAyam : 0;
-
-    const summary = { totalMasuk, totalKeluar, totalBiaya, konsumsiPerBulan, konsumsiPerHari, konsumsiPerEkor, konsumsiPerEkorGram, biayaPerKg, biayaPerEkor };
-    const stats: StatItem[] = [
-      { label: "Konsumsi/Bulan", value: `${konsumsiPerBulan.toFixed(1)} Kg`, color: "blue" },
-      { label: "Konsumsi/Hari", value: `${konsumsiPerHari.toFixed(1)} Kg`, color: "emerald" },
-      { label: "Konsumsi/Ekor", value: `${konsumsiPerEkorGram.toFixed(0)} gram`, color: "purple" },
-      { label: "Biaya/Kg", value: formatCurrency(biayaPerKg), color: "amber" },
-      { label: "Total Biaya", value: formatCurrency(totalBiaya), color: "rose" },
-      { label: "Biaya/Ekor", value: formatCurrency(biayaPerEkor), color: "slate" },
+  const stats: StatItem[] = useMemo(() => {
+    if (!rekap?.summary) return [
+      { label: "Konsumsi/Hari", value: "0 Kg", color: "emerald" },
+      { label: "Konsumsi/Bulan", value: "0 Kg", color: "blue" },
+      { label: "Konsumsi/Ekor", value: "0 gram", color: "purple" },
+      { label: "Biaya/Kg", value: formatCurrency(0), color: "amber" },
+      { label: "Total Biaya", value: formatCurrency(0), color: "rose" },
+      { label: "Biaya/Ekor", value: formatCurrency(0), color: "slate" },
     ];
 
-    return { summary, stats };
-  }, [filteredData, kandang, bulan]);
+    const s = rekap.summary;
+    return [
+      { label: "Konsumsi/Hari", value: `${s.konsumsiPerHari.toFixed(1)} Kg`, color: "emerald" },
+      { label: "Konsumsi/Bulan", value: `${s.totalKeluarKg.toFixed(1)} Kg`, color: "blue" },
+      { label: "Konsumsi/Ekor", value: `${s.konsumsiPerEkorGram.toFixed(0)} gram`, color: "purple" },
+      { label: "Biaya/Kg", value: formatCurrency(s.biayaPerKg), color: "amber" },
+      { label: "Total Biaya", value: formatCurrency(s.totalKeluarRp), color: "rose" },
+      { label: "Biaya/Ekor", value: formatCurrency(s.biayaPerEkor), color: "slate" },
+    ];
+  }, [rekap]);
 
   const handleFilterChange = (f: Record<string, string | null>) => {
     const month = f.bulan_month;
@@ -145,6 +68,10 @@ export default function RekapPakanPage() {
     setJenisPakanId(f.jenisPakan);
   };
 
+  const dataHarian = rekap?.dataHarian || [];
+  const summary = rekap?.summary || {};
+  const jenisPakanNama = jenisPakan.find((jp: any) => jp.id === jenisPakanId)?.nama || "-";
+
   return (
     <section className="space-y-4 sm:space-y-6">
       <div>
@@ -156,24 +83,23 @@ export default function RekapPakanPage() {
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
-        <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: '600px' }}>
+        <div className="overflow-x-auto">
+          <div className="flex flex-col rounded-lg overflow-hidden min-w-[800px] sm:min-w-0" style={{ height: '600px' }}>
           <div className="flex-1 overflow-auto">
             <table className="w-full text-sm">
               <colgroup>
-                <col style={{ width: '12%' }} />
                 <col style={{ width: '15%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
                 <col style={{ width: '13%' }} />
               </colgroup>
               <thead className="sticky top-0 bg-slate-900 text-white z-10 border-b">
                 <tr>
                   <th className="text-center p-2 font-medium">Tanggal</th>
-                  <th className="text-center p-2 font-medium">Jenis Pakan</th>
                   <th className="text-center p-2 font-medium">Rp/Kg</th>
                   <th className="text-center p-2 font-medium">Stok Awal</th>
                   <th className="text-center p-2 font-medium">Masuk (Kg)</th>
@@ -185,17 +111,18 @@ export default function RekapPakanPage() {
               </thead>
               <tbody>
                 {!jenisPakanId ? (
-                  <tr><td colSpan={9} className="text-center p-8 text-muted-foreground">
+                  <tr><td colSpan={8} className="text-center p-8 text-muted-foreground">
                     <p className="text-lg mb-2">Pilih Jenis Pakan</p>
                     <p className="text-sm">Silakan pilih jenis pakan dari filter di atas untuk melihat rekap</p>
                   </td></tr>
-                ) : filteredData.length === 0 ? (
-                  <tr><td colSpan={9} className="text-center p-4 text-muted-foreground">Tidak ada data untuk periode ini</td></tr>
+                ) : loading ? (
+                  <tr><td colSpan={8} className="text-center p-4 text-muted-foreground">Memuat data...</td></tr>
+                ) : dataHarian.length === 0 ? (
+                  <tr><td colSpan={8} className="text-center p-4 text-muted-foreground">Tidak ada data untuk periode ini</td></tr>
                 ) : (
-                  filteredData.map((item, idx) => (
+                  dataHarian.map((item: any, idx: number) => (
                     <tr key={item.tanggal} className="border-b hover:bg-muted/50">
                       <td className="p-2 text-center">{formatDate(item.tanggal)}</td>
-                      <td className="p-2 text-center">{item.jenisPakan}</td>
                       <td className="p-2 text-center">{item.hargaPerKg > 0 ? formatCurrency(item.hargaPerKg) : "-"}</td>
                       <td className="p-2 text-center">{idx === 0 ? item.stokAwalKg.toFixed(0) : ""}</td>
                       <td className="p-2 text-center text-emerald-600">{item.masukKg > 0 ? item.masukKg.toFixed(0) : "-"}</td>
@@ -209,42 +136,41 @@ export default function RekapPakanPage() {
               </tbody>
             </table>
           </div>
-          {filteredData.length > 0 && jenisPakanId && (
+          {dataHarian.length > 0 && jenisPakanId && (
             <div className="border-t-2 bg-background">
               <table className="w-full text-sm">
                 <colgroup>
-                  <col style={{ width: '12%' }} />
                   <col style={{ width: '15%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '12%' }} />
                   <col style={{ width: '13%' }} />
                 </colgroup>
                 <tfoot className="font-bold">
                   <tr>
                     <td className="p-2 text-center">TOTAL</td>
                     <td className="p-2 text-center"></td>
-                    <td className="p-2 text-center"></td>
-                    <td className="p-2 text-center">{filteredData[0]?.stokAwalKg.toFixed(0) || 0}</td>
-                    <td className="p-2 text-center text-emerald-600">{summary.totalMasuk.toFixed(0)}</td>
+                    <td className="p-2 text-center">{dataHarian[0]?.stokAwalKg.toFixed(0) || 0}</td>
+                    <td className="p-2 text-center text-emerald-600">{summary.totalMasukKg?.toFixed(0) || 0}</td>
                     <td className="p-2 text-center text-emerald-600"></td>
-                    <td className="p-2 text-center text-rose-600">{summary.totalKeluar.toFixed(0)}</td>
-                    <td className="p-2 text-center text-rose-600">{formatCurrency(summary.totalBiaya)}</td>
+                    <td className="p-2 text-center text-rose-600">{summary.totalKeluarKg?.toFixed(0) || 0}</td>
+                    <td className="p-2 text-center text-rose-600">{formatCurrency(summary.totalKeluarRp || 0)}</td>
                     <td className="p-2 text-center"></td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center" colSpan={6}></td>
+                    <td className="p-2 text-center" colSpan={5}></td>
                     <td className="p-2 text-center text-xs">RATA2 /KG /BULAN</td>
-                    <td className="p-2 text-center">{summary.totalKeluar > 0 ? formatCurrency(summary.biayaPerKg) : "-"}</td>
+                    <td className="p-2 text-center">{summary.biayaPerKg > 0 ? formatCurrency(summary.biayaPerKg) : "-"}</td>
                     <td className="p-2 text-center"></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           )}
+          </div>
         </div>
       </Card>
     </section>

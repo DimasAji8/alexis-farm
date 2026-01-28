@@ -1,8 +1,9 @@
 import { apiClient } from "@/lib/api-client";
 import type { JenisPakan, CreateJenisPakanInput, UpdateJenisPakanInput } from "../types";
 
-export async function fetchJenisPakanList(): Promise<JenisPakan[]> {
-  const response = await apiClient<JenisPakan[]>("/api/jenis-pakan");
+export async function fetchJenisPakanList(activeOnly = false): Promise<JenisPakan[]> {
+  const url = activeOnly ? "/api/jenis-pakan?active=true" : "/api/jenis-pakan";
+  const response = await apiClient<JenisPakan[]>(url);
   return response.data;
 }
 

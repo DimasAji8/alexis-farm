@@ -73,6 +73,11 @@ export const dashboardNavItems: SidebarNavItem[] = [
     icon: "pakan",
     children: [
       {
+        title: "Dashboard",
+        href: "/client/dashboard/pakan/dashboard",
+        roles: ["super_user", "manager"],
+      },
+      {
         title: "Pembelian Pakan",
         href: "/client/dashboard/pakan/pembelian",
       },

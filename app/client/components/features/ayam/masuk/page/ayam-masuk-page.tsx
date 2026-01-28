@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,6 @@ import { useKandangList } from "@/components/features/kandang/hooks/use-kandang"
 
 import { AyamMasukFormDialog } from "../components/form-dialog";
 import { useAyamMasukList, useCreateAyamMasuk, useUpdateAyamMasuk, useDeleteAyamMasuk } from "../hooks/use-ayam-masuk";
-import { useApi } from "@/hooks/use-api";
 import type { AyamMasuk, CreateAyamMasukInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -63,12 +63,12 @@ export function AyamMasukPage() {
     return `/api/ayam/masuk?${params.toString()}`;
   }, [summaryParams]);
 
-  const { data: summaryData } = useApi<{
-    totalMasuk: number;
-    totalMasukBulanIni: number;
-    rataRataPerHari: number;
-    totalTransaksi: number;
-  }>(summaryUrl);
+  const { data: summaryData } = useQuery({
+    queryKey: ["ayam-masuk-summary", summaryParams],
+    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!selectedKandangId,
+  });
 
   const filteredData = useMemo(() => {
     if (!data) return [];

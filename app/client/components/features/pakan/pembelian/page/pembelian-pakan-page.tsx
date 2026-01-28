@@ -28,7 +28,7 @@ const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export function PembelianPakanPage() {
   const { data, isLoading } = usePembelianPakanList();
-  const { data: jenisPakan } = useJenisPakanList();
+  const { data: jenisPakan } = useJenisPakanList(true);
   const createMutation = useCreatePembelianPakan();
 
   const [filters, setFilters] = useState<Record<string, string | null>>({ bulan: null, jenisPakanId: null });
@@ -69,13 +69,13 @@ export function PembelianPakanPage() {
   const stats: StatItem[] = useMemo(() => {
     if (!summary) return [
       { label: "Total Pembelian", value: formatCurrency(0), color: "emerald" },
-      { label: "Rata-rata Harga/Kg", value: formatCurrency(0), color: "blue" },
+      { label: "Jenis Pakan Aktif", value: "0", color: "blue" },
       { label: "Total Stok", value: "0 Kg", color: "purple" },
     ];
     
     return [
       { label: "Total Pembelian", value: formatCurrency(summary.totalPembelian || 0), color: "emerald" },
-      { label: "Rata-rata Harga/Kg", value: formatCurrency(summary.rataRataHargaPerKg || 0), color: "blue" },
+      { label: "Jenis Pakan Aktif", value: `${summary.jumlahJenisPakanAktif || 0}`, color: "blue" },
       { label: "Total Stok", value: `${(summary.totalStok || 0).toFixed(0)} Kg`, color: "purple" },
     ];
   }, [summary]);

@@ -20,8 +20,9 @@ export class PemakaianPakanService {
   }
 
   static async getDailySummary(kandangId: string, tanggal: string) {
-    // Get all jenis pakan
+    // Get all active jenis pakan
     const jenisPakan = await prisma.jenisPakan.findMany({
+      where: { isActive: true },
       select: { id: true, kode: true, nama: true },
       orderBy: { nama: "asc" },
     });
