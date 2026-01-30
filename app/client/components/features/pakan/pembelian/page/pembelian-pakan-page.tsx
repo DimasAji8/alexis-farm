@@ -67,16 +67,16 @@ export function PembelianPakanPage() {
   }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!summary) return [
+    if (!summary || Array.isArray(summary)) return [
       { label: "Total Pembelian", value: formatCurrency(0), color: "emerald" },
       { label: "Jenis Pakan Aktif", value: "0", color: "blue" },
       { label: "Total Stok", value: "0 Kg", color: "purple" },
     ];
     
     return [
-      { label: "Total Pembelian", value: formatCurrency(summary.totalPembelian || 0), color: "emerald" },
-      { label: "Jenis Pakan Aktif", value: `${summary.jumlahJenisPakanAktif || 0}`, color: "blue" },
-      { label: "Total Stok", value: `${(summary.totalStok || 0).toFixed(0)} Kg`, color: "purple" },
+      { label: "Total Pembelian", value: formatCurrency((summary as any).totalPembelian || 0), color: "emerald" },
+      { label: "Jenis Pakan Aktif", value: `${(summary as any).jumlahJenisPakanAktif || 0}`, color: "blue" },
+      { label: "Total Stok", value: `${((summary as any).totalStok || 0).toFixed(0)} Kg`, color: "purple" },
     ];
   }, [summary]);
 
@@ -97,13 +97,7 @@ export function PembelianPakanPage() {
   const handleAdd = () => setFormOpen(true);
 
   const handleFormSubmit = (formData: CreatePembelianPakanInput) => {
-    const payload = {
-      ...formData,
-      tanggalBeli: formData.tanggalBeli instanceof Date 
-        ? formData.tanggalBeli.toISOString().split("T")[0] 
-        : formData.tanggalBeli
-    };
-    createMutation.mutate(payload, {
+    createMutation.mutate(formData, {
       onSuccess: () => { toast.success("Pembelian pakan berhasil ditambahkan"); setFormOpen(false); },
       onError: (err) => toast.error(err.message || "Gagal menambahkan"),
     });

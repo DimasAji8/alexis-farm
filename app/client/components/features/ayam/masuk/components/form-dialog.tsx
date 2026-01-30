@@ -26,7 +26,7 @@ export function AyamMasukFormDialog({ open, onOpenChange, onSubmit, isLoading, d
     <FormDialog<FormData>
       open={open} onOpenChange={onOpenChange} onSubmit={onSubmit} isLoading={isLoading}
       title="Ayam Masuk" fields={fields}
-      defaultValues={{ tanggal: new Date(), jumlahAyam: undefined as unknown as number }}
+      defaultValues={{ tanggal: new Date().toISOString().split('T')[0], jumlahAyam: undefined as unknown as number }}
       editData={editData}
     />
   );

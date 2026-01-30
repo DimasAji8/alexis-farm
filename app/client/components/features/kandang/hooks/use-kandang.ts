@@ -10,7 +10,10 @@ export function useCreateKandang() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateKandangInput) => createKandang(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kandang"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["kandang"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }
 
@@ -18,7 +21,10 @@ export function useUpdateKandang() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateKandangInput }) => updateKandang(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kandang"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["kandang"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }
 
@@ -26,6 +32,9 @@ export function useDeleteKandang() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteKandang(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kandang"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["kandang"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }

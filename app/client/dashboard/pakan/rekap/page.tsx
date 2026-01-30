@@ -21,7 +21,7 @@ export default function RekapPakanPage() {
   // Fetch rekap from backend
   const rekapUrl = jenisPakanId 
     ? `/api/pakan/rekap?type=harian&bulan=${bulan}&jenisPakanId=${jenisPakanId}`
-    : null;
+    : "";
   const { data: rekap, loading } = useApiList<any>(rekapUrl);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
@@ -36,7 +36,7 @@ export default function RekapPakanPage() {
   ], [jenisPakan]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!rekap?.summary) return [
+    if (!rekap || Array.isArray(rekap) || !(rekap as any).summary) return [
       { label: "Konsumsi/Hari", value: "0 Kg", color: "emerald" },
       { label: "Konsumsi/Bulan", value: "0 Kg", color: "blue" },
       { label: "Konsumsi/Ekor", value: "0 gram", color: "purple" },
@@ -45,7 +45,7 @@ export default function RekapPakanPage() {
       { label: "Biaya/Ekor", value: formatCurrency(0), color: "slate" },
     ];
 
-    const s = rekap.summary;
+    const s = (rekap as any).summary;
     return [
       { label: "Konsumsi/Hari", value: `${s.konsumsiPerHari.toFixed(1)} Kg`, color: "emerald" },
       { label: "Konsumsi/Bulan", value: `${s.totalKeluarKg.toFixed(1)} Kg`, color: "blue" },
@@ -65,11 +65,11 @@ export default function RekapPakanPage() {
       setBulan(`${year}-${monthNum}`);
     }
 
-    setJenisPakanId(f.jenisPakan);
+    setJenisPakanId(f.jenisPakan || "");
   };
 
-  const dataHarian = rekap?.dataHarian || [];
-  const summary = rekap?.summary || {};
+  const dataHarian = (rekap as any)?.dataHarian || [];
+  const summary = (rekap as any)?.summary || {};
   const jenisPakanNama = jenisPakan.find((jp: any) => jp.id === jenisPakanId)?.nama || "-";
 
   return (

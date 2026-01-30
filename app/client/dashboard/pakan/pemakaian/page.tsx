@@ -18,10 +18,12 @@ import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { useApiList } from "@/hooks/use-api";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function PemakaianPakanPage() {
+  const queryClient = useQueryClient();
   const { selectedKandangId } = useSelectedKandang();
   const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan?active=true");
   const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
@@ -38,7 +40,7 @@ export default function PemakaianPakanPage() {
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
   const summaryUrl = selectedKandangId 
     ? `/api/pakan/pemakaian?type=daily-summary&kandangId=${selectedKandangId}&tanggal=${selectedDateStr}`
-    : null;
+    : "";
   const { data: summary, loading, refetch } = useApiList<any>(summaryUrl);
 
   const stokInfo = useMemo(() => {
@@ -68,16 +70,17 @@ export default function PemakaianPakanPage() {
   }, [form.jenisPakanId, form.jumlahKg, stokInfo]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!summary || !summary.totalStok) return [
+    if (!summary || Array.isArray(summary) || !(summary as any).totalStok) return [
       { label: "Total Stok Tersedia", value: "0 Kg", color: "blue" },
       { label: "Pemakaian Hari Ini", value: "0 Kg", color: "emerald", highlight: true },
       { label: "Total Biaya Hari Ini", value: formatCurrency(0), color: "amber" },
     ];
 
+    const s = summary as any;
     return [
-      { label: "Total Stok Tersedia", value: `${(summary.totalStok || 0).toFixed(1)} Kg`, color: "blue" },
-      { label: "Pemakaian Hari Ini", value: `${(summary.totalPemakaian || 0).toFixed(1)} Kg`, color: "emerald", highlight: true },
-      { label: "Total Biaya Hari Ini", value: formatCurrency(summary.totalBiaya || 0), color: "amber" },
+      { label: "Total Stok Tersedia", value: `${(s.totalStok || 0).toFixed(1)} Kg`, color: "blue" },
+      { label: "Pemakaian Hari Ini", value: `${(s.totalPemakaian || 0).toFixed(1)} Kg`, color: "emerald", highlight: true },
+      { label: "Total Biaya Hari Ini", value: formatCurrency(s.totalBiaya || 0), color: "amber" },
     ];
   }, [summary]);
 
@@ -137,6 +140,8 @@ export default function PemakaianPakanPage() {
       toast.success("Pemakaian pakan berhasil ditambahkan");
       setOpen(false);
       refetch();
+      // Invalidate dashboard cache
+      queryClient.invalidateQueries({ queryKey: ["pakan-dashboard"] });
       setForm({
         jenisPakanId: "",
         jumlahKg: "",
@@ -176,7 +181,7 @@ export default function PemakaianPakanPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable 
-          data={summary?.perJenisPakan || []} 
+          data={(summary as any)?.perJenisPakan || []} 
           columns={columns} 
           isLoading={loading} 
           getRowKey={(item) => item.id} 

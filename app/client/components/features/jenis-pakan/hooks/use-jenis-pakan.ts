@@ -14,7 +14,10 @@ export function useCreateJenisPakan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateJenisPakanInput) => createJenisPakan(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["jenis-pakan"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jenis-pakan"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }
 
@@ -22,7 +25,10 @@ export function useUpdateJenisPakan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateJenisPakanInput }) => updateJenisPakan(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["jenis-pakan"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jenis-pakan"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }
 
@@ -30,6 +36,9 @@ export function useDeleteJenisPakan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteJenisPakan(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["jenis-pakan"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jenis-pakan"] });
+      qc.invalidateQueries({ queryKey: ["pakan-dashboard"] });
+    },
   });
 }

@@ -75,6 +75,59 @@ export class PakanDashboardService {
     const biayaPerKg = totalKonsumsi > 0 ? totalBiaya / totalKonsumsi : 0;
     const biayaPerEkor = totalAyam > 0 ? totalBiaya / totalAyam : 0;
 
+    // Calculate daily consumption for line chart
+    const konsumsiHarian = [];
+    for (let day = 1; day <= jumlahHari; day++) {
+      const dayStart = new Date(tahun, bulanNum - 1, day, 0, 0, 0);
+      const dayEnd = new Date(tahun, bulanNum - 1, day, 23, 59, 59);
+      
+      const dailyTotal = pemakaianBulanIni
+        .filter(p => p.tanggalPakai >= dayStart && p.tanggalPakai <= dayEnd)
+        .reduce((sum, p) => sum + p.jumlahKg, 0);
+      
+      konsumsiHarian.push({
+        tanggal: day,
+        konsumsi: dailyTotal,
+      });
+    }
+
+    // Get previous month data for comparison
+    const prevMonth = bulanNum === 1 ? 12 : bulanNum - 1;
+    const prevYear = bulanNum === 1 ? tahun - 1 : tahun;
+    const prevStartDate = new Date(prevYear, prevMonth - 1, 1);
+    const prevEndDate = new Date(prevYear, prevMonth, 0, 23, 59, 59);
+
+    const wherePrevPemakaian: any = {
+      tanggalPakai: { gte: prevStartDate, lte: prevEndDate },
+    };
+    if (kandangId) wherePrevPemakaian.kandangId = kandangId;
+
+    const pemakaianBulanLalu = await prisma.pemakaianPakanHeader.findMany({
+      where: wherePrevPemakaian,
+    });
+
+    const totalKonsumsiPrev = pemakaianBulanLalu.reduce((sum, p) => sum + p.jumlahKg, 0);
+    const totalBiayaPrev = pemakaianBulanLalu.reduce((sum, p) => sum + p.totalBiaya, 0);
+
+    // Calculate comparison per jenis pakan
+    const perbandingan = await Promise.all(
+      jenisPakanList.map(async (jp) => {
+        const konsumsiSekarang = pemakaianBulanIni
+          .filter(p => p.jenisPakanId === jp.id)
+          .reduce((sum, p) => sum + p.jumlahKg, 0);
+        
+        const konsumsiLalu = pemakaianBulanLalu
+          .filter(p => p.jenisPakanId === jp.id)
+          .reduce((sum, p) => sum + p.jumlahKg, 0);
+
+        return {
+          nama: jp.nama,
+          bulanIni: konsumsiSekarang,
+          bulanLalu: konsumsiLalu,
+        };
+      })
+    );
+
     return {
       periode: bulan,
       summary: {
@@ -86,8 +139,12 @@ export class PakanDashboardService {
         biayaPerKg,
         biayaPerEkor,
         totalAyam,
+        totalKonsumsiPrev,
+        totalBiayaPrev,
       },
       perJenisPakan: perJenisPakan.sort((a, b) => b.totalKonsumsi - a.totalKonsumsi),
+      konsumsiHarian,
+      perbandingan: perbandingan.filter(p => p.bulanIni > 0 || p.bulanLalu > 0),
     };
   }
 }

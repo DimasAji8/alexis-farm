@@ -26,9 +26,9 @@ const parseCurrency = (value: string) => Number(value.replace(/\./g, "")) || 0;
 
 const schema = z.object({
   jenisPakanId: z.string().min(1, "Jenis pakan wajib dipilih"),
-  tanggalBeli: z.date({ required_error: "Tanggal wajib diisi" }),
-  jumlahKg: z.coerce.number().positive("Jumlah harus lebih dari 0"),
-  hargaPerKg: z.coerce.number().positive("Harga harus lebih dari 0"),
+  tanggalBeli: z.string().min(1, "Tanggal wajib diisi"),
+  jumlahKg: z.number().positive("Jumlah harus lebih dari 0"),
+  hargaPerKg: z.number().positive("Harga harus lebih dari 0"),
   keterangan: z.string().optional(),
 });
 
@@ -45,11 +45,11 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
   const { data: jenisPakan } = useJenisPakanList(true);
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { jenisPakanId: "", tanggalBeli: new Date(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
+    defaultValues: { jenisPakanId: "", tanggalBeli: new Date().toISOString().split('T')[0], jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
   });
 
   useEffect(() => {
-    if (open) reset({ jenisPakanId: "", tanggalBeli: new Date(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
+    if (open) reset({ jenisPakanId: "", tanggalBeli: new Date().toISOString().split('T')[0], jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
   }, [reset, open]);
 
   return (
@@ -91,11 +91,16 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(field.value, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+                      {field.value ? format(new Date(field.value), "PPP", { locale: id }) : <span>Pilih tanggal</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar 
+                      mode="single" 
+                      selected={field.value ? new Date(field.value) : undefined} 
+                      onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
+                      initialFocus 
+                    />
                   </PopoverContent>
                 </Popover>
               )} />
