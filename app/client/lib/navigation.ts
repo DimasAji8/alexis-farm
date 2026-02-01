@@ -99,7 +99,11 @@ export const dashboardNavItems: SidebarNavItem[] = [
     roles: ["super_user", "manager"],
     children: [
       {
-        title: "Biaya Operasional",
+        title: "Laporan Keuangan",
+        href: "/client/dashboard/keuangan/laporan",
+      },
+      {
+        title: "Pengeluaran",
         href: "/client/dashboard/keuangan/pengeluaran",
       },
     ],
