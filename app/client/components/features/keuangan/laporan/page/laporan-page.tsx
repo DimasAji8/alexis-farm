@@ -3,9 +3,13 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { FileSpreadsheet, FileText } from "lucide-react";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { styles } from "@/lib/styles";
+import { exportToExcel, exportToPDF } from "@/lib/export-utils";
+import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
 import { useLaporanKeuangan } from "../hooks/use-laporan";
 
@@ -21,6 +25,7 @@ const filterConfig: FilterConfig[] = [
 
 export function LaporanKeuanganPage() {
   const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const { selectedKandangId } = useSelectedKandang();
 
   const bulan = useMemo(() => {
     if (filters.bulan_year && filters.bulan_month != null) {
@@ -31,7 +36,7 @@ export function LaporanKeuanganPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   }, [filters]);
 
-  const { data, isLoading, isError, error } = useLaporanKeuangan(bulan);
+  const { data, isLoading, isError, error } = useLaporanKeuangan(bulan, selectedKandangId);
 
   const { stats, transaksiGrouped } = useMemo(() => {
     if (!data) {
@@ -84,6 +89,56 @@ export function LaporanKeuanganPage() {
     return { stats, transaksiGrouped };
   }, [data]);
 
+  const handleExportExcel = async () => {
+    if (!data) return;
+
+    const transactions = transaksiGrouped.flatMap((group) =>
+      group.items.map((item, idx) => {
+        const isLastInGroup = idx === group.items.length - 1;
+        return {
+          tanggal: idx === 0 ? formatDate(group.tanggal) : "",
+          keterangan: item.keterangan,
+          debit: item.jenis === "pemasukan" ? item.jumlah : "-",
+          kredit: item.jenis === "pengeluaran" ? item.jumlah : "-",
+          saldo: isLastInGroup ? group.saldo : "",
+        };
+      })
+    );
+
+    await exportToExcel({
+      title: "Laporan Keuangan",
+      period: bulan,
+      kandang: data.kandang ? `${data.kandang.kode} - ${data.kandang.nama}` : undefined,
+      summary: data.summary,
+      transactions,
+    });
+  };
+
+  const handleExportPDF = () => {
+    if (!data) return;
+
+    const transactions = transaksiGrouped.flatMap((group) =>
+      group.items.map((item, idx) => {
+        const isLastInGroup = idx === group.items.length - 1;
+        return {
+          tanggal: idx === 0 ? formatDate(group.tanggal) : "",
+          keterangan: item.keterangan,
+          debit: item.jenis === "pemasukan" ? item.jumlah : "-",
+          kredit: item.jenis === "pengeluaran" ? item.jumlah : "-",
+          saldo: isLastInGroup ? group.saldo : "",
+        };
+      })
+    );
+
+    exportToPDF({
+      title: "Laporan Keuangan",
+      period: bulan,
+      kandang: data.kandang ? `${data.kandang.kode} - ${data.kandang.nama}` : undefined,
+      summary: data.summary,
+      transactions,
+    });
+  };
+
   if (isError) {
     return (
       <section className="space-y-6">
@@ -100,10 +155,22 @@ export function LaporanKeuanganPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <div className={styles.pageHeader.eyebrow}>Keuangan</div>
-        <h1 className={styles.pageHeader.title}>Laporan Keuangan</h1>
-        <p className={styles.pageHeader.description}>Buku besar dan ringkasan keuangan bulanan</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className={styles.pageHeader.eyebrow}>Keuangan</div>
+          <h1 className={styles.pageHeader.title}>Laporan Keuangan</h1>
+          <p className={styles.pageHeader.description}>Buku besar dan ringkasan keuangan bulanan</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleExportExcel} variant="outline" size="sm" disabled={!data || isLoading}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button onClick={handleExportPDF} variant="outline" size="sm" disabled={!data || isLoading}>
+            <FileText className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

@@ -37,6 +37,7 @@ model Kandang {
   produksiTelur        ProduksiTelur[]
   stockTelur           StockTelur[]
   penjualanTelur       PenjualanTelur[]
+  pengeluaranOperasional PengeluaranOperasional[]
 
   @@index([kode])
   @@index([status])
@@ -242,6 +243,7 @@ model TransaksiKeuangan {
 
 model PengeluaranOperasional {
   id         String   @id @default(cuid()) @map("id_trx_pengeluaran_operasional")
+  kandangId  String?  @map("id_mst_kandang")
   tanggal    DateTime
   kategori   String
   jumlah     Float
@@ -249,7 +251,9 @@ model PengeluaranOperasional {
   bukti      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  kandang    Kandang? @relation(fields: [kandangId], references: [id])
 
+  @@index([kandangId])
   @@index([tanggal])
   @@index([kategori])
   @@map("trx_pengeluaran_operasional")

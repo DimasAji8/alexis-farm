@@ -7,12 +7,13 @@ export class LaporanKeuanganController {
     try {
       const { searchParams } = req.nextUrl;
       const bulan = searchParams.get("bulan");
+      const kandangId = searchParams.get("kandangId") || undefined;
 
       if (!bulan) {
         throw new Error("Parameter bulan wajib diisi (format: YYYY-MM)");
       }
 
-      const data = await LaporanKeuanganService.getLaporan(bulan);
+      const data = await LaporanKeuanganService.getLaporan(bulan, kandangId);
       return apiResponse(data, "Laporan keuangan berhasil diambil");
     } catch (error) {
       return apiError(error);

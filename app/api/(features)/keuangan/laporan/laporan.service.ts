@@ -1,27 +1,38 @@
 import { prisma } from "@/app/api/db/prisma";
 
 export class LaporanKeuanganService {
-  static async getLaporan(bulan: string) {
+  static async getLaporan(bulan: string, kandangId?: string) {
     const [year, month] = bulan.split("-");
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
 
-    // Ambil penjualan telur
+    // Get kandang info
+    const kandang = kandangId ? await prisma.kandang.findUnique({ where: { id: kandangId } }) : null;
+
+    // Ambil penjualan telur (per kandang)
     const penjualan = await prisma.penjualanTelur.findMany({
-      where: { tanggal: { gte: startDate, lte: endDate } },
+      where: { 
+        tanggal: { gte: startDate, lte: endDate },
+        ...(kandangId && { kandangId })
+      },
       orderBy: { tanggal: "asc" },
     });
 
-    // Ambil pembelian pakan
+    // Ambil pembelian pakan (global, tidak per kandang)
     const pembelianPakan = await prisma.pembelianPakan.findMany({
-      where: { tanggalBeli: { gte: startDate, lte: endDate } },
+      where: { 
+        tanggalBeli: { gte: startDate, lte: endDate }
+      },
       orderBy: { tanggalBeli: "asc" },
       include: { jenisPakan: true },
     });
 
-    // Ambil pengeluaran operasional
+    // Ambil pengeluaran operasional (per kandang jika ada)
     const pengeluaran = await prisma.pengeluaranOperasional.findMany({
-      where: { tanggal: { gte: startDate, lte: endDate } },
+      where: { 
+        tanggal: { gte: startDate, lte: endDate },
+        ...(kandangId && { kandangId })
+      },
       orderBy: { tanggal: "asc" },
     });
 
@@ -72,17 +83,25 @@ export class LaporanKeuanganService {
     const prevMonthEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59);
 
     const prevPenjualan = await prisma.penjualanTelur.aggregate({
-      where: { tanggal: { gte: prevMonthStart, lte: prevMonthEnd } },
+      where: { 
+        tanggal: { gte: prevMonthStart, lte: prevMonthEnd },
+        ...(kandangId && { kandangId })
+      },
       _sum: { totalHarga: true },
     });
 
     const prevPembelian = await prisma.pembelianPakan.aggregate({
-      where: { tanggalBeli: { gte: prevMonthStart, lte: prevMonthEnd } },
+      where: { 
+        tanggalBeli: { gte: prevMonthStart, lte: prevMonthEnd }
+      },
       _sum: { totalHarga: true },
     });
 
     const prevPengeluaran = await prisma.pengeluaranOperasional.aggregate({
-      where: { tanggal: { gte: prevMonthStart, lte: prevMonthEnd } },
+      where: { 
+        tanggal: { gte: prevMonthStart, lte: prevMonthEnd },
+        ...(kandangId && { kandangId })
+      },
       _sum: { jumlah: true },
     });
 
@@ -94,6 +113,7 @@ export class LaporanKeuanganService {
     const saldoAkhir = saldoAwal + totalPemasukan - totalPengeluaran;
 
     return {
+      kandang: kandang ? { id: kandang.id, kode: kandang.kode, nama: kandang.nama } : null,
       summary: {
         saldoAwal,
         totalPemasukan,
