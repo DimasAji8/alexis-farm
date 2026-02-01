@@ -2,12 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import { DataTable, type ColumnDef } from "@/components/shared/data-table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
-import { Pagination } from "@/components/shared/pagination";
 import { styles } from "@/lib/styles";
 import { Package, ArrowRight } from "lucide-react";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
@@ -15,9 +13,6 @@ import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 import { useStokTelurList } from "../hooks/use-stok-telur";
 import { useProduktivitasList } from "../../produktivitas/hooks/use-produktivitas";
 import { usePenjualanList } from "../../penjualan/hooks/use-penjualan";
-import type { StokTelur } from "../types";
-
-const ITEMS_PER_PAGE = 10;
 
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
@@ -35,7 +30,6 @@ export function StokTelurPage() {
   const { data: produksiData } = useProduktivitasList(selectedKandangId);
   const { data: penjualanData } = usePenjualanList(selectedKandangId);
   const [filters, setFilters] = useState<Record<string, string | null>>({});
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Map produksi by tanggal untuk lookup cepat
   const produksiByDate = useMemo(() => {
@@ -62,9 +56,6 @@ export function StokTelurPage() {
 
   const { filteredData, stats, latestStock } = useMemo(() => {
     if (!data || data.length === 0) return { filteredData: [], stats: [], latestStock: null };
-    
-    // Data sudah sorted asc dari API, jadi index terakhir adalah yang terbaru
-    const latestStock = data[data.length - 1];
     
     // Filter bulan yang dipilih
     const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
@@ -93,35 +84,37 @@ export function StokTelurPage() {
       if (prevMonthStocks.length > 0) {
         stokAwal = prevMonthStocks[prevMonthStocks.length - 1].stockKg;
       }
+    } else {
+      // Jika tidak ada filter, stok awal = 0
+      stokAwal = 0;
     }
+
+    // Stok akhir adalah stok terakhir dari data yang difilter
+    const stokAkhir = filtered.length > 0 ? filtered[filtered.length - 1].stockKg : stokAwal;
+
+    // Hitung total masuk dan keluar dari filtered data
+    let totalMasuk = 0;
+    let totalKeluar = 0;
+    
+    filtered.forEach(item => {
+      const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
+      const masuk = produksiByDate.get(dateKey) ?? 0;
+      const keluar = penjualanByDate.get(dateKey) ?? 0;
+      totalMasuk += masuk;
+      totalKeluar += keluar;
+    });
 
     const stats: StatItem[] = [
       { label: "Stok Awal", value: stokAwal.toLocaleString("id-ID") + " kg", color: "slate" },
-      { label: "Stok Saat Ini", value: latestStock.stockKg.toLocaleString("id-ID") + " kg", color: "emerald" },
+      { label: "Total Masuk", value: totalMasuk.toLocaleString("id-ID") + " kg", color: "emerald" },
+      { label: "Total Keluar", value: totalKeluar.toLocaleString("id-ID") + " kg", color: "rose" },
+      { label: "Stok Saat Ini", value: stokAkhir.toLocaleString("id-ID") + " kg", color: "blue" },
     ];
 
-    return { filteredData: filtered, stats, latestStock };
-  }, [data, filters]);
+    return { filteredData: filtered, stats, latestStock: filtered[filtered.length - 1] || null };
+  }, [data, filters, produksiByDate, penjualanByDate]);
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  const columns: ColumnDef<StokTelur>[] = [
-    { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: (item) => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-24" /> },
-    { key: "masuk", header: "Masuk", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums text-emerald-600`, render: (item) => {
-      const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
-      const masuk = produksiByDate.get(dateKey) ?? 0;
-      return masuk > 0 ? `+${masuk.toLocaleString("id-ID")} kg` : "-";
-    }, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
-    { key: "keluar", header: "Keluar", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums text-rose-600`, render: (item) => {
-      const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
-      const keluar = penjualanByDate.get(dateKey) ?? 0;
-      return keluar > 0 ? `-${keluar.toLocaleString("id-ID")} kg` : "-";
-    }, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
-    { key: "stockKg", header: "Stok", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium`, render: (item) => `${item.stockKg.toLocaleString("id-ID")} kg`, skeleton: <Skeleton className="h-4 w-16 ml-auto" /> },
-  ];
-
-  const handleFilterChange = (f: Record<string, string | null>) => { setFilters(f); setCurrentPage(1); };
+  const handleFilterChange = (f: Record<string, string | null>) => setFilters(f);
 
   if (isLoading && !data) {
     return (
@@ -180,12 +173,52 @@ export function StokTelurPage() {
         <p className={styles.pageHeader.description}>Posisi stok telur per kandang.</p>
       </div>
 
-      <DataStats stats={stats} columns={2} />
+      <DataStats stats={stats} columns={4} />
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
-        <DataTable data={paginatedData} columns={columns} isLoading={isLoading} getRowKey={(item) => item.id} showActions={false} />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: '600px' }}>
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-slate-900 text-white z-10 border-b">
+                <tr>
+                  <th className="text-left p-3 font-medium">Tanggal</th>
+                  <th className="text-right p-3 font-medium">Masuk</th>
+                  <th className="text-right p-3 font-medium">Keluar</th>
+                  <th className="text-right p-3 font-medium">Stok</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr><td colSpan={4} className="text-center p-4 text-muted-foreground">Loading...</td></tr>
+                ) : filteredData.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center p-4 text-muted-foreground">Tidak ada data</td></tr>
+                ) : (
+                  filteredData.map((item) => {
+                    const dateKey = new Date(item.tanggal).toISOString().split("T")[0];
+                    const masuk = produksiByDate.get(dateKey) ?? 0;
+                    const keluar = penjualanByDate.get(dateKey) ?? 0;
+                    
+                    return (
+                      <tr key={item.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3">{formatDate(item.tanggal)}</td>
+                        <td className="p-3 text-right tabular-nums text-emerald-600">
+                          {masuk > 0 ? `+${masuk.toLocaleString("id-ID")} kg` : "-"}
+                        </td>
+                        <td className="p-3 text-right tabular-nums text-rose-600">
+                          {keluar > 0 ? `-${keluar.toLocaleString("id-ID")} kg` : "-"}
+                        </td>
+                        <td className="p-3 text-right tabular-nums font-medium">
+                          {item.stockKg.toLocaleString("id-ID")} kg
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </Card>
     </section>
   );

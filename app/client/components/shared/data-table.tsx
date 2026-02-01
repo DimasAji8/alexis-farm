@@ -22,6 +22,7 @@ interface DataTableProps<T> {
   onDelete?: (item: T) => void;
   showActions?: boolean;
   getRowKey: (item: T) => string;
+  noWrapper?: boolean;
 }
 
 export function DataTable<T>({
@@ -34,6 +35,7 @@ export function DataTable<T>({
   onDelete,
   showActions = true,
   getRowKey,
+  noWrapper = false,
 }: DataTableProps<T>) {
   const renderEmptyRow = () => (
     <TableRow>
@@ -62,6 +64,24 @@ export function DataTable<T>({
   const renderRows = () => {
     if (isLoading) return renderSkeletonRows();
     if (data.length === 0) return renderEmptyRow();
+    
+    if (noWrapper) {
+      return data.map((item, index) => (
+        <tr key={getRowKey(item)} className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700">
+          {columns.map((col) => (
+            <td key={col.key} className={`px-4 py-3 align-middle ${col.className || ""}`}>
+              {col.render(item, startIndex + index)}
+            </td>
+          ))}
+          {showActions && (
+            <td className="px-4 py-3 text-center">
+              <TableActions onEdit={onEdit ? () => onEdit(item) : undefined} onDelete={onDelete ? () => onDelete(item) : undefined} />
+            </td>
+          )}
+        </tr>
+      ));
+    }
+    
     return data.map((item, index) => (
       <TableRow key={getRowKey(item)} className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-200 dark:border-slate-700">
         {columns.map((col) => (
@@ -77,6 +97,24 @@ export function DataTable<T>({
       </TableRow>
     ));
   };
+
+  if (noWrapper) {
+    return (
+      <table className="w-full caption-bottom text-sm">
+        <thead className="sticky top-0 z-10 bg-slate-900 dark:bg-slate-700">
+          <tr className="bg-slate-900 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-700 border-b-2 border-slate-600">
+            {columns.map((col) => (
+              <th key={col.key} className={`h-10 px-4 text-left align-middle font-medium text-white text-xs sm:text-sm ${col.headerClassName || ""}`}>
+                {col.header}
+              </th>
+            ))}
+            {showActions && <th className="h-10 px-4 font-medium text-white w-12 text-center">Aksi</th>}
+          </tr>
+        </thead>
+        <tbody className="[&_tr:last-child]:border-0">{renderRows()}</tbody>
+      </table>
+    );
+  }
 
   return (
     <div className="flex flex-col rounded-lg overflow-hidden bg-white dark:bg-slate-800/50" style={{ height: '600px' }}>

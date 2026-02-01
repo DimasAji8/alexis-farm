@@ -47,8 +47,13 @@ export function ProduktivitasPage() {
   const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
 
   // Fetch summary from backend
-  const summaryUrl = selectedKandangId && filters.bulan
-    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${filters.bulan}`
+  const bulanParam = filters.bulan_year && filters.bulan_month != null
+    ? `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`
+    : null;
+  const summaryUrl = selectedKandangId && bulanParam
+    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${bulanParam}`
+    : selectedKandangId
+    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}`
     : null;
   const { data: summary } = useApi<{
     totalBagus: number;
@@ -81,14 +86,10 @@ export function ProduktivitasPage() {
       { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
     
-    const persentaseBagus = summary.totalButir > 0 
-      ? ((summary.totalBagus / summary.totalButir) * 100).toFixed(1) 
-      : "0";
-    
     return [
       { label: "Telur Bagus", value: (summary.totalBagus || 0).toLocaleString("id-ID") + " butir", color: "emerald" },
       { label: "Telur Rusak", value: (summary.totalTidakBagus || 0).toLocaleString("id-ID") + " butir", color: "rose" },
-      { label: "% Bagus", value: persentaseBagus + "%", color: "blue" },
+      { label: "% Bagus", value: summary.persentaseHenDay.toFixed(1) + "%", color: "blue" },
       { label: "Total Berat", value: (summary.totalKg || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " kg", color: "amber" },
       { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
@@ -99,7 +100,7 @@ export function ProduktivitasPage() {
     { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: (item) => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-20" /> },
     { key: "bagus", header: "Bagus (butir)", headerClassName: "text-center", className: `${styles.table.cellPrimary} text-center tabular-nums text-emerald-600 dark:text-emerald-400`, render: (item) => item.jumlahBagusButir.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
     { key: "tidakBagus", header: "Rusak (butir)", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell text-rose-600 dark:text-rose-400`, render: (item) => item.jumlahTidakBagusButir.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
-    { key: "persen", header: "% Bagus", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell`, render: (item) => { const total = item.jumlahBagusButir + item.jumlahTidakBagusButir; return total > 0 ? ((item.jumlahBagusButir / total) * 100).toFixed(1) + "%" : "-"; }, skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
+    { key: "persen", header: "% Bagus", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell`, render: (item) => { const jumlahAyam = currentKandang?.jumlahAyam ?? 0; return jumlahAyam > 0 ? ((item.totalButir / jumlahAyam) * 100).toFixed(1) + "%" : "-"; }, skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
     { key: "totalKg", header: "Berat (kg)", headerClassName: "text-center", className: `${styles.table.cellSecondary} text-center tabular-nums`, render: (item) => item.totalKg.toLocaleString("id-ID", { maximumFractionDigits: 2 }), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
   ];
 
