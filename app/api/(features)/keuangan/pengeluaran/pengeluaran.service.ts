@@ -45,4 +45,14 @@ export class PengeluaranOperasionalService {
       },
     });
   }
+
+  static async delete(id: string) {
+    await requireRole(["super_user", "staff"]);
+    const existing = await prisma.pengeluaranOperasional.findUnique({ where: { id } });
+    if (!existing) {
+      throw new Error("Pengeluaran tidak ditemukan");
+    }
+
+    return prisma.pengeluaranOperasional.delete({ where: { id } });
+  }
 }

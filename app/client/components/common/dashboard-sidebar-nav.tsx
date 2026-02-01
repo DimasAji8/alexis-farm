@@ -13,6 +13,7 @@ import {
   Bird,
   Egg,
   ShoppingCart,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const iconMap: Record<SidebarNavItem["icon"], LucideIcon> = {
   ayam: Bird,
   telur: Egg,
   pakan: ShoppingCart,
+  keuangan: Wallet,
 };
 
 const activeButtonClassName =

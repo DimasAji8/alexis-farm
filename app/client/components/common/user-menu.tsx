@@ -174,10 +174,10 @@ export function UserMenu({
               Batal
             </Button>
             <Button
-              variant="destructive"
-              onClick={() => {
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={async () => {
                 setConfirmOpen(false);
-                void signOut();
+                await signOut({ callbackUrl: "/client/auth/login", redirect: true });
               }}
             >
               Keluar

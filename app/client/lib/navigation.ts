@@ -6,7 +6,8 @@ export type SidebarNavIcon =
   | "users"
   | "ayam"
   | "telur"
-  | "pakan";
+  | "pakan"
+  | "keuangan";
 
 export type UserRole = "super_user" | "manager" | "staff";
 
@@ -89,6 +90,17 @@ export const dashboardNavItems: SidebarNavItem[] = [
         title: "Rekap Pakan",
         href: "/client/dashboard/pakan/rekap",
         roles: ["super_user", "manager"], // Hanya owner & manager bisa lihat rekap
+      },
+    ],
+  },
+  {
+    title: "Keuangan",
+    icon: "keuangan",
+    roles: ["super_user", "manager"],
+    children: [
+      {
+        title: "Biaya Operasional",
+        href: "/client/dashboard/keuangan/pengeluaran",
       },
     ],
   },
