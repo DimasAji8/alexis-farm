@@ -1,5 +1,6 @@
 export type PengeluaranOperasional = {
   id: string;
+  kandangId: string;
   tanggal: string;
   kategori: string;
   jumlah: number;
@@ -10,6 +11,7 @@ export type PengeluaranOperasional = {
 };
 
 export type CreatePengeluaranInput = {
+  kandangId: string;
   tanggal: Date;
   kategori: string;
   jumlah: number;

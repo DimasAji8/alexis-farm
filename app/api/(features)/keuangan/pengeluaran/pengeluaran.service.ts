@@ -18,6 +18,7 @@ export class PengeluaranOperasionalService {
     await requireRole(["super_user", "staff"]);
     return prisma.pengeluaranOperasional.create({
       data: {
+        kandangId: data.kandangId,
         tanggal: data.tanggal,
         kategori: data.kategori,
         jumlah: data.jumlah,
@@ -37,6 +38,7 @@ export class PengeluaranOperasionalService {
     return prisma.pengeluaranOperasional.update({
       where: { id },
       data: {
+        kandangId: data.kandangId ?? existing.kandangId,
         tanggal: data.tanggal ?? existing.tanggal,
         kategori: data.kategori ?? existing.kategori,
         jumlah: data.jumlah ?? existing.jumlah,

@@ -1,0 +1,1 @@
+export { PemasukanPage as default } from '@/components/features/keuangan/pemasukan';

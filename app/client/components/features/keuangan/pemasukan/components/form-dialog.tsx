@@ -11,16 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker";
 import { getLocalDateString } from "@/lib/date-utils";
 import { Plus, Trash2 } from "lucide-react";
-import type { CreatePengeluaranInput, PengeluaranOperasional } from "../types";
-import { useEffect, } from "react";
+import { useEffect } from "react";
 
 const KATEGORI_OPTIONS = [
-  "Listrik",
-  "Air",
-  "Gaji",
-  "Maintenance",
-  "Transport",
-  "Vitamin, Vaksin, Obat",
+  "Modal Awal",
+  "Pinjaman",
+  "Hibah",
   "Lainnya",
 ];
 
@@ -36,9 +32,9 @@ type FormData = {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<CreatePengeluaranInput, "bukti" | "kandangId">[]) => void;
+  onSubmit: (data: any[]) => void;
   isLoading: boolean;
-  data?: PengeluaranOperasional | null;
+  data?: any | null;
 }
 
 const formatCurrency = (value: string) => {
@@ -50,11 +46,11 @@ const parseCurrency = (value: string) => {
   return value.replace(/\./g, "");
 };
 
-export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading, data }: Props) {
+export function PemasukanFormDialog({ open, onOpenChange, onSubmit, isLoading, data }: Props) {
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       tanggal: getLocalDateString(),
-      items: [{ kategori: "Listrik", jumlah: "", keterangan: "" }],
+      items: [{ kategori: "Modal Awal", jumlah: "", keterangan: "" }],
     },
   });
 
@@ -67,7 +63,7 @@ export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading,
     if (open && !data) {
       reset({
         tanggal: getLocalDateString(),
-        items: [{ kategori: "Listrik", jumlah: "", keterangan: "" }],
+        items: [{ kategori: "Modal Awal", jumlah: "", keterangan: "" }],
       });
     } else if (data) {
       const tanggalStr = getLocalDateString(new Date(data.tanggal));
@@ -107,9 +103,9 @@ export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading,
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] p-0 gap-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle>{data ? "Edit" : "Tambah"} Pengeluaran Operasional</DialogTitle>
+          <DialogTitle>{data ? "Edit" : "Tambah"} Pemasukan</DialogTitle>
           <DialogDescription>
-            {data ? "Ubah data pengeluaran operasional" : "Tambahkan data pengeluaran operasional baru"}
+            {data ? "Ubah data pemasukan" : "Tambahkan data pemasukan baru"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col flex-1 min-h-0">
@@ -132,13 +128,13 @@ export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading,
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Item Pengeluaran</Label>
+                <Label>Item Pemasukan</Label>
                 {!data && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => append({ kategori: "Listrik", jumlah: "", keterangan: "" })}
+                    onClick={() => append({ kategori: "Modal Awal", jumlah: "", keterangan: "" })}
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Tambah Item
@@ -187,7 +183,7 @@ export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading,
                       Keterangan <span className="text-red-500">*</span>
                     </Label>
                     <Textarea
-                      placeholder="Detail pengeluaran..."
+                      placeholder="Detail pemasukan..."
                       rows={2}
                       {...register(`items.${index}.keterangan`, { required: true })}
                     />

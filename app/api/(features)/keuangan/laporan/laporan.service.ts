@@ -18,6 +18,14 @@ export class LaporanKeuanganService {
       orderBy: { tanggal: "asc" },
     });
 
+    // Ambil pemasukan lain (global, tidak per kandang)
+    const pemasukan = await prisma.pemasukan.findMany({
+      where: { 
+        tanggal: { gte: startDate, lte: endDate }
+      },
+      orderBy: { tanggal: "asc" },
+    });
+
     // Ambil pembelian pakan (global, tidak per kandang)
     const pembelianPakan = await prisma.pembelianPakan.findMany({
       where: { 
@@ -27,7 +35,7 @@ export class LaporanKeuanganService {
       include: { jenisPakan: true },
     });
 
-    // Ambil pengeluaran operasional (per kandang jika ada)
+    // Ambil pengeluaran operasional (per kandang)
     const pengeluaran = await prisma.pengeluaranOperasional.findMany({
       where: { 
         tanggal: { gte: startDate, lte: endDate },
@@ -46,6 +54,15 @@ export class LaporanKeuanganService {
         jumlah: p.totalHarga,
         referensiId: p.id,
         referensiType: "penjualan_telur",
+      })),
+      ...pemasukan.map((p) => ({
+        tanggal: p.tanggal.toISOString(),
+        keterangan: `${p.kategori} - ${p.keterangan}`,
+        kategori: p.kategori,
+        jenis: "pemasukan" as const,
+        jumlah: p.jumlah,
+        referensiId: p.id,
+        referensiType: "pemasukan",
       })),
       ...pembelianPakan.map((p) => ({
         tanggal: p.tanggalBeli.toISOString(),
@@ -90,6 +107,13 @@ export class LaporanKeuanganService {
       _sum: { totalHarga: true },
     });
 
+    const prevPemasukan = await prisma.pemasukan.aggregate({
+      where: { 
+        tanggal: { gte: prevMonthStart, lte: prevMonthEnd }
+      },
+      _sum: { jumlah: true },
+    });
+
     const prevPembelian = await prisma.pembelianPakan.aggregate({
       where: { 
         tanggalBeli: { gte: prevMonthStart, lte: prevMonthEnd }
@@ -106,7 +130,8 @@ export class LaporanKeuanganService {
     });
 
     const saldoAwal =
-      (prevPenjualan._sum.totalHarga || 0) -
+      (prevPenjualan._sum.totalHarga || 0) +
+      (prevPemasukan._sum.jumlah || 0) -
       (prevPembelian._sum.totalHarga || 0) -
       (prevPengeluaran._sum.jumlah || 0);
 

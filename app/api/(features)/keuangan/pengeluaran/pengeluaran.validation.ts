@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createPengeluaranOperasionalSchema = z.object({
+  kandangId: z.string().min(1, "Kandang wajib dipilih"),
   tanggal: z.coerce.date({ error: "Tanggal wajib diisi" }),
   kategori: z.string().min(1, "Kategori wajib diisi"),
   jumlah: z.number().positive("Jumlah harus lebih dari 0"),

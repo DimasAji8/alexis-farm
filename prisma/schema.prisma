@@ -243,7 +243,7 @@ model TransaksiKeuangan {
 
 model PengeluaranOperasional {
   id         String   @id @default(cuid()) @map("id_trx_pengeluaran_operasional")
-  kandangId  String?  @map("id_mst_kandang")
+  kandangId  String   @map("id_mst_kandang")
   tanggal    DateTime
   kategori   String
   jumlah     Float
@@ -251,12 +251,26 @@ model PengeluaranOperasional {
   bukti      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  kandang    Kandang? @relation(fields: [kandangId], references: [id])
+  kandang    Kandang  @relation(fields: [kandangId], references: [id])
 
   @@index([kandangId])
   @@index([tanggal])
   @@index([kategori])
   @@map("trx_pengeluaran_operasional")
+}
+
+model Pemasukan {
+  id         String   @id @default(cuid()) @map("id_trx_pemasukan")
+  tanggal    DateTime
+  kategori   String
+  jumlah     Float
+  keterangan String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tanggal])
+  @@index([kategori])
+  @@map("trx_pemasukan")
 }
 
 model LaporanBulanan {

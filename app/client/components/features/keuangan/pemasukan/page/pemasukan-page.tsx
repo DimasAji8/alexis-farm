@@ -10,11 +10,10 @@ import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { styles } from "@/lib/styles";
-import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 
-import { PengeluaranFormDialog } from "../components/form-dialog";
-import { usePengeluaranList, useCreatePengeluaran, useUpdatePengeluaran, useDeletePengeluaran } from "../hooks/use-pengeluaran";
-import type { PengeluaranOperasional, CreatePengeluaranInput } from "../types";
+import { PemasukanFormDialog } from "../components/form-dialog";
+import { usePemasukanList, useCreatePemasukan, useUpdatePemasukan, useDeletePemasukan } from "../hooks/use-pemasukan";
+import type { Pemasukan, CreatePemasukanInput } from "../types";
 
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
@@ -28,21 +27,20 @@ const filterConfig: FilterConfig[] = [
   { key: "bulan", label: "Bulan", type: "month" },
 ];
 
-export function PengeluaranPage() {
-  const { selectedKandang } = useSelectedKandang();
-  const { data, isLoading, isError, error, refetch } = usePengeluaranList();
-  const createMutation = useCreatePengeluaran();
-  const updateMutation = useUpdatePengeluaran();
-  const deleteMutation = useDeletePengeluaran();
+export function PemasukanPage() {
+  const { data, isLoading, isError, error, refetch } = usePemasukanList();
+  const createMutation = useCreatePemasukan();
+  const updateMutation = useUpdatePemasukan();
+  const deleteMutation = useDeletePemasukan();
 
   const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [formOpen, setFormOpen] = useState(false);
-  const [selected, setSelected] = useState<PengeluaranOperasional | null>(null);
+  const [selected, setSelected] = useState<Pemasukan | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<PengeluaranOperasional | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<Pemasukan | null>(null);
 
-  const { filteredData, totalPengeluaran } = useMemo(() => {
-    if (!data) return { filteredData: [], totalPengeluaran: 0 };
+  const { filteredData, totalPemasukan } = useMemo(() => {
+    if (!data) return { filteredData: [], totalPemasukan: 0 };
 
     const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
     const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
@@ -57,19 +55,14 @@ export function PengeluaranPage() {
 
     const total = filtered.reduce((sum, item) => sum + item.jumlah, 0);
 
-    return { filteredData: filtered, totalPengeluaran: total };
+    return { filteredData: filtered, totalPemasukan: total };
   }, [data, filters]);
 
-  const handleFormSubmit = (formData: Omit<CreatePengeluaranInput, "bukti" | "kandangId">[]) => {
-    if (!selectedKandang) {
-      toast.error("Pilih kandang terlebih dahulu");
-      return;
-    }
-
+  const handleFormSubmit = (formData: Omit<CreatePemasukanInput, "bukti">[]) => {
     if (selected) {
       // Edit mode - hanya 1 item
       updateMutation.mutate(
-        { id: selected.id, data: { ...formData[0], kandangId: selectedKandang.id } },
+        { id: selected.id, data: formData[0] },
         {
           onSuccess: () => {
             toast.success("Data berhasil diperbarui");
@@ -85,7 +78,7 @@ export function PengeluaranPage() {
       let errorCount = 0;
 
       const promises = formData.map((item) =>
-        createMutation.mutateAsync({ ...item, kandangId: selectedKandang.id }).then(() => {
+        createMutation.mutateAsync(item).then(() => {
           successCount++;
         }).catch(() => {
           errorCount++;
@@ -104,7 +97,7 @@ export function PengeluaranPage() {
     }
   };
 
-  const handleDelete = (item: PengeluaranOperasional) => {
+  const handleDelete = (item: Pemasukan) => {
     setItemToDelete(item);
     setDeleteDialogOpen(true);
   };
@@ -126,7 +119,7 @@ export function PengeluaranPage() {
       <section className="space-y-6">
         <div>
           <div className={styles.pageHeader.eyebrow}>Keuangan</div>
-          <h1 className={styles.pageHeader.title}>Pengeluaran Operasional</h1>
+          <h1 className={styles.pageHeader.title}>Pemasukan</h1>
         </div>
         <Card className="p-6">
           <Skeleton className="h-8 w-32" />
@@ -140,7 +133,7 @@ export function PengeluaranPage() {
       <section className="space-y-6">
         <div>
           <div className={styles.pageHeader.eyebrow}>Keuangan</div>
-          <h1 className={styles.pageHeader.title}>Pengeluaran Operasional</h1>
+          <h1 className={styles.pageHeader.title}>Pemasukan</h1>
         </div>
         <Card className="p-6 text-center">
           <p className="text-red-500 mb-4">{error instanceof Error ? error.message : "Terjadi kesalahan"}</p>
@@ -157,8 +150,8 @@ export function PengeluaranPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className={styles.pageHeader.eyebrow}>Keuangan</div>
-          <h1 className={styles.pageHeader.title}>Pengeluaran Operasional</h1>
-          <p className={styles.pageHeader.description}>Catat pengeluaran operasional seperti listrik, air, gaji, dll.</p>
+          <h1 className={styles.pageHeader.title}>Pemasukan</h1>
+          <p className={styles.pageHeader.description}>Catat pemasukan seperti modal awal, pinjaman, hibah, dll.</p>
         </div>
         <Button
           onClick={() => {
@@ -212,7 +205,7 @@ export function PengeluaranPage() {
                         </span>
                       </td>
                       <td className="p-3 text-muted-foreground">{item.keterangan}</td>
-                      <td className="p-3 text-right tabular-nums font-medium text-rose-600">{formatCurrency(item.jumlah)}</td>
+                      <td className="p-3 text-right tabular-nums font-medium text-green-600">{formatCurrency(item.jumlah)}</td>
                       <td className="p-3 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -245,14 +238,14 @@ export function PengeluaranPage() {
           </div>
           <div className="sticky bottom-0 bg-slate-900 text-white border-t">
             <div className="flex justify-between items-center p-3">
-              <span className="text-sm font-medium">Total Pengeluaran</span>
-              <span className="text-base font-semibold tabular-nums">{formatCurrency(totalPengeluaran)}</span>
+              <span className="text-sm font-medium">Total Pemasukan</span>
+              <span className="text-base font-semibold tabular-nums text-green-400">{formatCurrency(totalPemasukan)}</span>
             </div>
           </div>
         </div>
       </Card>
 
-      <PengeluaranFormDialog
+      <PemasukanFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         onSubmit={handleFormSubmit}
@@ -265,8 +258,8 @@ export function PengeluaranPage() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         isLoading={deleteMutation.isPending}
-        title="Hapus Pengeluaran"
-        description={`Hapus data pengeluaran "${itemToDelete?.kategori}"? Tindakan ini tidak dapat dibatalkan.`}
+        title="Hapus Pemasukan"
+        description={`Hapus data pemasukan "${itemToDelete?.kategori}"? Tindakan ini tidak dapat dibatalkan.`}
       />
     </section>
   );

@@ -103,6 +103,10 @@ export const dashboardNavItems: SidebarNavItem[] = [
         href: "/client/dashboard/keuangan/laporan",
       },
       {
+        title: "Pemasukan",
+        href: "/client/dashboard/keuangan/pemasukan",
+      },
+      {
         title: "Pengeluaran",
         href: "/client/dashboard/keuangan/pengeluaran",
       },
