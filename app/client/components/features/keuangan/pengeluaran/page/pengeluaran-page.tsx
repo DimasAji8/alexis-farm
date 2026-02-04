@@ -29,7 +29,7 @@ const filterConfig: FilterConfig[] = [
 ];
 
 export function PengeluaranPage() {
-  const { selectedKandang } = useSelectedKandang();
+  const { selectedKandangId } = useSelectedKandang();
   const { data, isLoading, isError, error, refetch } = usePengeluaranList();
   const createMutation = useCreatePengeluaran();
   const updateMutation = useUpdatePengeluaran();
@@ -61,7 +61,7 @@ export function PengeluaranPage() {
   }, [data, filters]);
 
   const handleFormSubmit = (formData: Omit<CreatePengeluaranInput, "bukti" | "kandangId">[]) => {
-    if (!selectedKandang) {
+    if (!selectedKandangId) {
       toast.error("Pilih kandang terlebih dahulu");
       return;
     }
@@ -69,7 +69,7 @@ export function PengeluaranPage() {
     if (selected) {
       // Edit mode - hanya 1 item
       updateMutation.mutate(
-        { id: selected.id, data: { ...formData[0], kandangId: selectedKandang.id } },
+        { id: selected.id, data: { ...formData[0], kandangId: selectedKandangId } },
         {
           onSuccess: () => {
             toast.success("Data berhasil diperbarui");
@@ -85,7 +85,7 @@ export function PengeluaranPage() {
       let errorCount = 0;
 
       const promises = formData.map((item) =>
-        createMutation.mutateAsync({ ...item, kandangId: selectedKandang.id }).then(() => {
+        createMutation.mutateAsync({ ...item, kandangId: selectedKandangId }).then(() => {
           successCount++;
         }).catch(() => {
           errorCount++;

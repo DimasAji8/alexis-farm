@@ -23,7 +23,7 @@ const parseCurrency = (value: string) => Number(value.replace(/\./g, "")) || 0;
 const schema = z.object({
   jenisPakanId: z.string().min(1, "Jenis pakan wajib dipilih"),
   tanggalBeli: z.string().min(1, "Tanggal wajib diisi"),
-  jumlahKg: z.coerce.number().positive("Jumlah harus lebih dari 0"),
+  jumlahKg: z.number().positive("Jumlah harus lebih dari 0"),
   hargaPerKg: z.number().positive("Harga harus lebih dari 0"),
   keterangan: z.string().optional(),
 });
@@ -41,11 +41,11 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
   const { data: jenisPakan } = useJenisPakanList(true);
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
+    defaultValues: { jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: 0, hargaPerKg: undefined, keterangan: "" },
   });
 
   useEffect(() => {
-    if (open) reset({ jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
+    if (open) reset({ jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: 0, hargaPerKg: undefined, keterangan: "" });
   }, [reset, open]);
 
   return (
@@ -90,7 +90,7 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
             </div>
             <div className="grid gap-2">
               <Label htmlFor="jumlahKg">Jumlah (Kg) <span className="text-red-500">*</span></Label>
-              <Input id="jumlahKg" type="number" step="0.01" placeholder="Contoh: 50" className={errors.jumlahKg ? "border-red-500" : ""} {...register("jumlahKg")} />
+              <Input id="jumlahKg" type="number" step="0.01" placeholder="Contoh: 50" className={errors.jumlahKg ? "border-red-500" : ""} {...register("jumlahKg", { valueAsNumber: true })} />
               {errors.jumlahKg && <p className="text-xs text-red-500">{errors.jumlahKg.message}</p>}
             </div>
             <div className="grid gap-2">

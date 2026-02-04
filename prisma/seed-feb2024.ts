@@ -237,8 +237,16 @@ async function main() {
       continue;
     }
 
+    // Get first kandang for pengeluaran
+    const kandang = await prisma.kandang.findFirst({ orderBy: { kode: 'asc' } });
+    if (!kandang) {
+      console.log('⚠️  Tidak ada kandang, skip pengeluaran');
+      continue;
+    }
+
     await prisma.pengeluaranOperasional.create({
       data: {
+        kandangId: kandang.id,
         tanggal: new Date(data.tanggal),
         kategori: data.kategori,
         jumlah: data.jumlah,

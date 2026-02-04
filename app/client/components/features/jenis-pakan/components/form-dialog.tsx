@@ -15,7 +15,7 @@ import type { JenisPakan } from "../types";
 const schema = z.object({
   kode: z.string().min(1, "Kode wajib diisi").max(20, "Maksimal 20 karakter").regex(/^[A-Z0-9]+$/, "Hanya huruf kapital dan angka"),
   nama: z.string().min(1, "Nama wajib diisi").max(100, "Maksimal 100 karakter"),
-  satuan: z.string().default("KG"),
+  satuan: z.string(),
   keterangan: z.string().optional(),
   isActive: z.boolean(),
 });

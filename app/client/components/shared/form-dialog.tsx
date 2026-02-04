@@ -84,17 +84,25 @@ export function FormDialog<T extends FieldValues>({
           name={field.name}
           control={control}
           rules={{ required: rules.required }}
-          render={({ field: f }) => (
-            <>
-              <DatePicker
-                value={f.value instanceof Date ? format(f.value, "yyyy-MM-dd") : f.value}
-                onChange={f.onChange}
-                placeholder={field.placeholder || "Pilih tanggal"}
-                error={!!error}
-              />
-              {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
-            </>
-          )}
+          render={({ field: f }) => {
+            let dateValue = '';
+            if (typeof f.value === 'string') {
+              dateValue = f.value;
+            } else if (f.value && typeof f.value === 'object' && 'getTime' in f.value) {
+              dateValue = format(f.value as Date, "yyyy-MM-dd");
+            }
+            return (
+              <>
+                <DatePicker
+                  value={dateValue}
+                  onChange={f.onChange}
+                  placeholder={field.placeholder || "Pilih tanggal"}
+                  error={!!error}
+                />
+                {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+              </>
+            );
+          }}
         />
       );
     }
