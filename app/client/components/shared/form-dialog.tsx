@@ -3,16 +3,13 @@
 import { useEffect, type ReactNode } from "react";
 import { useForm, Controller, type FieldValues, type DefaultValues, type Path } from "react-hook-form";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { styles } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
@@ -57,11 +54,11 @@ export function FormDialog<T extends FieldValues>({
   useEffect(() => {
     if (open) {
       const dataToReset = editData ? { ...defaultValues, ...editData } : defaultValues;
-      // Convert string dates to Date objects for date fields
+      // Convert Date objects to string format for date fields
       const processedData = { ...dataToReset } as any;
       fields.forEach(field => {
-        if (field.type === "date" && processedData[field.name] && typeof processedData[field.name] === "string") {
-          processedData[field.name] = new Date(processedData[field.name]);
+        if (field.type === "date" && processedData[field.name] instanceof Date) {
+          processedData[field.name] = format(processedData[field.name], "yyyy-MM-dd");
         }
       });
       reset(processedData as DefaultValues<T>);
@@ -69,14 +66,8 @@ export function FormDialog<T extends FieldValues>({
   }, [open, editData, reset, defaultValues, fields]);
 
   const handleFormSubmit = (data: T) => {
-    // Convert Date objects to string format for API
-    const processedData = { ...data } as any;
-    fields.forEach(field => {
-      if (field.type === "date" && processedData[field.name] instanceof Date) {
-        processedData[field.name] = format(processedData[field.name], "yyyy-MM-dd");
-      }
-    });
-    onSubmit(processedData);
+    // DatePicker already returns string format, no conversion needed
+    onSubmit(data);
   };
 
   const renderField = (field: FieldConfig<T>) => {
@@ -95,24 +86,12 @@ export function FormDialog<T extends FieldValues>({
           rules={{ required: rules.required }}
           render={({ field: f }) => (
             <>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className={cn(
-                      "justify-start text-left font-normal w-full",
-                      !f.value && "text-muted-foreground",
-                      error && "border-red-500"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {f.value ? format(f.value as Date, "PPP", { locale: id }) : <span>{field.placeholder || "Pilih tanggal"}</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={f.value as Date} onSelect={f.onChange} initialFocus />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={f.value instanceof Date ? format(f.value, "yyyy-MM-dd") : f.value}
+                onChange={f.onChange}
+                placeholder={field.placeholder || "Pilih tanggal"}
+                error={!!error}
+              />
               {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
             </>
           )}

@@ -2,6 +2,7 @@ import { prisma } from "@/app/api/db/prisma";
 
 import { requireRole } from "@/app/api/shared/utils/auth-guard";
 import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
+import { validatePembelianPakanRelations } from "@/app/api/shared/utils/relation-validator";
 import type { CreatePembelianPakanInput, UpdatePembelianPakanInput } from "./pembelian.validation";
 
 export class PembelianPakanService {
@@ -132,5 +133,17 @@ export class PembelianPakanService {
         updatedBy: userId ?? undefined,
       },
     });
+  }
+
+  static async delete(id: string) {
+    await requireRole(["super_user"]);
+    const existing = await prisma.pembelianPakan.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundError("Pembelian pakan tidak ditemukan");
+    }
+
+    await validatePembelianPakanRelations(id);
+
+    return prisma.pembelianPakan.delete({ where: { id } });
   }
 }

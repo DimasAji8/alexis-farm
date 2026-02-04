@@ -1,7 +1,8 @@
 import { prisma } from "@/app/api/db/prisma";
 
-import { requireAuth, requireRole } from "@/app/api/shared/utils/auth-guard";
+import { requireRole } from "@/app/api/shared/utils/auth-guard";
 import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
+import { validateKandangRelations } from "@/app/api/shared/utils/relation-validator";
 
 import type { CreateKandangInput, UpdateKandangInput } from "./kandang.validation";
 
@@ -64,6 +65,7 @@ export class KandangService {
   static async delete(id: string) {
     await requireRole(["super_user", "staff"]);
     await this.getById(id);
+    await validateKandangRelations(id);
     return prisma.kandang.delete({ where: { id } });
   }
 }

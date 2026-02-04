@@ -50,4 +50,17 @@ export class PembelianPakanController {
       return apiError(error);
     }
   }
+
+  static async delete(_req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+      const id = params.id;
+      if (!id) {
+        throw new Error("Parameter id wajib diisi");
+      }
+      await PembelianPakanService.delete(id);
+      return apiResponse(null, "Pembelian pakan berhasil dihapus");
+    } catch (error) {
+      return apiError(error);
+    }
+  }
 }

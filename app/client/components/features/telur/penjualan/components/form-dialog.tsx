@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { FormDialog, type FieldConfig } from "@/components/shared/form-dialog";
+import { getLocalDateString } from "@/lib/date-utils";
 import type { PenjualanTelur, CreatePenjualanInput } from "../types";
 
 type Props = {
@@ -48,7 +49,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
       isLoading={isLoading}
       title={isEdit ? "Edit Penjualan" : "Tambah Penjualan"}
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split('T')[0], pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
+      defaultValues={{ tanggal: getLocalDateString(), pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
       editData={editData}
     />
   );

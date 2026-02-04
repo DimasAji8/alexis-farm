@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { FormDialog, type FieldConfig } from "@/components/shared/form-dialog";
+import { getLocalDateString } from "@/lib/date-utils";
 import type { AyamMasuk, CreateAyamMasukInput } from "../types";
 
 type Props = {
@@ -26,7 +27,7 @@ export function AyamMasukFormDialog({ open, onOpenChange, onSubmit, isLoading, d
     <FormDialog<FormData>
       open={open} onOpenChange={onOpenChange} onSubmit={onSubmit} isLoading={isLoading}
       title="Ayam Masuk" fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split('T')[0], jumlahAyam: undefined as unknown as number }}
+      defaultValues={{ tanggal: getLocalDateString(), jumlahAyam: undefined as unknown as number }}
       editData={editData}
     />
   );

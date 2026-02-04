@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -40,8 +39,8 @@ export function PengeluaranPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<PengeluaranOperasional | null>(null);
 
-  const { filteredData, stats } = useMemo(() => {
-    if (!data) return { filteredData: [], stats: [] };
+  const { filteredData, totalPengeluaran } = useMemo(() => {
+    if (!data) return { filteredData: [], totalPengeluaran: 0 };
 
     const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
     const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
@@ -54,27 +53,16 @@ export function PengeluaranPage() {
       return true;
     });
 
-    const totalPengeluaran = filtered.reduce((sum, item) => sum + item.jumlah, 0);
-    const byKategori = filtered.reduce((acc, item) => {
-      acc[item.kategori] = (acc[item.kategori] || 0) + item.jumlah;
-      return acc;
-    }, {} as Record<string, number>);
+    const total = filtered.reduce((sum, item) => sum + item.jumlah, 0);
 
-    const topKategori = Object.entries(byKategori).sort((a, b) => b[1] - a[1])[0];
-
-    const stats: StatItem[] = [
-      { label: "Total Pengeluaran", value: formatCurrency(totalPengeluaran), color: "rose" },
-      { label: "Jumlah Transaksi", value: filtered.length.toString(), color: "blue" },
-      { label: "Kategori Terbesar", value: topKategori ? `${topKategori[0]} (${formatCurrency(topKategori[1])})` : "-", color: "amber" },
-    ];
-
-    return { filteredData: filtered, stats };
+    return { filteredData: filtered, totalPengeluaran: total };
   }, [data, filters]);
 
-  const handleFormSubmit = (formData: Omit<CreatePengeluaranInput, "bukti">) => {
+  const handleFormSubmit = (formData: Omit<CreatePengeluaranInput, "bukti">[]) => {
     if (selected) {
+      // Edit mode - hanya 1 item
       updateMutation.mutate(
-        { id: selected.id, data: formData },
+        { id: selected.id, data: formData[0] },
         {
           onSuccess: () => {
             toast.success("Data berhasil diperbarui");
@@ -85,12 +73,26 @@ export function PengeluaranPage() {
         }
       );
     } else {
-      createMutation.mutate(formData, {
-        onSuccess: () => {
-          toast.success("Data berhasil ditambahkan");
-          setFormOpen(false);
-        },
-        onError: (err) => toast.error(err.message || "Gagal menambahkan"),
+      // Batch create
+      let successCount = 0;
+      let errorCount = 0;
+
+      const promises = formData.map((item) =>
+        createMutation.mutateAsync(item).then(() => {
+          successCount++;
+        }).catch(() => {
+          errorCount++;
+        })
+      );
+
+      Promise.all(promises).finally(() => {
+        if (successCount > 0) {
+          toast.success(`${successCount} data berhasil ditambahkan`);
+        }
+        if (errorCount > 0) {
+          toast.error(`${errorCount} data gagal ditambahkan`);
+        }
+        setFormOpen(false);
       });
     }
   };
@@ -119,14 +121,9 @@ export function PengeluaranPage() {
           <div className={styles.pageHeader.eyebrow}>Keuangan</div>
           <h1 className={styles.pageHeader.title}>Pengeluaran Operasional</h1>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-6">
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-8 w-16" />
-            </Card>
-          ))}
-        </div>
+        <Card className="p-6">
+          <Skeleton className="h-8 w-32" />
+        </Card>
       </section>
     );
   }
@@ -168,11 +165,10 @@ export function PengeluaranPage() {
         </Button>
       </div>
 
-      <DataStats stats={stats} columns={3} />
       <DataFilters config={filterConfig} onFilterChange={(f) => setFilters(f)} />
 
       <Card className="p-4 sm:p-6">
-        <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: "600px" }}>
+        <div className="flex flex-col rounded-lg overflow-hidden border" style={{ height: "calc(100vh - 320px)", minHeight: "500px" }}>
           <div className="flex-1 overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-slate-900 text-white z-10 border-b">
@@ -180,8 +176,8 @@ export function PengeluaranPage() {
                   <th className="text-center p-3 font-medium w-12">No</th>
                   <th className="text-left p-3 font-medium">Tanggal</th>
                   <th className="text-left p-3 font-medium">Kategori</th>
-                  <th className="text-right p-3 font-medium">Jumlah</th>
                   <th className="text-left p-3 font-medium">Keterangan</th>
+                  <th className="text-right p-3 font-medium">Jumlah</th>
                   <th className="text-center p-3 font-medium w-12">Aksi</th>
                 </tr>
               </thead>
@@ -208,8 +204,8 @@ export function PengeluaranPage() {
                           {item.kategori}
                         </span>
                       </td>
-                      <td className="p-3 text-right tabular-nums font-medium text-rose-600">{formatCurrency(item.jumlah)}</td>
                       <td className="p-3 text-muted-foreground">{item.keterangan}</td>
+                      <td className="p-3 text-right tabular-nums font-medium text-rose-600">{formatCurrency(item.jumlah)}</td>
                       <td className="p-3 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -239,6 +235,12 @@ export function PengeluaranPage() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="sticky bottom-0 bg-slate-900 text-white border-t">
+            <div className="flex justify-between items-center p-3">
+              <span className="text-sm font-medium">Total Pengeluaran</span>
+              <span className="text-base font-semibold tabular-nums">{formatCurrency(totalPengeluaran)}</span>
+            </div>
           </div>
         </div>
       </Card>

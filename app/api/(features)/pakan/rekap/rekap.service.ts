@@ -132,11 +132,14 @@ export class RekapPakanService {
     
     const totalKeluarKg = dataHarian.reduce((sum, d) => sum + d.keluarKg, 0);
     const totalKeluarRp = dataHarian.reduce((sum, d) => sum + d.keluarRp, 0);
-    const konsumsiPerHari = totalKeluarKg / jumlahHari;
-    const konsumsiPerEkor = totalAyam > 0 ? totalKeluarKg / totalAyam : 0;
+    
+    // Hitung hari yang ada pemakaian
+    const hariDenganPemakaian = dataHarian.filter(d => d.keluarKg > 0).length;
+    const konsumsiPerHari = hariDenganPemakaian > 0 ? totalKeluarKg / hariDenganPemakaian : 0;
+    const konsumsiPerEkor = totalAyam > 0 && hariDenganPemakaian > 0 ? totalKeluarKg / totalAyam / hariDenganPemakaian : 0;
     const konsumsiPerEkorGram = konsumsiPerEkor * 1000;
     const biayaPerKg = totalKeluarKg > 0 ? totalKeluarRp / totalKeluarKg : 0;
-    const biayaPerEkor = totalAyam > 0 ? totalKeluarRp / totalAyam : 0;
+    const biayaPerEkor = totalAyam > 0 && hariDenganPemakaian > 0 ? totalKeluarRp / totalAyam / hariDenganPemakaian : 0;
 
     return {
       periode: bulan,

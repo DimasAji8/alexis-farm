@@ -31,7 +31,7 @@ export class KandangController {
       const data = await KandangService.getById(id);
       return apiResponse(data, "Kandang berhasil diambil");
     } catch (error) {
-      return apiError(error, "Kandang tidak ditemukan", 404);
+      return apiError(error);
     }
   }
 
@@ -64,7 +64,7 @@ export class KandangController {
       const data = await KandangService.delete(id);
       return apiResponse(data, "Kandang berhasil dihapus");
     } catch (error) {
-      return apiError(error, "Kandang tidak ditemukan", 404);
+      return apiError(error);
     }
   }
 }

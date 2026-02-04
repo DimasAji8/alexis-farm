@@ -53,7 +53,7 @@ export class UsersController {
       const data = await UsersService.delete(id);
       return apiResponse(data, "User berhasil dihapus");
     } catch (error) {
-      return apiError(error, "User tidak ditemukan", 404);
+      return apiError(error);
     }
   }
 }

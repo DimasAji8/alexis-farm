@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { getLocalDateString } from "@/lib/date-utils";
+import { Plus, Trash2 } from "lucide-react";
 import type { CreatePengeluaranInput, PengeluaranOperasional } from "../types";
-import { useEffect, useState } from "react";
+import { useEffect, } from "react";
 
 const KATEGORI_OPTIONS = [
   "Listrik",
@@ -17,20 +20,23 @@ const KATEGORI_OPTIONS = [
   "Gaji",
   "Maintenance",
   "Transport",
+  "Vitamin, Vaksin, Obat",
   "Lainnya",
 ];
 
 type FormData = {
   tanggal: string;
-  kategori: string;
-  jumlah: string;
-  keterangan: string;
+  items: Array<{
+    kategori: string;
+    jumlah: string;
+    keterangan: string;
+  }>;
 };
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: Omit<CreatePengeluaranInput, "bukti">) => void;
+  onSubmit: (data: Omit<CreatePengeluaranInput, "bukti">[]) => void;
   isLoading: boolean;
   data?: PengeluaranOperasional | null;
 }
@@ -45,135 +51,172 @@ const parseCurrency = (value: string) => {
 };
 
 export function PengeluaranFormDialog({ open, onOpenChange, onSubmit, isLoading, data }: Props) {
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     defaultValues: {
-      tanggal: new Date().toISOString().split("T")[0],
-      kategori: "Listrik",
-      jumlah: "",
-      keterangan: "",
+      tanggal: getLocalDateString(),
+      items: [{ kategori: "Listrik", jumlah: "", keterangan: "" }],
     },
   });
 
-  const kategori = watch("kategori");
-  const [displayJumlah, setDisplayJumlah] = useState("");
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
 
   useEffect(() => {
-    if (data) {
-      setValue("tanggal", new Date(data.tanggal).toISOString().split("T")[0]);
-      setValue("kategori", data.kategori);
-      setValue("jumlah", data.jumlah.toString());
-      setDisplayJumlah(formatCurrency(data.jumlah.toString()));
-      setValue("keterangan", data.keterangan);
-    } else {
+    if (open && !data) {
       reset({
-        tanggal: new Date().toISOString().split("T")[0],
-        kategori: "Listrik",
-        jumlah: "",
-        keterangan: "",
+        tanggal: getLocalDateString(),
+        items: [{ kategori: "Listrik", jumlah: "", keterangan: "" }],
       });
-      setDisplayJumlah("");
+    } else if (data) {
+      const tanggalStr = getLocalDateString(new Date(data.tanggal));
+      reset({
+        tanggal: tanggalStr,
+        items: [{ kategori: data.kategori, jumlah: data.jumlah.toString(), keterangan: data.keterangan }],
+      });
     }
-  }, [data, setValue, reset]);
-
-  const handleJumlahChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCurrency(e.target.value);
-    setDisplayJumlah(formatted);
-    setValue("jumlah", parseCurrency(formatted));
-  };
+  }, [open, data, reset]);
 
   const handleFormSubmit = (formData: FormData) => {
-    // Validasi manual
     if (!formData.tanggal) {
       toast.error("Tanggal wajib diisi");
       return;
     }
-    if (!formData.jumlah || parseFloat(formData.jumlah) <= 0) {
-      toast.error("Jumlah harus lebih dari 0");
-      return;
-    }
-    if (!formData.keterangan || !formData.keterangan.trim()) {
-      toast.error("Keterangan wajib diisi");
-      return;
-    }
-    
-    onSubmit({
-      tanggal: new Date(formData.tanggal),
-      kategori: formData.kategori,
-      jumlah: parseFloat(formData.jumlah),
-      keterangan: formData.keterangan.trim(),
-    });
-  };
 
-  const handleFormError = () => {
-    if (errors.tanggal) {
-      toast.error("Tanggal wajib diisi");
-    } else if (errors.jumlah) {
-      toast.error("Jumlah wajib diisi");
-    } else if (errors.keterangan) {
-      toast.error("Keterangan wajib diisi");
-    }
+    const items = formData.items.map((item) => {
+      const jumlah = parseFloat(parseCurrency(item.jumlah));
+      if (!jumlah || jumlah <= 0) {
+        throw new Error("Jumlah harus lebih dari 0");
+      }
+      if (!item.keterangan?.trim()) {
+        throw new Error("Keterangan wajib diisi");
+      }
+      return {
+        tanggal: new Date(formData.tanggal),
+        kategori: item.kategori,
+        jumlah,
+        keterangan: item.keterangan.trim(),
+      };
+    });
+
+    onSubmit(items);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] p-0 gap-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>{data ? "Edit" : "Tambah"} Pengeluaran Operasional</DialogTitle>
           <DialogDescription>
             {data ? "Ubah data pengeluaran operasional" : "Tambahkan data pengeluaran operasional baru"}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit, handleFormError)} className="space-y-4">
-          <div>
-            <Label htmlFor="tanggal">Tanggal</Label>
-            <Input id="tanggal" type="date" {...register("tanggal", { required: true })} />
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 space-y-4">
+            <div>
+              <Label htmlFor="tanggal">Tanggal</Label>
+              <Controller
+                control={control}
+                name="tanggal"
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={!!errors.tanggal}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Item Pengeluaran</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ kategori: "Listrik", jumlah: "", keterangan: "" })}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Tambah Item
+                </Button>
+              </div>
+
+              {fields.map((field, index) => (
+                <div key={field.id} className="border rounded-lg p-4 space-y-3 relative">
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2 h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <div>
+                    <Label htmlFor={`items.${index}.kategori`}>Kategori</Label>
+                    <Controller
+                      control={control}
+                      name={`items.${index}.kategori`}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {KATEGORI_OPTIONS.map((k) => (
+                              <SelectItem key={k} value={k}>
+                                {k}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`items.${index}.keterangan`}>
+                      Keterangan <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      placeholder="Detail pengeluaran..."
+                      rows={2}
+                      {...register(`items.${index}.keterangan`, { required: true })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`items.${index}.jumlah`}>Jumlah (Rp)</Label>
+                    <Controller
+                      control={control}
+                      name={`items.${index}.jumlah`}
+                      render={({ field }) => (
+                        <Input
+                          type="text"
+                          placeholder="0"
+                          value={field.value ? formatCurrency(field.value) : ""}
+                          onChange={(e) => field.onChange(parseCurrency(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="kategori">Kategori</Label>
-            <Select value={kategori} onValueChange={(v) => setValue("kategori", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {KATEGORI_OPTIONS.map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {k}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="jumlah">Jumlah (Rp)</Label>
-            <Input
-              id="jumlah"
-              type="text"
-              placeholder="0"
-              value={displayJumlah}
-              onChange={handleJumlahChange}
-            />
-            <input type="hidden" {...register("jumlah", { required: true, min: 0 })} />
-          </div>
-
-          <div>
-            <Label htmlFor="keterangan">
-              Keterangan <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="keterangan"
-              placeholder="Detail pengeluaran..."
-              {...register("keterangan", { required: true })}
-            />
-          </div>
-
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-end px-6 py-4 border-t bg-muted/30">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Batal
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Menyimpan..." : "Simpan"}
+              {isLoading ? "Menyimpan..." : data ? "Simpan" : `Simpan ${fields.length} Item`}
             </Button>
           </div>
         </form>

@@ -1,6 +1,7 @@
 import { prisma } from "@/app/api/db/prisma";
 import { requireRole } from "@/app/api/shared/utils/auth-guard";
 import { NotFoundError, ValidationError } from "@/app/api/shared/utils/errors";
+import { validateJenisPakanRelations } from "@/app/api/shared/utils/relation-validator";
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan.validation";
 
 export class JenisPakanService {
@@ -72,6 +73,8 @@ export class JenisPakanService {
     if (!existing) {
       throw new NotFoundError("Jenis pakan tidak ditemukan");
     }
+
+    await validateJenisPakanRelations(id);
 
     return prisma.jenisPakan.update({
       where: { id },

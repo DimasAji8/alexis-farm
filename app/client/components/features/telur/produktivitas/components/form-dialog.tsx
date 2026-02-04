@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { FormDialog, type FieldConfig } from "@/components/shared/form-dialog";
+import { getLocalDateString } from "@/lib/date-utils";
 import type { ProduktivitasTelur, CreateProduktivitasInput } from "../types";
 
 type Props = {
@@ -39,7 +40,7 @@ export function ProduktivitasFormDialog({ open, onOpenChange, onSubmit, isLoadin
       isLoading={isLoading}
       title="Produktivitas Telur"
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split('T')[0], jumlahBagusButir: undefined as unknown as number, jumlahTidakBagusButir: undefined as unknown as number, totalKg: undefined as unknown as number, keterangan: "" }}
+      defaultValues={{ tanggal: getLocalDateString(), jumlahBagusButir: undefined as unknown as number, jumlahTidakBagusButir: undefined as unknown as number, totalKg: undefined as unknown as number, keterangan: "" }}
       editData={editData}
       columns={2}
     />

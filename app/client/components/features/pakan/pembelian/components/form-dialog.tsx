@@ -4,18 +4,14 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useJenisPakanList } from "@/components/features/jenis-pakan/hooks/use-jenis-pakan";
-import { cn } from "@/lib/utils";
+import { getLocalDateString } from "@/lib/date-utils";
 
 const formatCurrency = (value: string) => {
   const num = value.replace(/\D/g, "");
@@ -27,7 +23,7 @@ const parseCurrency = (value: string) => Number(value.replace(/\./g, "")) || 0;
 const schema = z.object({
   jenisPakanId: z.string().min(1, "Jenis pakan wajib dipilih"),
   tanggalBeli: z.string().min(1, "Tanggal wajib diisi"),
-  jumlahKg: z.number().positive("Jumlah harus lebih dari 0"),
+  jumlahKg: z.coerce.number().positive("Jumlah harus lebih dari 0"),
   hargaPerKg: z.number().positive("Harga harus lebih dari 0"),
   keterangan: z.string().optional(),
 });
@@ -45,11 +41,11 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
   const { data: jenisPakan } = useJenisPakanList(true);
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { jenisPakanId: "", tanggalBeli: new Date().toISOString().split('T')[0], jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
+    defaultValues: { jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
   });
 
   useEffect(() => {
-    if (open) reset({ jenisPakanId: "", tanggalBeli: new Date().toISOString().split('T')[0], jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
+    if (open) reset({ jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
   }, [reset, open]);
 
   return (
@@ -79,31 +75,17 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
             </div>
             <div className="grid gap-2">
               <Label htmlFor="tanggalBeli">Tanggal Beli <span className="text-red-500">*</span></Label>
-              <Controller control={control} name="tanggalBeli" render={({ field }) => (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "justify-start text-left font-normal w-full",
-                        !field.value && "text-muted-foreground",
-                        errors.tanggalBeli && "border-red-500"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(new Date(field.value), "PPP", { locale: id }) : <span>Pilih tanggal</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar 
-                      mode="single" 
-                      selected={field.value ? new Date(field.value) : undefined} 
-                      onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')} 
-                      initialFocus 
-                    />
-                  </PopoverContent>
-                </Popover>
-              )} />
+              <Controller 
+                control={control} 
+                name="tanggalBeli" 
+                render={({ field }) => (
+                  <DatePicker 
+                    value={field.value} 
+                    onChange={field.onChange} 
+                    error={!!errors.tanggalBeli} 
+                  />
+                )} 
+              />
               {errors.tanggalBeli && <p className="text-xs text-red-500">{errors.tanggalBeli.message}</p>}
             </div>
             <div className="grid gap-2">

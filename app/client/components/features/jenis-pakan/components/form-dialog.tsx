@@ -15,7 +15,7 @@ import type { JenisPakan } from "../types";
 const schema = z.object({
   kode: z.string().min(1, "Kode wajib diisi").max(20, "Maksimal 20 karakter").regex(/^[A-Z0-9]+$/, "Hanya huruf kapital dan angka"),
   nama: z.string().min(1, "Nama wajib diisi").max(100, "Maksimal 100 karakter"),
-  satuan: z.string().min(1, "Satuan wajib diisi").max(10, "Maksimal 10 karakter"),
+  satuan: z.string().default("KG"),
   keterangan: z.string().optional(),
   isActive: z.boolean(),
 });
@@ -63,9 +63,8 @@ export function JenisPakanFormDialog({ open, onOpenChange, onSubmit, isLoading, 
               {errors.nama && <p className="text-xs text-red-500">{errors.nama.message}</p>}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="satuan">Satuan <span className="text-red-500">*</span></Label>
-              <Input id="satuan" placeholder="KG" className={errors.satuan ? "border-red-500" : ""} {...register("satuan")} />
-              {errors.satuan && <p className="text-xs text-red-500">{errors.satuan.message}</p>}
+              <Label htmlFor="satuan">Satuan</Label>
+              <Input id="satuan" value="KG" disabled className="bg-muted" {...register("satuan")} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="keterangan">Keterangan</Label>

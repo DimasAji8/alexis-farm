@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { FormDialog, type FieldConfig } from "@/components/shared/form-dialog";
+import { getLocalDateString } from "@/lib/date-utils";
 import type { KematianAyam, CreateKematianInput } from "../types";
 
 type Props = {
@@ -35,7 +36,7 @@ export function KematianFormDialog({ open, onOpenChange, onSubmit, isLoading, ke
       isLoading={isLoading}
       title="Kematian Ayam"
       fields={fields}
-      defaultValues={{ tanggal: new Date().toISOString().split('T')[0], jumlahMati: undefined as unknown as number, keterangan: "" }}
+      defaultValues={{ tanggal: getLocalDateString(), jumlahMati: undefined as unknown as number, keterangan: "" }}
       editData={editData}
     />
   );
