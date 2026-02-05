@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/card";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
 const formatCurrency = (value: number) => `Rp ${(value || 0).toLocaleString("id-ID")}`;
+
+interface AktivitasItem {
+  tanggal: string;
+  jenis: string;
+  deskripsi: string;
+}
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -42,9 +47,7 @@ export default function DashboardPage() {
           <h1 className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">
             {session?.user?.name || "Pengguna"}
           </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
-            Pilih kandang terlebih dahulu untuk melihat data.
-          </p>
+          
         </div>
       </section>
     );
@@ -58,9 +61,7 @@ export default function DashboardPage() {
         <h1 className="mt-2 text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-white">
           {session?.user?.name || "Pengguna"}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          {dashboard?.kandang.nama} ({dashboard?.kandang.kode}) • {dashboard?.kandang.jumlahAyam.toLocaleString("id-ID")} ekor ayam
-        </p>
+       
       </div>
 
       {/* Stats Grid - 4 Cards Utama */}
@@ -328,7 +329,7 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">Tidak ada aktivitas</p>
           ) : (
             <div className="space-y-3">
-              {dashboard.aktivitas.map((a: any, idx: number) => (
+              {dashboard.aktivitas.map((a: AktivitasItem, idx: number) => (
                 <div key={idx} className="flex items-start gap-3 pb-3 border-b last:border-0">
                   <div className="text-xs text-muted-foreground min-w-[70px]">
                     {format(new Date(a.tanggal), "dd/MM/yyyy")}
