@@ -24,7 +24,9 @@
       "@/components": ["app/client/components"],
       "@/components/*": ["app/client/components/*"],
       "@/lib": ["app/client/lib"],
-      "@/lib/*": ["app/client/lib/*"]
+      "@/lib/*": ["app/client/lib/*"],
+      "@/hooks": ["hooks"],
+      "@/hooks/*": ["hooks/*"]
     }
   },
   "include": [

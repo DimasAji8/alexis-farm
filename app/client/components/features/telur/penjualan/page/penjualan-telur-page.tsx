@@ -10,10 +10,11 @@ import { Pagination } from "@/components/shared/pagination";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo } from "@/components/shared/data-filters";
 import { Plus, AlertCircle } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 
 import { PenjualanFormDialog } from "../components/form-dialog";
 import { usePenjualanList, useCreatePenjualan, useUpdatePenjualan, useDeletePenjualan } from "../hooks/use-penjualan";
@@ -29,19 +30,14 @@ const formatDate = (value?: string | null) => {
 
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
-const filterConfig: FilterConfig[] = [
-  { key: "bulan", label: "Bulan", type: "month" },
-  { key: "search", label: "Cari", type: "search", placeholder: "Cari pembeli..." },
-];
-
 export function PenjualanTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const { data, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId);
+  const { bulan, setBulan } = useMonthFilter();
+  const { data, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId, bulan);
   const createMutation = useCreatePenjualan();
   const updateMutation = useUpdatePenjualan();
   const deleteMutation = useDeletePenjualan();
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -50,11 +46,9 @@ export function PenjualanTelurPage() {
   const summaryParams = useMemo(() => {
     const params: Record<string, string> = { type: "summary" };
     if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (filters.bulan_month != null && filters.bulan_year != null) {
-      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
-    }
+    if (bulan) params.bulan = bulan;
     return params;
-  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+  }, [selectedKandangId, bulan]);
 
   const summaryUrl = useMemo(() => {
     const params = new URLSearchParams(summaryParams);
@@ -67,20 +61,6 @@ export function PenjualanTelurPage() {
     staleTime: 5 * 60 * 1000,
     enabled: !!selectedKandangId,
   });
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item) => {
-      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
-      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
-      if (month !== null && year !== null) {
-        const date = new Date(item.tanggal);
-        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
-      }
-      if (filters.search && !item.pembeli.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      return true;
-    });
-  }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: { kg: 0, butir: 0 } };
@@ -103,10 +83,9 @@ export function PenjualanTelurPage() {
     { key: "totalHarga", header: "Total", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400`, render: (item) => formatCurrency(item.totalHarga), skeleton: <Skeleton className="h-4 w-24 ml-auto" /> },
   ];
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil((data?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedData = data?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
 
-  const handleFilterChange = (f: Record<string, string | null>) => { setFilters(f); setCurrentPage(1); };
   const handleAdd = () => { setSelected(null); setFormOpen(true); };
   const handleEdit = (item: PenjualanTelur) => { setSelected(item); setFormOpen(true); };
   const handleDelete = (item: PenjualanTelur) => { setSelected(item); setDeleteOpen(true); };
@@ -189,11 +168,11 @@ export function PenjualanTelurPage() {
       )}
 
       <DataStats stats={stats} columns={4} />
-      <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
+      <DataFiltersMemo bulan={bulan} setBulan={setBulan} />
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={handleEdit} onDelete={handleDelete} getRowKey={(item) => item.id} />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {(data?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <PenjualanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} penjualan={selected} stokTersedia={summaryData?.stokTersedia ?? 0} />

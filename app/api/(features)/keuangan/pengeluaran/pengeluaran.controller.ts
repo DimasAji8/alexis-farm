@@ -9,9 +9,11 @@ import {
 } from "./pengeluaran.validation";
 
 export class PengeluaranOperasionalController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await PengeluaranOperasionalService.getAll();
+      const { searchParams } = new URL(req.url);
+      const bulan = searchParams.get('bulan');
+      const data = await PengeluaranOperasionalService.getAll(bulan || undefined);
       return apiResponse(data, "Pengeluaran operasional berhasil diambil");
     } catch (error) {
       return apiError(error);

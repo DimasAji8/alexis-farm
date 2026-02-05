@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchProduktivitasList, createProduktivitas, updateProduktivitas } from "./api";
 import type { CreateProduktivitasInput, UpdateProduktivitasInput } from "../types";
 
-export function useProduktivitasList(kandangId?: string | null) {
+export function useProduktivitasList(kandangId?: string | null, bulan?: string | null) {
   return useQuery({
-    queryKey: ["produktivitas-telur", kandangId],
-    queryFn: () => fetchProduktivitasList(kandangId),
+    queryKey: ["produktivitas-telur", kandangId, bulan],
+    queryFn: () => fetchProduktivitasList(kandangId, bulan),
     staleTime: 5 * 60 * 1000,
     enabled: !!kandangId,
   });

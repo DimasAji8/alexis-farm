@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +26,7 @@ interface DataFiltersProps {
 
 export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   const initialized = useRef(false);
+  const hasEmittedInitial = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState("0");
   const [currentYear, setCurrentYear] = useState("2026");
@@ -52,17 +53,33 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   };
 
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [tempFilters, setTempFilters] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
+  const filtersSnapshot = useRef<Record<string, string>>({});
 
   // Initialize filters after mount
   useEffect(() => {
     if (mounted && !initialized.current) {
       const initial = getInitialState();
       setFilters(initial);
-      emitChange(initial);
+      setTempFilters(initial);
+      filtersSnapshot.current = initial;
+      if (!hasEmittedInitial.current) {
+        emitChange(initial);
+        hasEmittedInitial.current = true;
+      }
       initialized.current = true;
     }
   }, [mounted, currentMonth, currentYear]);
+
+  // Handle popover open/close
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      filtersSnapshot.current = { ...filters };
+      setTempFilters({ ...filters });
+    }
+    setOpen(isOpen);
+  };
 
   const emitChange = (newFilters: Record<string, string>) => {
     const output: Record<string, string | null> = {};
@@ -79,15 +96,23 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   };
 
   const handleChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
-    emitChange(newFilters);
+    setTempFilters({ ...tempFilters, [key]: value });
+  };
+
+  const apply = () => {
+    setFilters({ ...tempFilters });
+    filtersSnapshot.current = { ...tempFilters };
+    emitChange(tempFilters);
+    setOpen(false);
   };
 
   const clear = () => {
     const initial = getInitialState();
+    setTempFilters(initial);
     setFilters(initial);
+    filtersSnapshot.current = initial;
     emitChange(initial);
+    setOpen(false);
   };
 
   // Count non-default filters
@@ -129,7 +154,7 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-9 gap-2">
           <Filter className="h-4 w-4" />
@@ -156,13 +181,13 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
               <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
               {f.type === "month" ? (
                 <div className="flex gap-2">
-                  <Select value={filters[`${f.key}_month`]} onValueChange={(v) => handleChange(`${f.key}_month`, v)}>
+                  <Select value={tempFilters[`${f.key}_month`]} onValueChange={(v) => handleChange(`${f.key}_month`, v)}>
                     <SelectTrigger className="h-9 text-sm flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {MONTHS.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Select value={filters[`${f.key}_year`]} onValueChange={(v) => handleChange(`${f.key}_year`, v)}>
+                  <Select value={tempFilters[`${f.key}_year`]} onValueChange={(v) => handleChange(`${f.key}_year`, v)}>
                     <SelectTrigger className="h-9 text-sm w-24"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
@@ -172,12 +197,12 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
               ) : f.type === "search" ? (
                 <Input
                   placeholder={f.placeholder || "Cari..."}
-                  value={filters[f.key]}
+                  value={tempFilters[f.key]}
                   onChange={(e) => handleChange(f.key, e.target.value)}
                   className="h-9 text-sm"
                 />
               ) : (
-                <Select value={filters[f.key]} onValueChange={(v) => handleChange(f.key, v)}>
+                <Select value={tempFilters[f.key]} onValueChange={(v) => handleChange(f.key, v)}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua</SelectItem>
@@ -187,8 +212,22 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
               )}
             </div>
           ))}
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="flex-1 h-8">
+              Batal
+            </Button>
+            <Button size="sm" onClick={apply} className="flex-1 h-8">
+              Terapkan
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
   );
 }
+
+// Memoize to prevent unnecessary remounts
+export const DataFiltersMemo = memo(DataFilters, (prev, next) => {
+  // Only re-render if config structure changes (not reference)
+  return JSON.stringify(prev.config) === JSON.stringify(next.config);
+});

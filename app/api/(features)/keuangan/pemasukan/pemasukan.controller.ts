@@ -4,9 +4,11 @@ import { PemasukanService } from "./pemasukan.service";
 import { createPemasukanSchema, updatePemasukanSchema } from "./pemasukan.validation";
 
 export class PemasukanController {
-  static async getAll() {
+  static async getAll(req: NextRequest) {
     try {
-      const data = await PemasukanService.getAll();
+      const { searchParams } = new URL(req.url);
+      const bulan = searchParams.get('bulan');
+      const data = await PemasukanService.getAll(bulan || undefined);
       return apiResponse(data, "Daftar pemasukan berhasil diambil");
     } catch (error) {
       return apiError(error);

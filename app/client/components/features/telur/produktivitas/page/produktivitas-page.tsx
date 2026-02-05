@@ -8,11 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/shared/pagination";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo } from "@/components/shared/data-filters";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
 import { useApi } from "@/hooks/use-api";
 
@@ -28,30 +29,23 @@ const formatDate = (value?: string | null) => {
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 };
 
-const filterConfig: FilterConfig[] = [
-  { key: "bulan", label: "Bulan", type: "month" },
-];
-
 export function ProduktivitasPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const { data, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId);
+  const { bulan } = useMonthFilter();
+  const { data, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId, bulan);
   const createMutation = useCreateProduktivitas();
   const updateMutation = useUpdateProduktivitas();
 
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
 
   // Fetch summary from backend
-  const bulanParam = filters.bulan_year && filters.bulan_month != null
-    ? `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`
-    : null;
-  const summaryUrl = selectedKandangId && bulanParam
-    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${bulanParam}`
+  const summaryUrl = selectedKandangId && bulan
+    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${bulan}`
     : selectedKandangId
     ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}`
     : null;
@@ -63,19 +57,6 @@ export function ProduktivitasPage() {
     rataRataHarian: number;
     persentaseHenDay: number;
   }>(summaryUrl || "");
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item) => {
-      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
-      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
-      if (month !== null && year !== null) {
-        const date = new Date(item.tanggal);
-        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
-      }
-      return true;
-    });
-  }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
     if (!summary) return [
@@ -104,8 +85,8 @@ export function ProduktivitasPage() {
     { key: "totalKg", header: "Berat (kg)", headerClassName: "text-center", className: `${styles.table.cellSecondary} text-center tabular-nums`, render: (item) => item.totalKg.toLocaleString("id-ID", { maximumFractionDigits: 2 }), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
   ];
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil((data?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedData = data?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
 
   const handleFormSubmit = (formData: Omit<CreateProduktivitasInput, "kandangId">) => {
     const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
@@ -152,11 +133,11 @@ export function ProduktivitasPage() {
       </div>
 
       <DataStats stats={stats} columns={5} />
-      <DataFilters config={filterConfig} onFilterChange={f => { setFilters(f); setCurrentPage(1); }} />
+      <DataFiltersMemo />
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} getRowKey={(item) => item.id} showActions />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {(data?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <ProduktivitasFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} />

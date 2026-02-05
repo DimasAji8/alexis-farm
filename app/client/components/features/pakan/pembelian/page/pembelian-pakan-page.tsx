@@ -7,10 +7,11 @@ import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo as DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { Plus } from "lucide-react";
 
 import { useApiList } from "@/hooks/use-api";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useJenisPakanList } from "@/components/features/jenis-pakan/hooks/use-jenis-pakan";
 import { PembelianPakanFormDialog } from "../components/form-dialog";
 import { PembelianPakanSkeleton } from "../components/pembelian-pakan-skeleton";
@@ -27,16 +28,17 @@ const formatDate = (value?: string) => {
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export function PembelianPakanPage() {
-  const { data, isLoading } = usePembelianPakanList();
-  const { data: jenisPakan } = useJenisPakanList(true);
-  const createMutation = useCreatePembelianPakan();
-
-  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan: null, jenisPakanId: null });
+  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: null, bulan_year: null, jenisPakanId: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
 
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  const { data, isLoading } = usePembelianPakanList(bulanFilter, filters.jenisPakanId);
+  const { data: jenisPakan } = useJenisPakanList(true);
+  const createMutation = useCreatePembelianPakan();
+
   // Fetch summary from backend
-  const summaryUrl = `/api/pakan/pembelian?type=summary${filters.bulan ? `&bulan=${filters.bulan}` : ""}${filters.jenisPakanId ? `&jenisPakanId=${filters.jenisPakanId}` : ""}`;
+  const summaryUrl = `/api/pakan/pembelian?type=summary${bulanFilter ? `&bulan=${bulanFilter}` : ""}${filters.jenisPakanId ? `&jenisPakanId=${filters.jenisPakanId}` : ""}`;
   const { data: summary } = useApiList<any>(summaryUrl);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
@@ -48,23 +50,11 @@ export function PembelianPakanPage() {
       placeholder: "Semua Jenis",
       options: jenisPakan?.map(jp => ({ value: jp.id, label: jp.nama })) || []
     },
-  ], [jenisPakan]);
+  ], [jenisPakan?.length]); // Only re-create when length changes, not the array itself
 
   const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item) => {
-      const matchJenis = !filters.jenisPakanId || item.jenisPakanId === filters.jenisPakanId;
-      
-      let matchBulan = true;
-      if (filters.bulan) {
-        const itemDate = new Date(item.tanggalBeli);
-        const [year, month] = filters.bulan.split("-");
-        matchBulan = itemDate.getFullYear() === parseInt(year) && (itemDate.getMonth() + 1) === parseInt(month);
-      }
-      
-      return matchJenis && matchBulan;
-    });
-  }, [data, filters]);
+    return data || [];
+  }, [data]);
 
   const stats: StatItem[] = useMemo(() => {
     if (!summary || Array.isArray(summary)) return [

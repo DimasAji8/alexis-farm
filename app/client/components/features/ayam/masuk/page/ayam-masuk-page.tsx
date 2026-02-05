@@ -10,11 +10,12 @@ import { Pagination } from "@/components/shared/pagination";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo as DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
 
 import { AyamMasukFormDialog } from "../components/form-dialog";
@@ -36,14 +37,16 @@ const filterConfig: FilterConfig[] = [
 export function AyamMasukPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const { data, isLoading, isError, error, refetch } = useAyamMasukList(selectedKandangId);
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  const { data, isLoading, isError, error, refetch } = useAyamMasukList(selectedKandangId, bulanFilter);
   const createMutation = useCreateAyamMasuk();
   const updateMutation = useUpdateAyamMasuk();
   const deleteMutation = useDeleteAyamMasuk();
 
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -52,11 +55,9 @@ export function AyamMasukPage() {
   const summaryParams = useMemo(() => {
     const params: Record<string, string> = { type: "summary" };
     if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (filters.bulan_month != null && filters.bulan_year != null) {
-      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
-    }
+    if (bulanFilter) params.bulan = bulanFilter;
     return params;
-  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+  }, [selectedKandangId, bulanFilter]);
 
   const summaryUrl = useMemo(() => {
     const params = new URLSearchParams(summaryParams);
@@ -69,19 +70,6 @@ export function AyamMasukPage() {
     staleTime: 5 * 60 * 1000,
     enabled: !!selectedKandangId,
   });
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter(item => {
-      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
-      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
-      if (month !== null && year !== null) {
-        const date = new Date(item.tanggal);
-        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
-      }
-      return true;
-    });
-  }, [data, filters]);
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalMasuk: 0, totalMasukBulanIni: 0, rataRataPerHari: 0, totalTransaksi: 0 };
@@ -98,8 +86,8 @@ export function AyamMasukPage() {
     { key: "jumlah", header: "Jumlah", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums text-emerald-600`, render: item => item.jumlahAyam.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 ml-auto" /> },
   ];
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil((data?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedData = data?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
 
   const handleFormSubmit = (formData: Omit<CreateAyamMasukInput, "kandangId">) => {
     const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
@@ -151,7 +139,7 @@ export function AyamMasukPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} onDelete={item => { setSelected(item); setDeleteOpen(true); }} getRowKey={item => item.id} />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {(data?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <AyamMasukFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} />

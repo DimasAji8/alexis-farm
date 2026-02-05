@@ -11,14 +11,14 @@ export class ProduksiTelurController {
       const { searchParams } = req.nextUrl;
       const type = searchParams.get("type");
       const kandangId = searchParams.get("kandangId") || undefined;
+      const bulan = searchParams.get("bulan") || undefined;
       
       if (type === "summary" && kandangId) {
-        const bulan = searchParams.get("bulan") || undefined;
         const data = await ProduksiTelurService.getSummary(kandangId, bulan);
         return apiResponse(data, "Summary berhasil diambil");
       }
       
-      const data = await ProduksiTelurService.getAll(kandangId);
+      const data = await ProduksiTelurService.getAll(kandangId, bulan);
       return apiResponse(data, "Produksi telur berhasil diambil");
     } catch (error) {
       return apiError(error);

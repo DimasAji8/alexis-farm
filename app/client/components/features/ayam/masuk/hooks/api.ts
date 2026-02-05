@@ -1,9 +1,12 @@
 import { apiClient } from "@/lib/api-client";
 import type { AyamMasuk, CreateAyamMasukInput, UpdateAyamMasukInput } from "../types";
 
-export async function fetchAyamMasukList(kandangId?: string | null): Promise<AyamMasuk[]> {
-  const params = kandangId ? `?kandangId=${kandangId}` : "";
-  const response = await apiClient<AyamMasuk[]>(`/api/ayam/masuk${params}`);
+export async function fetchAyamMasukList(kandangId?: string | null, bulan?: string | null): Promise<AyamMasuk[]> {
+  const params = new URLSearchParams();
+  if (kandangId) params.set("kandangId", kandangId);
+  if (bulan) params.set("bulan", bulan);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const response = await apiClient<AyamMasuk[]>(`/api/ayam/masuk${query}`);
   return response.data;
 }
 

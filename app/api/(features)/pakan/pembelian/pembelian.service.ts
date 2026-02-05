@@ -6,8 +6,22 @@ import { validatePembelianPakanRelations } from "@/app/api/shared/utils/relation
 import type { CreatePembelianPakanInput, UpdatePembelianPakanInput } from "./pembelian.validation";
 
 export class PembelianPakanService {
-  static async getAll() {
+  static async getAll(bulan?: string, jenisPakanId?: string) {
+    const where: any = {};
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggalBeli = { gte: startDate, lte: endDate };
+    }
+    
+    if (jenisPakanId) {
+      where.jenisPakanId = jenisPakanId;
+    }
+
     return prisma.pembelianPakan.findMany({
+      where,
       orderBy: { tanggalBeli: "asc" },
       include: {
         jenisPakan: { select: { id: true, kode: true, nama: true, satuan: true } },

@@ -10,15 +10,15 @@ export class PembelianPakanController {
     try {
       const { searchParams } = new URL(req.url);
       const type = searchParams.get("type");
+      const bulan = searchParams.get("bulan") || undefined;
+      const jenisPakanId = searchParams.get("jenisPakanId") || undefined;
       
       if (type === "summary") {
-        const bulan = searchParams.get("bulan") || undefined;
-        const jenisPakanId = searchParams.get("jenisPakanId") || undefined;
         const data = await PembelianPakanService.getSummary(bulan, jenisPakanId);
         return apiResponse(data, "Summary berhasil diambil");
       }
       
-      const data = await PembelianPakanService.getAll();
+      const data = await PembelianPakanService.getAll(bulan, jenisPakanId);
       return apiResponse(data, "Pembelian pakan berhasil diambil");
     } catch (error) {
       return apiError(error);

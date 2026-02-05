@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchKematianList, createKematian, updateKematian, deleteKematian } from "./api";
 import type { CreateKematianInput, UpdateKematianInput } from "../types";
 
-export function useKematianList(kandangId?: string | null) {
+export function useKematianList(kandangId?: string | null, bulan?: string | null) {
   return useQuery({
-    queryKey: ["kematian", kandangId],
-    queryFn: () => fetchKematianList(kandangId),
+    queryKey: ["kematian", kandangId, bulan],
+    queryFn: () => fetchKematianList(kandangId, bulan),
     staleTime: 5 * 60 * 1000,
     enabled: !!kandangId,
   });

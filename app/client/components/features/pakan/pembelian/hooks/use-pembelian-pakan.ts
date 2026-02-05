@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchPembelianPakanList, createPembelianPakan, updatePembelianPakan, deletePembelianPakan } from "./api";
 
-export function usePembelianPakanList() {
+export function usePembelianPakanList(bulan?: string | null, jenisPakanId?: string | null) {
   return useQuery({ 
-    queryKey: ["pembelian-pakan"], 
-    queryFn: fetchPembelianPakanList,
+    queryKey: ["pembelian-pakan", bulan, jenisPakanId], 
+    queryFn: () => fetchPembelianPakanList(bulan, jenisPakanId),
     staleTime: 5 * 60 * 1000, // 5 menit
   });
 }

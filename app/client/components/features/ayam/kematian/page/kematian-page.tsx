@@ -10,10 +10,11 @@ import { Pagination } from "@/components/shared/pagination";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo as DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
 
 import { KematianFormDialog } from "../components/form-dialog";
@@ -35,14 +36,16 @@ const filterConfig: FilterConfig[] = [
 export function KematianPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const { data, isLoading, isError, error, refetch } = useKematianList(selectedKandangId);
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  const { data, isLoading, isError, error, refetch } = useKematianList(selectedKandangId, bulanFilter);
   const createMutation = useCreateKematian();
   const updateMutation = useUpdateKematian();
   const deleteMutation = useDeleteKematian();
 
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -51,11 +54,9 @@ export function KematianPage() {
   const summaryParams = useMemo(() => {
     const params: Record<string, string> = { type: "summary" };
     if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (filters.bulan_month != null && filters.bulan_year != null) {
-      params.bulan = `${filters.bulan_year}-${String(Number(filters.bulan_month) + 1).padStart(2, "0")}`;
-    }
+    if (bulanFilter) params.bulan = bulanFilter;
     return params;
-  }, [selectedKandangId, filters.bulan_month, filters.bulan_year]);
+  }, [selectedKandangId, bulanFilter]);
 
   const summaryUrl = useMemo(() => {
     const params = new URLSearchParams(summaryParams);
@@ -70,17 +71,8 @@ export function KematianPage() {
   });
 
   const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((item) => {
-      const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
-      const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
-      if (month !== null && year !== null) {
-        const date = new Date(item.tanggal);
-        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
-      }
-      return true;
-    });
-  }, [data, filters]);
+    return data || [];
+  }, [data]);
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalKematian: 0, totalKematianBulanIni: 0, persentaseKematian: 0, rataRataPerHari: 0 };

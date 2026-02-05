@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DataFiltersMemo, type FilterConfig } from "@/components/shared/data-filters";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { styles } from "@/lib/styles";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 
 import { PemasukanFormDialog } from "../components/form-dialog";
 import { usePemasukanList, useCreatePemasukan, useUpdatePemasukan, useDeletePemasukan } from "../hooks/use-pemasukan";
@@ -28,35 +29,18 @@ const filterConfig: FilterConfig[] = [
 ];
 
 export function PemasukanPage() {
-  const { data, isLoading, isError, error, refetch } = usePemasukanList();
+  const { bulan, setBulan } = useMonthFilter();
+  const { data, isLoading, isError, error, refetch } = usePemasukanList(bulan);
   const createMutation = useCreatePemasukan();
   const updateMutation = useUpdatePemasukan();
   const deleteMutation = useDeletePemasukan();
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<Pemasukan | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Pemasukan | null>(null);
 
-  const { filteredData, totalPemasukan } = useMemo(() => {
-    if (!data) return { filteredData: [], totalPemasukan: 0 };
-
-    const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
-    const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
-
-    const filtered = data.filter((item) => {
-      if (month !== null && year !== null) {
-        const date = new Date(item.tanggal);
-        if (date.getMonth() !== month || date.getFullYear() !== year) return false;
-      }
-      return true;
-    });
-
-    const total = filtered.reduce((sum, item) => sum + item.jumlah, 0);
-
-    return { filteredData: filtered, totalPemasukan: total };
-  }, [data, filters]);
+  const totalPemasukan = data?.reduce((sum, item) => sum + item.jumlah, 0) || 0;
 
   const handleFormSubmit = (formData: Omit<CreatePemasukanInput, "bukti">[]) => {
     if (selected) {
@@ -165,7 +149,7 @@ export function PemasukanPage() {
         </Button>
       </div>
 
-      <DataFilters config={filterConfig} onFilterChange={(f) => setFilters(f)} />
+      <DataFiltersMemo config={filterConfig} onFilterChange={(filters) => setBulan(filters.bulan_month, filters.bulan_year)} />
 
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col rounded-lg overflow-hidden border" style={{ height: "calc(100vh - 320px)", minHeight: "500px" }}>
@@ -188,14 +172,14 @@ export function PemasukanPage() {
                       Loading...
                     </td>
                   </tr>
-                ) : filteredData.length === 0 ? (
+                ) : !data || data.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center p-4 text-muted-foreground">
                       Tidak ada data
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((item, idx) => (
+                  data.map((item, idx) => (
                     <tr key={item.id} className="border-b hover:bg-muted/50">
                       <td className="p-3 text-center text-muted-foreground">{idx + 1}</td>
                       <td className="p-3">{formatDate(item.tanggal)}</td>

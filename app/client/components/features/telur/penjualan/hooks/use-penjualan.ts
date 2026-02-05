@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchPenjualanList, createPenjualan, updatePenjualan, deletePenjualan } from "./api";
 import type { CreatePenjualanInput, UpdatePenjualanInput } from "../types";
 
-export function usePenjualanList(kandangId?: string | null) {
+export function usePenjualanList(kandangId?: string | null, bulan?: string | null) {
   return useQuery({
-    queryKey: ["penjualan-telur", kandangId],
-    queryFn: () => fetchPenjualanList(kandangId),
+    queryKey: ["penjualan-telur", kandangId, bulan],
+    queryFn: () => fetchPenjualanList(kandangId, bulan),
     staleTime: 5 * 60 * 1000,
     enabled: !!kandangId,
   });

@@ -8,8 +8,22 @@ import type {
 } from "./pengeluaran.validation";
 
 export class PengeluaranOperasionalService {
-  static async getAll() {
+  static async getAll(bulan?: string) {
+    const where: any = {};
+    
+    if (bulan) {
+      const [year, month] = bulan.split('-');
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+      
+      where.tanggal = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
     return prisma.pengeluaranOperasional.findMany({
+      where,
       orderBy: { tanggal: "asc" },
     });
   }

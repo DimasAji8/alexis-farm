@@ -8,9 +8,18 @@ import { StockTelurService } from "../stock/stock.service";
 import type { CreatePenjualanTelurInput, UpdatePenjualanTelurInput } from "./penjualan.validation";
 
 export class PenjualanTelurService {
-  static async getAll(kandangId?: string) {
+  static async getAll(kandangId?: string, bulan?: string) {
+    const where: any = kandangId ? { kandangId } : {};
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+    }
+
     return prisma.penjualanTelur.findMany({
-      where: kandangId ? { kandangId } : undefined,
+      where,
       orderBy: { tanggal: "asc" },
       include: { kandang: { select: { id: true, kode: true, nama: true } } },
     });
