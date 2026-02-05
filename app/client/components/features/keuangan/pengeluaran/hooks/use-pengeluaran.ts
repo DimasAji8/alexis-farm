@@ -4,11 +4,11 @@ import { API_ENDPOINTS } from "./api";
 
 const QUERY_KEY = "pengeluaran-operasional";
 
-export function usePengeluaranList(bulan?: string) {
+export function usePengeluaranList(bulan?: string | null) {
   return useQuery<PengeluaranOperasional[]>({
     queryKey: [QUERY_KEY, bulan],
     queryFn: async () => {
-      const res = await fetch(API_ENDPOINTS.getAll(bulan));
+      const res = await fetch(API_ENDPOINTS.getAll(bulan || undefined));
       if (!res.ok) throw new Error("Gagal mengambil data");
       const json = await res.json();
       return json.data;

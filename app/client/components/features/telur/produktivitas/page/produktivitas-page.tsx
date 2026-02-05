@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,14 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/shared/pagination";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
-import { DataFiltersMemo } from "@/components/shared/data-filters";
+import { DataFiltersMemo, type FilterConfig } from "@/components/shared/data-filters";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
 import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useKandangList } from "@/components/features/kandang/hooks/use-kandang";
-import { useApi } from "@/hooks/use-api";
 
 import { ProduktivitasFormDialog } from "../components/form-dialog";
 import { useProduktivitasList, useCreateProduktivitas, useUpdateProduktivitas } from "../hooks/use-produktivitas";
@@ -29,34 +29,43 @@ const formatDate = (value?: string | null) => {
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 };
 
+const filterConfig: FilterConfig[] = [
+  { key: "bulan", label: "Bulan", type: "month" },
+];
+
 export function ProduktivitasPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const { bulan } = useMonthFilter();
-  const { data, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId, bulan);
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  const { data, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId, bulanFilter);
   const createMutation = useCreateProduktivitas();
   const updateMutation = useUpdateProduktivitas();
-
-  const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
 
-  // Fetch summary from backend
-  const summaryUrl = selectedKandangId && bulan
-    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}&bulan=${bulan}`
-    : selectedKandangId
-    ? `/api/telur/produksi?type=summary&kandangId=${selectedKandangId}`
-    : null;
-  const { data: summary } = useApi<{
-    totalBagus: number;
-    totalTidakBagus: number;
-    totalButir: number;
-    totalKg: number;
-    rataRataHarian: number;
-    persentaseHenDay: number;
-  }>(summaryUrl || "");
+  const summaryParams = useMemo(() => {
+    const params: Record<string, string> = { type: "summary" };
+    if (selectedKandangId) params.kandangId = selectedKandangId;
+    if (bulanFilter) params.bulan = bulanFilter;
+    return params;
+  }, [selectedKandangId, bulanFilter]);
+
+  const summaryUrl = useMemo(() => {
+    const params = new URLSearchParams(summaryParams);
+    return `/api/telur/produksi?${params.toString()}`;
+  }, [summaryParams]);
+
+  const { data: summary } = useQuery({
+    queryKey: ["produktivitas-telur-summary", summaryParams],
+    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!selectedKandangId,
+  });
+
+  const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
   const stats: StatItem[] = useMemo(() => {
     if (!summary) return [
@@ -133,7 +142,7 @@ export function ProduktivitasPage() {
       </div>
 
       <DataStats stats={stats} columns={5} />
-      <DataFiltersMemo />
+      <DataFiltersMemo config={filterConfig} onFilterChange={setFilters} />
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} getRowKey={(item) => item.id} showActions />

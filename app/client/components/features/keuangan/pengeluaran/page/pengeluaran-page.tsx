@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,18 +31,21 @@ const filterConfig: FilterConfig[] = [
 
 export function PengeluaranPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const { bulan, setBulan } = useMonthFilter();
-  const { data, isLoading, isError, error, refetch } = usePengeluaranList(bulan);
+  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  const { data, isLoading, isError, error, refetch } = usePengeluaranList(bulanFilter);
   const createMutation = useCreatePengeluaran();
   const updateMutation = useUpdatePengeluaran();
   const deleteMutation = useDeletePengeluaran();
 
+  const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<PengeluaranOperasional | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<PengeluaranOperasional | null>(null);
 
-  const totalPengeluaran = data?.reduce((sum, item) => sum + item.jumlah, 0) || 0;
+  const filteredData = useMemo(() => data || [], [data]);
+  const totalPengeluaran = filteredData.reduce((sum, item) => sum + item.jumlah, 0);
 
   const handleFormSubmit = (formData: Omit<CreatePengeluaranInput, "bukti" | "kandangId">[]) => {
     if (!selectedKandangId) {
@@ -156,7 +159,7 @@ export function PengeluaranPage() {
         </Button>
       </div>
 
-      <DataFiltersMemo config={filterConfig} onFilterChange={(filters) => setBulan(filters.bulan_month, filters.bulan_year)} />
+      <DataFiltersMemo config={filterConfig} onFilterChange={setFilters} />
 
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col rounded-lg overflow-hidden border" style={{ height: "calc(100vh - 320px)", minHeight: "500px" }}>
