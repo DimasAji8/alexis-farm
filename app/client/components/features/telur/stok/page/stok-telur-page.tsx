@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { styles } from "@/lib/styles";
 import { Package, ArrowRight } from "lucide-react";
@@ -117,18 +117,7 @@ export function StokTelurPage() {
   const handleFilterChange = (f: Record<string, string | null>) => setFilters(f);
 
   if (isLoading && !data) {
-    return (
-      <section className="space-y-6">
-        <div>
-          <div className={styles.pageHeader.eyebrow}>Telur</div>
-          <h1 className={styles.pageHeader.title}>Stok Telur</h1>
-          <p className={styles.pageHeader.description}>Posisi stok telur per kandang.</p>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1,2,3].map((i) => <Card key={i} className="p-6"><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-8 w-16" /></Card>)}
-        </div>
-      </section>
-    );
+    return <PageSkeleton eyebrow="Telur" title="Stok Telur" description="Pantau stok telur per kandang." statsCount={4} statsColumns={2} tableColumns={4} />;
   }
 
   if (isError) {

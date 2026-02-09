@@ -39,8 +39,12 @@ export class ProduksiTelurService {
     // Get filtered data
     const data = await prisma.produksiTelur.findMany({
       where,
-      include: {
-        kandang: { select: { jumlahAyam: true } },
+      select: {
+        jumlahBagusButir: true,
+        jumlahTidakBagusButir: true,
+        totalButir: true,
+        totalKg: true,
+        jumlahAyam: true,
       },
     });
 
@@ -54,10 +58,12 @@ export class ProduksiTelurService {
     const jumlahHari = data.length;
     const rataRataHarian = jumlahHari > 0 ? totalButir / jumlahHari : 0;
     
-    // Calculate persentase hen-day (jika ada data jumlah ayam)
-    const jumlahAyam = data[0]?.kandang.jumlahAyam || 0;
-    const persentaseHenDay = jumlahAyam > 0 && jumlahHari > 0 
-      ? (totalButir / (jumlahAyam * jumlahHari)) * 100 
+    // Calculate persentase hen-day: rata-rata hen-day per hari
+    const henDayPerHari = data.map(item => 
+      item.jumlahAyam > 0 ? (item.totalButir / item.jumlahAyam) * 100 : 0
+    );
+    const persentaseHenDay = henDayPerHari.length > 0
+      ? henDayPerHari.reduce((sum, hd) => sum + hd, 0) / henDayPerHari.length
       : 0;
 
     return {
@@ -96,6 +102,7 @@ export class ProduksiTelurService {
         data: {
           kandangId: data.kandangId,
           tanggal: data.tanggal,
+          jumlahAyam: kandang.jumlahAyam,
           jumlahBagusButir: data.jumlahBagusButir,
           jumlahTidakBagusButir: data.jumlahTidakBagusButir,
           totalButir,

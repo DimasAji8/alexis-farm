@@ -58,9 +58,27 @@ export function ProduktivitasPage() {
     return `/api/telur/produksi?${params.toString()}`;
   }, [summaryParams]);
 
-  const { data: summary } = useQuery({
+  const { data: summary = {
+    totalBagus: 0,
+    totalTidakBagus: 0,
+    totalButir: 0,
+    totalKg: 0,
+    rataRataHarian: 0,
+    persentaseHenDay: 0,
+  } } = useQuery({
     queryKey: ["produktivitas-telur-summary", summaryParams],
-    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
+    queryFn: async () => {
+      const res = await fetch(summaryUrl);
+      const json = await res.json();
+      return json.data || {
+        totalBagus: 0,
+        totalTidakBagus: 0,
+        totalButir: 0,
+        totalKg: 0,
+        rataRataHarian: 0,
+        persentaseHenDay: 0,
+      };
+    },
     staleTime: 5 * 60 * 1000,
     enabled: !!selectedKandangId,
   });
@@ -112,7 +130,7 @@ export function ProduktivitasPage() {
     }
   };
 
-  if (isLoading && !data) {
+  if (!selectedKandangId || (isLoading && !data)) {
     return <PageSkeleton eyebrow="Telur" title="Produktivitas Telur" description="Catat dan kelola produktivitas telur harian." statsCount={5} statsColumns={5} tableColumns={6} />;
   }
 

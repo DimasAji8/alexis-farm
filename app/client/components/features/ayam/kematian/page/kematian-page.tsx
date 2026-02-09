@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
@@ -121,22 +122,8 @@ export function KematianPage() {
     });
   };
 
-  if (isLoading && !data) {
-    return (
-      <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className={styles.pageHeader.eyebrow}>Ayam</div>
-            <h1 className={styles.pageHeader.title}>Kematian Ayam</h1>
-            <p className={styles.pageHeader.description}>Rekap data kematian ayam di kandang.</p>
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[1,2,3].map((i) => <Card key={i} className="p-6"><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-8 w-12" /></Card>)}
-        </div>
-      </section>
-    );
+  if (!selectedKandangId || (isLoading && !data)) {
+    return <PageSkeleton eyebrow="Ayam" title="Kematian Ayam" description="Rekap data kematian ayam di kandang." statsCount={3} statsColumns={3} tableColumns={4} />;
   }
 
   if (isError) {

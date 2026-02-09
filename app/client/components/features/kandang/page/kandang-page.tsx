@@ -11,6 +11,7 @@ import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
 
@@ -118,21 +119,14 @@ export function KandangPage() {
 
   if (showSkeleton) {
     return (
-      <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className={styles.pageHeader.eyebrow}>Master Data</div>
-            <h1 className={styles.pageHeader.title}>Kandang</h1>
-            <p className={styles.pageHeader.description}>Kelola data kandang, kapasitas, dan status operasional.</p>
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {[1,2,3,4,5].map((i) => <Card key={i} className="p-6"><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-8 w-12" /></Card>)}
-        </div>
-        <Card className="p-6"><div className="flex gap-4"><Skeleton className="h-10 flex-1" /><Skeleton className="h-10 w-40" /></div></Card>
-        <Card className="border-0 shadow-sm overflow-hidden"><DataTable data={[]} columns={columns} isLoading getRowKey={() => ""} showActions={false} /></Card>
-      </section>
+      <PageSkeleton
+        eyebrow="Master Data"
+        title="Kandang"
+        description="Kelola data kandang, kapasitas, dan status operasional."
+        statsCount={0}
+        tableColumns={5}
+        showFilter={false}
+      />
     );
   }
 

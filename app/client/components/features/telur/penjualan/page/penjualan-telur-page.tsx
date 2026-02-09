@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/shared/pagination";
@@ -121,22 +122,8 @@ export function PenjualanTelurPage() {
     });
   };
 
-  if (isLoading && !data) {
-    return (
-      <section className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className={styles.pageHeader.eyebrow}>Telur</div>
-            <h1 className={styles.pageHeader.title}>Penjualan Telur</h1>
-            <p className={styles.pageHeader.description}>Catat transaksi penjualan telur.</p>
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[1,2,3,4].map((i) => <Card key={i} className="p-6"><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-8 w-16" /></Card>)}
-        </div>
-      </section>
-    );
+  if (!selectedKandangId || (isLoading && !data)) {
+    return <PageSkeleton eyebrow="Telur" title="Penjualan Telur" description="Catat transaksi penjualan telur." statsCount={4} statsColumns={4} tableColumns={7} />;
   }
 
   if (isError) {
@@ -184,7 +171,7 @@ export function PenjualanTelurPage() {
       </Card>
 
       <PenjualanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} penjualan={selected} stokTersedia={summaryData?.stokTersedia ?? 0} />
-      <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} isLoading={deleteMutation.isPending} title="Hapus Transaksi" description={`Hapus transaksi ${selected?.nomorTransaksi}? Stok ${selected?.beratKg} kg akan dikembalikan.`} />
+      <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} isLoading={deleteMutation.isPending} title="Hapus Transaksi" description={`Hapus transaksi ini? Stok ${selected?.beratKg} kg akan dikembalikan.`} />
     </section>
   );
 }

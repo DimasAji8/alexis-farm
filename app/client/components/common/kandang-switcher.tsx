@@ -28,10 +28,13 @@ export function KandangSwitcher() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className={cn(
-          "flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent transition-colors",
-          isCollapsed && "justify-center px-2"
-        )}>
+        <button 
+          type="button"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent transition-colors",
+            isCollapsed && "justify-center px-2"
+          )}
+        >
           {isGlobal ? (
             <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
           ) : (

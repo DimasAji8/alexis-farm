@@ -43,7 +43,7 @@ export class JenisPakanService {
   }
 
   static async update(id: string, data: UpdateJenisPakanInput) {
-    const userId = await requireRole(["super_user", "staff"]);
+    const userId = await requireRole(["super_user", "manager", "staff"]);
     
     const existing = await prisma.jenisPakan.findUnique({ where: { id } });
     if (!existing) {

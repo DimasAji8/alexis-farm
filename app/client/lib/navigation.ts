@@ -56,7 +56,7 @@ export const dashboardNavItems: SidebarNavItem[] = [
       {
         title: "Penjualan",
         href: "/client/dashboard/telur/penjualan",
-        roles: ["super_user", "manager"], // Staff tidak bisa akses penjualan
+        roles: ["super_user", "manager", "staff"],
       },
       {
         title: "Stok Telur",

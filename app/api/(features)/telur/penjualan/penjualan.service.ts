@@ -103,7 +103,7 @@ export class PenjualanTelurService {
   }
 
   static async create(data: CreatePenjualanTelurInput) {
-    const userId = await requireRole(["super_user", "staff"]);
+    const userId = await requireRole(["super_user", "manager", "staff"]);
     const totalHarga = data.beratKg * data.hargaPerKg;
     const uangMasuk = data.uangMasuk ?? totalHarga;
     const uangKeluar = data.uangKeluar ?? 0;
@@ -170,7 +170,7 @@ export class PenjualanTelurService {
   }
 
   static async update(id: string, data: UpdatePenjualanTelurInput) {
-    const userId = await requireRole(["super_user", "staff"]);
+    const userId = await requireRole(["super_user", "manager", "staff"]);
     return prisma.$transaction(async (tx) => {
       const existing = await tx.penjualanTelur.findUnique({ where: { id } });
       if (!existing) {
@@ -253,7 +253,7 @@ export class PenjualanTelurService {
   }
 
   static async delete(id: string) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     return prisma.$transaction(async (tx) => {
       const existing = await tx.penjualanTelur.findUnique({ where: { id } });
       if (!existing) {

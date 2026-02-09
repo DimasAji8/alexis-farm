@@ -44,7 +44,7 @@ export class TransaksiKeuanganService {
   }
 
   static async create(data: CreateTransaksiKeuanganInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     return prisma.transaksiKeuangan.create({
       data: {
         tanggal: data.tanggal,
@@ -59,7 +59,7 @@ export class TransaksiKeuanganService {
   }
 
   static async update(id: string, data: UpdateTransaksiKeuanganInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.transaksiKeuangan.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Transaksi keuangan tidak ditemukan");
@@ -80,7 +80,7 @@ export class TransaksiKeuanganService {
   }
 
   static async delete(id: string) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.transaksiKeuangan.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Transaksi keuangan tidak ditemukan");

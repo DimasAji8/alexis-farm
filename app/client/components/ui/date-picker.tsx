@@ -30,13 +30,15 @@ export function DatePicker({ value, onChange, placeholder = "Pilih tanggal", err
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(new Date(value + 'T00:00:00'), "PPP", { locale: id }) : <span>{placeholder}</span>}
+          {value && !isNaN(new Date(value + 'T00:00:00').getTime()) 
+            ? format(new Date(value + 'T00:00:00'), "PPP", { locale: id }) 
+            : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar 
           mode="single" 
-          selected={value ? new Date(value + 'T00:00:00') : undefined} 
+          selected={value && !isNaN(new Date(value + 'T00:00:00').getTime()) ? new Date(value + 'T00:00:00') : undefined} 
           onSelect={(date) => {
             if (date) {
               const year = date.getFullYear();

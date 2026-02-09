@@ -41,7 +41,7 @@ export class KandangService {
   }
 
   static async update(id: string, data: UpdateKandangInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager", "staff"]);
     await this.getById(id);
 
     if (data.kode) {

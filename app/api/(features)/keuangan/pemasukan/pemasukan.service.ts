@@ -24,7 +24,7 @@ export class PemasukanService {
   }
 
   static async create(data: CreatePemasukanInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     return prisma.pemasukan.create({
       data: {
         tanggal: data.tanggal,
@@ -36,7 +36,7 @@ export class PemasukanService {
   }
 
   static async update(id: string, data: UpdatePemasukanInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.pemasukan.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Pemasukan tidak ditemukan");
@@ -54,7 +54,7 @@ export class PemasukanService {
   }
 
   static async delete(id: string) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.pemasukan.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Pemasukan tidak ditemukan");

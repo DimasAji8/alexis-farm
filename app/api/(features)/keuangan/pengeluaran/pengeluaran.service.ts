@@ -29,7 +29,7 @@ export class PengeluaranOperasionalService {
   }
 
   static async create(data: CreatePengeluaranOperasionalInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     return prisma.pengeluaranOperasional.create({
       data: {
         kandangId: data.kandangId,
@@ -43,7 +43,7 @@ export class PengeluaranOperasionalService {
   }
 
   static async update(id: string, data: UpdatePengeluaranOperasionalInput) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.pengeluaranOperasional.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Pengeluaran tidak ditemukan");
@@ -63,7 +63,7 @@ export class PengeluaranOperasionalService {
   }
 
   static async delete(id: string) {
-    await requireRole(["super_user", "staff"]);
+    await requireRole(["super_user", "manager"]);
     const existing = await prisma.pengeluaranOperasional.findUnique({ where: { id } });
     if (!existing) {
       throw new Error("Pengeluaran tidak ditemukan");

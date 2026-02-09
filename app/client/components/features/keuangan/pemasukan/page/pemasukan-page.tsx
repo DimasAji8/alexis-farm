@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { DataFiltersMemo, type FilterConfig } from "@/components/shared/data-filters";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -102,17 +102,7 @@ export function PemasukanPage() {
   };
 
   if (isLoading && !data) {
-    return (
-      <section className="space-y-6">
-        <div>
-          <div className={styles.pageHeader.eyebrow}>Keuangan</div>
-          <h1 className={styles.pageHeader.title}>Pemasukan</h1>
-        </div>
-        <Card className="p-6">
-          <Skeleton className="h-8 w-32" />
-        </Card>
-      </section>
-    );
+    return <PageSkeleton eyebrow="Keuangan" title="Pemasukan" description="Kelola data pemasukan keuangan." statsCount={3} statsColumns={3} tableColumns={6} />;
   }
 
   if (isError) {

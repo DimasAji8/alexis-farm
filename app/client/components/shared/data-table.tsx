@@ -47,7 +47,7 @@ export function DataTable<T>({
 
   const renderSkeletonRows = () =>
     Array.from({ length: skeletonRows }).map((_, i) => (
-      <TableRow key={i}>
+      <TableRow key={`skeleton-${i}`}>
         {columns.map((col) => (
           <TableCell key={col.key} className={col.className}>
             {col.skeleton || <Skeleton className="h-4 w-16" />}
@@ -63,7 +63,7 @@ export function DataTable<T>({
 
   const renderRows = () => {
     if (isLoading) return renderSkeletonRows();
-    if (data.length === 0) return renderEmptyRow();
+    if (!data || data.length === 0) return renderEmptyRow();
     
     if (noWrapper) {
       return data.map((item, index) => (
@@ -117,11 +117,11 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="flex flex-col rounded-lg overflow-hidden bg-white dark:bg-slate-800/50" style={{ height: '600px' }}>
-      <div className="flex-1 overflow-auto">
+    <div className="rounded-lg overflow-hidden bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+      <div className="overflow-auto" style={{ maxHeight: '600px' }}>
         <Table>
-          <TableHeader className="sticky top-0 z-10">
-            <TableRow className="bg-slate-900 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-700 border-b-2 border-slate-600">
+          <TableHeader className="sticky top-0 z-10 bg-slate-900 dark:bg-slate-700">
+            <TableRow className="hover:bg-slate-900 dark:hover:bg-slate-700 border-b-2 border-slate-600">
               {columns.map((col) => (
                 <TableHead key={col.key} className={`font-medium text-white text-xs sm:text-sm ${col.headerClassName || ""}`}>
                   {col.header}
