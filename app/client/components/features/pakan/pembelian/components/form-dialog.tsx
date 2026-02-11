@@ -35,25 +35,38 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: FormData) => void;
   isLoading?: boolean;
+  editData?: any;
 }
 
-export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoading }: Props) {
+export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoading, editData }: Props) {
   const { data: jenisPakan } = useJenisPakanList(true);
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: 0, hargaPerKg: undefined, keterangan: "" },
+    defaultValues: { jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" },
   });
 
   useEffect(() => {
-    if (open) reset({ jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: 0, hargaPerKg: undefined, keterangan: "" });
-  }, [reset, open]);
+    if (open) {
+      if (editData) {
+        reset({
+          jenisPakanId: editData.jenisPakanId,
+          tanggalBeli: editData.tanggalBeli?.split('T')[0] || getLocalDateString(),
+          jumlahKg: editData.jumlahKg,
+          hargaPerKg: editData.hargaPerKg,
+          keterangan: editData.keterangan || "",
+        });
+      } else {
+        reset({ jenisPakanId: "", tanggalBeli: getLocalDateString(), jumlahKg: undefined, hargaPerKg: undefined, keterangan: "" });
+      }
+    }
+  }, [reset, open, editData]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Tambah Pembelian Pakan</DialogTitle>
-          <DialogDescription>Isi informasi pembelian pakan baru.</DialogDescription>
+          <DialogTitle>{editData ? "Edit" : "Tambah"} Pembelian Pakan</DialogTitle>
+          <DialogDescription>Isi informasi pembelian pakan {editData ? "yang akan diubah" : "baru"}.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="grid gap-4">

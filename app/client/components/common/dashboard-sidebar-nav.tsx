@@ -14,6 +14,7 @@ import {
   Egg,
   ShoppingCart,
   Wallet,
+  Minus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,11 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,10 +134,35 @@ export function DashboardSidebarNav({
     });
   }, [items, pathname]);
 
+  const closeAllAccordions = () => {
+    setOpenGroups((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        next[key] = false;
+      });
+      return next;
+    });
+  };
+
   return (
     <SidebarMenu
       className={cn("group-data-[collapsible=icon]:items-center", className)}
     >
+      <SidebarMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={closeAllAccordions}
+              className="ml-auto mr-2 flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground group-data-[collapsible=icon]:hidden"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Tutup semua menu</p>
+          </TooltipContent>
+        </Tooltip>
+      </SidebarMenuItem>
       {items.map((item) => {
         const Icon = iconMap[item.icon] ?? LayoutDashboard;
         const isActive = isItemActive(item);

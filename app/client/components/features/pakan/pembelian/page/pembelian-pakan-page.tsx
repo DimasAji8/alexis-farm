@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,14 +9,14 @@ import { Pagination } from "@/components/shared/pagination";
 import { DataTable, type ColumnDef } from "@/components/shared/data-table";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFiltersMemo as DataFilters, type FilterConfig } from "@/components/shared/data-filters";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { Plus } from "lucide-react";
 
-import { useApiList } from "@/hooks/use-api";
 import { useMonthFilter } from "@/hooks/use-month-filter";
 import { useJenisPakanList } from "@/components/features/jenis-pakan/hooks/use-jenis-pakan";
 import { PembelianPakanFormDialog } from "../components/form-dialog";
 import { PembelianPakanSkeleton } from "../components/pembelian-pakan-skeleton";
-import { usePembelianPakanList, useCreatePembelianPakan } from "../hooks/use-pembelian-pakan";
+import { usePembelianPakanList, useCreatePembelianPakan, useUpdatePembelianPakan, useDeletePembelianPakan } from "../hooks/use-pembelian-pakan";
 import type { PembelianPakan, CreatePembelianPakanInput } from "../types";
 
 const ITEMS_PER_PAGE = 10;
@@ -31,15 +32,27 @@ export function PembelianPakanPage() {
   const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: null, bulan_year: null, jenisPakanId: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<PembelianPakan | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selected, setSelected] = useState<PembelianPakan | null>(null);
 
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
   const { data, isLoading } = usePembelianPakanList(bulanFilter, filters.jenisPakanId);
   const { data: jenisPakan } = useJenisPakanList(true);
   const createMutation = useCreatePembelianPakan();
+  const updateMutation = useUpdatePembelianPakan();
+  const deleteMutation = useDeletePembelianPakan();
 
   // Fetch summary from backend
   const summaryUrl = `/api/pakan/pembelian?type=summary${bulanFilter ? `&bulan=${bulanFilter}` : ""}${filters.jenisPakanId ? `&jenisPakanId=${filters.jenisPakanId}` : ""}`;
-  const { data: summary } = useApiList<any>(summaryUrl);
+  const { data: summary } = useQuery({
+    queryKey: ["pembelian-pakan", "summary", bulanFilter, filters.jenisPakanId],
+    queryFn: async () => {
+      const res = await fetch(summaryUrl);
+      const json = await res.json();
+      return json.success ? json.data : null;
+    },
+  });
 
   const filterConfig: FilterConfig[] = useMemo(() => [
     { key: "bulan", label: "Bulan", type: "month" },
@@ -86,11 +99,36 @@ export function PembelianPakanPage() {
   const handleFilterChange = (f: Record<string, string | null>) => { setFilters(f); setCurrentPage(1); };
   const handleAdd = () => setFormOpen(true);
 
-  const handleFormSubmit = (formData: CreatePembelianPakanInput) => {
-    createMutation.mutate(formData, {
-      onSuccess: () => { toast.success("Pembelian pakan berhasil ditambahkan"); setFormOpen(false); },
-      onError: (err) => toast.error(err.message || "Gagal menambahkan"),
+  const handleEdit = (item: PembelianPakan) => {
+    setEditingItem(item);
+    setFormOpen(true);
+  };
+
+  const handleDelete = (item: PembelianPakan) => {
+    setSelected(item);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!selected) return;
+    deleteMutation.mutate(selected.id, {
+      onSuccess: () => { toast.success("Data berhasil dihapus"); setDeleteOpen(false); setSelected(null); },
+      onError: (err) => toast.error(err.message || "Gagal menghapus"),
     });
+  };
+
+  const handleFormSubmit = (formData: CreatePembelianPakanInput) => {
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data: formData }, {
+        onSuccess: () => { toast.success("Data berhasil diperbarui"); setFormOpen(false); setEditingItem(null); },
+        onError: (err) => toast.error(err.message || "Gagal memperbarui"),
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => { toast.success("Pembelian pakan berhasil ditambahkan"); setFormOpen(false); },
+        onError: (err) => toast.error(err.message || "Gagal menambahkan"),
+      });
+    }
   };
 
   const showSkeleton = isLoading && !data;
@@ -113,11 +151,12 @@ export function PembelianPakanPage() {
       <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
-        <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} showActions={false} />
+        <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} getRowKey={(item) => item.id} onEdit={handleEdit} onDelete={handleDelete} />
         {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
-      <PembelianPakanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending} />
+      <PembelianPakanFormDialog open={formOpen} onOpenChange={(open) => { setFormOpen(open); if (!open) setEditingItem(null); }} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} editData={editingItem} />
+      <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} isLoading={deleteMutation.isPending} title="Hapus Pembelian" description={`Hapus pembelian pakan ${selected?.jenisPakan.nama} tanggal ${formatDate(selected?.tanggalBeli)}?`} />
     </section>
   );
 }

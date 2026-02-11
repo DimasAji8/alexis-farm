@@ -197,7 +197,7 @@ export function PemasukanFormDialog({ open, onOpenChange, onSubmit, isLoading, d
                       render={({ field }) => (
                         <Input
                           type="text"
-                          placeholder="0"
+                          placeholder="Masukkan jumlah"
                           value={field.value ? formatCurrency(field.value) : ""}
                           onChange={(e) => field.onChange(parseCurrency(e.target.value))}
                         />
