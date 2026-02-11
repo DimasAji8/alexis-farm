@@ -27,13 +27,16 @@ const filterConfig: FilterConfig[] = [
 export function StokTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data, isLoading, isError, error, refetch } = useStokTelurList(selectedKandangId);
-  const { data: produksiData } = useProduktivitasList(selectedKandangId);
-  const { data: penjualanData } = usePenjualanList(selectedKandangId);
+  const { data: produksiResponse } = useProduktivitasList(selectedKandangId);
+  const { data: penjualanResponse } = usePenjualanList(selectedKandangId);
   const [filters, setFilters] = useState<Record<string, string | null>>({});
+
+  const produksiData = produksiResponse?.list || [];
+  const penjualanData = penjualanResponse?.list || [];
 
   // Map produksi by tanggal untuk lookup cepat
   const produksiByDate = useMemo(() => {
-    if (!produksiData) return new Map<string, number>();
+    if (!produksiData.length) return new Map<string, number>();
     const map = new Map<string, number>();
     for (const p of produksiData) {
       const dateKey = new Date(p.tanggal).toISOString().split("T")[0];
@@ -44,7 +47,7 @@ export function StokTelurPage() {
 
   // Map penjualan by tanggal untuk lookup cepat
   const penjualanByDate = useMemo(() => {
-    if (!penjualanData) return new Map<string, number>();
+    if (!penjualanData.length) return new Map<string, number>();
     const map = new Map<string, number>();
     for (const p of penjualanData) {
       const dateKey = new Date(p.tanggal).toISOString().split("T")[0];

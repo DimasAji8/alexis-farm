@@ -27,16 +27,15 @@ interface DataFiltersProps {
 export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   const initialized = useRef(false);
   const hasEmittedInitial = useRef(false);
+  
+  // Initialize dengan bulan ini langsung
+  const now = new Date();
   const [mounted, setMounted] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState("0");
-  const [currentYear, setCurrentYear] = useState("2026");
-  const [years, setYears] = useState<string[]>(["2026", "2025", "2024"]);
+  const [currentMonth] = useState(String(now.getMonth()));
+  const [currentYear] = useState(String(now.getFullYear()));
+  const [years] = useState<string[]>(Array.from({ length: 3 }, (_, i) => String(now.getFullYear() - i)));
 
   useEffect(() => {
-    const now = new Date();
-    setCurrentMonth(String(now.getMonth()));
-    setCurrentYear(String(now.getFullYear()));
-    setYears(Array.from({ length: 3 }, (_, i) => String(now.getFullYear() - i)));
     setMounted(true);
   }, []);
 
@@ -70,13 +69,17 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
       }
       initialized.current = true;
     }
-  }, [mounted, currentMonth, currentYear]);
+  }, [mounted, currentMonth, currentYear, config]);
 
   // Handle popover open/close
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      filtersSnapshot.current = { ...filters };
-      setTempFilters({ ...filters });
+      const currentFilters = { ...filters };
+      filtersSnapshot.current = currentFilters;
+      setTempFilters(currentFilters);
+    } else {
+      // Reset tempFilters to last applied state when closing without applying
+      setTempFilters({ ...filtersSnapshot.current });
     }
     setOpen(isOpen);
   };
@@ -100,9 +103,10 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   };
 
   const apply = () => {
-    setFilters({ ...tempFilters });
-    filtersSnapshot.current = { ...tempFilters };
-    emitChange(tempFilters);
+    const newFilters = { ...tempFilters };
+    setFilters(newFilters);
+    filtersSnapshot.current = newFilters;
+    emitChange(newFilters);
     setOpen(false);
   };
 

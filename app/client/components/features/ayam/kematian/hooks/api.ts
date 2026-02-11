@@ -1,12 +1,12 @@
 import { apiClient } from "@/lib/api-client";
 import type { KematianAyam, CreateKematianInput, UpdateKematianInput } from "../types";
 
-export async function fetchKematianList(kandangId?: string | null, bulan?: string | null): Promise<KematianAyam[]> {
+export async function fetchKematianList(kandangId?: string | null, bulan?: string | null) {
   const params = new URLSearchParams();
   if (kandangId) params.append("kandangId", kandangId);
   if (bulan) params.append("bulan", bulan);
   const query = params.toString();
-  const response = await apiClient<KematianAyam[]>(`/api/ayam/kematian${query ? `?${query}` : ""}`);
+  const response = await apiClient<{ list: KematianAyam[], summary: any }>(`/api/ayam/kematian${query ? `?${query}` : ""}`);
   return response.data;
 }
 

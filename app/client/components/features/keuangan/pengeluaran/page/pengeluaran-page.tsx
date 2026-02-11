@@ -31,7 +31,11 @@ const filterConfig: FilterConfig[] = [
 
 export function PengeluaranPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ 
+    bulan_month: String(now.getMonth()), 
+    bulan_year: String(now.getFullYear()) 
+  });
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
   const { data, isLoading, isError, error, refetch } = usePengeluaranList(bulanFilter);
   const createMutation = useCreatePengeluaran();

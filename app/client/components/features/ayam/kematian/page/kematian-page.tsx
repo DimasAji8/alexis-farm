@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,43 +36,23 @@ const filterConfig: FilterConfig[] = [
 export function KematianPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: String(now.getMonth()), bulan_year: String(now.getFullYear()) });
   
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
-  const { data, isLoading, isError, error, refetch } = useKematianList(selectedKandangId, bulanFilter);
+  const { data: response, isLoading, isError, error, refetch } = useKematianList(selectedKandangId, bulanFilter);
   const createMutation = useCreateKematian();
   const updateMutation = useUpdateKematian();
   const deleteMutation = useDeleteKematian();
 
+  const data = response?.list || [];
+  const summaryData = response?.summary;
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<KematianAyam | null>(null);
-
-  const summaryParams = useMemo(() => {
-    const params: Record<string, string> = { type: "summary" };
-    if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (bulanFilter) params.bulan = bulanFilter;
-    return params;
-  }, [selectedKandangId, bulanFilter]);
-
-  const summaryUrl = useMemo(() => {
-    const params = new URLSearchParams(summaryParams);
-    return `/api/ayam/kematian?${params.toString()}`;
-  }, [summaryParams]);
-
-  const { data: summaryData } = useQuery({
-    queryKey: ["kematian-summary", summaryParams],
-    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-    enabled: !!selectedKandangId,
-  });
-
-  const filteredData = useMemo(() => {
-    return data || [];
-  }, [data]);
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalKematian: 0, totalKematianBulanIni: 0, persentaseKematian: 0, rataRataPerHari: 0 };
@@ -91,8 +70,8 @@ export function KematianPage() {
     { key: "keterangan", header: "Keterangan", headerClassName: "hidden md:table-cell", className: `${styles.table.cellTertiary} hidden md:table-cell`, render: (item) => item.keterangan || "-", skeleton: <Skeleton className="h-4 w-24" /> },
   ];
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
+  const paginatedData = data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleFilterChange = (f: Record<string, string | null>) => { setFilters(f); setCurrentPage(1); };
   const handleAdd = () => { setSelected(null); setFormOpen(true); };
@@ -156,7 +135,7 @@ export function KematianPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={handleEdit} onDelete={handleDelete} getRowKey={(item) => item.id} />
-        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {data.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <KematianFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} kematian={selected} />

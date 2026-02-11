@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import type { PenjualanTelur, CreatePenjualanInput, UpdatePenjualanInput } from "../types";
 
-export async function fetchPenjualanList(kandangId?: string | null, bulan?: string | null): Promise<PenjualanTelur[]> {
+export async function fetchPenjualanList(kandangId?: string | null, bulan?: string | null) {
   const params = new URLSearchParams();
   if (kandangId) params.set("kandangId", kandangId);
   if (bulan) params.set("bulan", bulan);
@@ -9,7 +9,7 @@ export async function fetchPenjualanList(kandangId?: string | null, bulan?: stri
   const queryString = params.toString();
   const url = queryString ? `/api/telur/penjualan?${queryString}` : "/api/telur/penjualan";
   
-  const response = await apiClient<PenjualanTelur[]>(url);
+  const response = await apiClient<{ list: PenjualanTelur[], summary: any }>(url);
   return response.data;
 }
 

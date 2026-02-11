@@ -6,7 +6,7 @@ export const fetchPembelianPakanList = (bulan?: string | null, jenisPakanId?: st
   if (bulan) params.append("bulan", bulan);
   if (jenisPakanId) params.append("jenisPakanId", jenisPakanId);
   const query = params.toString();
-  return apiClient<PembelianPakan[]>(`/api/pakan/pembelian${query ? `?${query}` : ""}`).then(res => res.data);
+  return apiClient<{ list: PembelianPakan[], summary: any }>(`/api/pakan/pembelian${query ? `?${query}` : ""}`).then(res => res.data);
 };
 
 export const createPembelianPakan = (data: CreatePembelianPakanInput) => 

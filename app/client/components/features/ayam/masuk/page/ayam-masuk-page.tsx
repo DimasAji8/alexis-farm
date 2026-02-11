@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,39 +36,23 @@ const filterConfig: FilterConfig[] = [
 export function AyamMasukPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: String(now.getMonth()), bulan_year: String(now.getFullYear()) });
   
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
-  const { data, isLoading, isError, error, refetch } = useAyamMasukList(selectedKandangId, bulanFilter);
+  const { data: response, isLoading, isError, error, refetch } = useAyamMasukList(selectedKandangId, bulanFilter);
   const createMutation = useCreateAyamMasuk();
   const updateMutation = useUpdateAyamMasuk();
   const deleteMutation = useDeleteAyamMasuk();
 
+  const data = response?.list || [];
+  const summaryData = response?.summary;
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<AyamMasuk | null>(null);
-
-  const summaryParams = useMemo(() => {
-    const params: Record<string, string> = { type: "summary" };
-    if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (bulanFilter) params.bulan = bulanFilter;
-    return params;
-  }, [selectedKandangId, bulanFilter]);
-
-  const summaryUrl = useMemo(() => {
-    const params = new URLSearchParams(summaryParams);
-    return `/api/ayam/masuk?${params.toString()}`;
-  }, [summaryParams]);
-
-  const { data: summaryData } = useQuery({
-    queryKey: ["ayam-masuk-summary", summaryParams],
-    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-    enabled: !!selectedKandangId,
-  });
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalMasuk: 0, totalMasukBulanIni: 0, rataRataPerHari: 0, totalTransaksi: 0 };
@@ -86,8 +69,8 @@ export function AyamMasukPage() {
     { key: "jumlah", header: "Jumlah", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums text-emerald-600`, render: item => item.jumlahAyam.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 ml-auto" /> },
   ];
 
-  const totalPages = Math.ceil((data?.length || 0) / ITEMS_PER_PAGE);
-  const paginatedData = data?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
+  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
+  const paginatedData = data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleFormSubmit = (formData: Omit<CreateAyamMasukInput, "kandangId">) => {
     const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
@@ -139,7 +122,7 @@ export function AyamMasukPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} onDelete={item => { setSelected(item); setDeleteOpen(true); }} getRowKey={item => item.id} />
-        {(data?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {data.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <AyamMasukFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} />

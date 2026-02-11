@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,64 +35,30 @@ const filterConfig: FilterConfig[] = [
 export function ProduktivitasPage() {
   const { selectedKandangId } = useSelectedKandang();
   const { data: kandangList } = useKandangList();
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: String(now.getMonth()), bulan_year: String(now.getFullYear()) });
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
-  const { data, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId, bulanFilter);
+  const { data: response, isLoading, isError, error, refetch } = useProduktivitasList(selectedKandangId, bulanFilter);
   const createMutation = useCreateProduktivitas();
   const updateMutation = useUpdateProduktivitas();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [formOpen, setFormOpen] = useState(false);
-  const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
-
-  const summaryParams = useMemo(() => {
-    const params: Record<string, string> = { type: "summary" };
-    if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (bulanFilter) params.bulan = bulanFilter;
-    return params;
-  }, [selectedKandangId, bulanFilter]);
-
-  const summaryUrl = useMemo(() => {
-    const params = new URLSearchParams(summaryParams);
-    return `/api/telur/produksi?${params.toString()}`;
-  }, [summaryParams]);
-
-  const { data: summary = {
+  const data = response?.list || [];
+  const summary = useMemo(() => response?.summary || {
     totalBagus: 0,
     totalTidakBagus: 0,
     totalButir: 0,
     totalKg: 0,
     rataRataHarian: 0,
     persentaseHenDay: 0,
-  } } = useQuery({
-    queryKey: ["produktivitas-telur-summary", summaryParams],
-    queryFn: async () => {
-      const res = await fetch(summaryUrl);
-      const json = await res.json();
-      return json.data || {
-        totalBagus: 0,
-        totalTidakBagus: 0,
-        totalButir: 0,
-        totalKg: 0,
-        rataRataHarian: 0,
-        persentaseHenDay: 0,
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled: !!selectedKandangId,
-  });
+  }, [response?.summary]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selected, setSelected] = useState<ProduktivitasTelur | null>(null);
 
   const currentKandang = kandangList?.find(k => k.id === selectedKandangId);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!summary) return [
-      { label: "Telur Bagus", value: "0 butir", color: "emerald" },
-      { label: "Telur Rusak", value: "0 butir", color: "rose" },
-      { label: "% Bagus", value: "0%", color: "blue" },
-      { label: "Total Berat", value: "0 kg", color: "amber" },
-      { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
-    ];
-    
     return [
       { label: "Telur Bagus", value: (summary.totalBagus || 0).toLocaleString("id-ID") + " butir", color: "emerald" },
       { label: "Telur Rusak", value: (summary.totalTidakBagus || 0).toLocaleString("id-ID") + " butir", color: "rose" },
@@ -112,8 +77,8 @@ export function ProduktivitasPage() {
     { key: "totalKg", header: "Berat (kg)", headerClassName: "text-center", className: `${styles.table.cellSecondary} text-center tabular-nums`, render: (item) => item.totalKg.toLocaleString("id-ID", { maximumFractionDigits: 2 }), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
   ];
 
-  const totalPages = Math.ceil((data?.length || 0) / ITEMS_PER_PAGE);
-  const paginatedData = data?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
+  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
+  const paginatedData = data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleFormSubmit = (formData: Omit<CreateProduktivitasInput, "kandangId">) => {
     const dataWithKandang = { ...formData, kandangId: selectedKandangId! };
@@ -164,7 +129,7 @@ export function ProduktivitasPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={item => { setSelected(item); setFormOpen(true); }} getRowKey={(item) => item.id} showActions />
-        {(data?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {data.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={data.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <ProduktivitasFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} data={selected} />

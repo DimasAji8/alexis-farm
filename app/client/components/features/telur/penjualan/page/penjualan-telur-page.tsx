@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
@@ -38,36 +37,21 @@ const filterConfig: FilterConfig[] = [
 
 export function PenjualanTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: String(now.getMonth()), bulan_year: String(now.getFullYear()) });
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
-  const { data, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId, bulanFilter);
+  const { data: response, isLoading, isError, error, refetch } = usePenjualanList(selectedKandangId, bulanFilter);
   const createMutation = useCreatePenjualan();
   const updateMutation = useUpdatePenjualan();
   const deleteMutation = useDeletePenjualan();
+
+  const data = response?.list || [];
+  const summaryData = response?.summary;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<PenjualanTelur | null>(null);
-
-  const summaryParams = useMemo(() => {
-    const params: Record<string, string> = { type: "summary" };
-    if (selectedKandangId) params.kandangId = selectedKandangId;
-    if (bulanFilter) params.bulan = bulanFilter;
-    return params;
-  }, [selectedKandangId, bulanFilter]);
-
-  const summaryUrl = useMemo(() => {
-    const params = new URLSearchParams(summaryParams);
-    return `/api/telur/penjualan?${params.toString()}`;
-  }, [summaryParams]);
-
-  const { data: summaryData } = useQuery({
-    queryKey: ["penjualan-telur-summary", summaryParams],
-    queryFn: () => fetch(summaryUrl).then(res => res.json()).then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-    enabled: !!selectedKandangId,
-  });
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: { kg: 0, butir: 0 } };
@@ -90,10 +74,10 @@ export function PenjualanTelurPage() {
     { key: "totalHarga", header: "Total", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400`, render: (item) => formatCurrency(item.totalHarga), skeleton: <Skeleton className="h-4 w-24 ml-auto" /> },
   ];
 
-  const filteredData = useMemo(() => data || [], [data]);
+  const filteredData = data;
 
-  const totalPages = Math.ceil((filteredData?.length || 0) / ITEMS_PER_PAGE);
-  const paginatedData = filteredData?.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) || [];
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleAdd = () => { setSelected(null); setFormOpen(true); };
   const handleEdit = (item: PenjualanTelur) => { setSelected(item); setFormOpen(true); };
@@ -167,7 +151,7 @@ export function PenjualanTelurPage() {
 
       <Card className="p-4 sm:p-6">
         <DataTable data={paginatedData} columns={columns} isLoading={isLoading} startIndex={(currentPage - 1) * ITEMS_PER_PAGE} onEdit={handleEdit} onDelete={handleDelete} getRowKey={(item) => item.id} />
-        {(filteredData?.length || 0) > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData?.length || 0} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
+        {filteredData.length > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredData.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />}
       </Card>
 
       <PenjualanFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleFormSubmit} isLoading={createMutation.isPending || updateMutation.isPending} penjualan={selected} stokTersedia={summaryData?.stokTersedia ?? 0} />

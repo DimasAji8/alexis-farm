@@ -1,12 +1,12 @@
 import { apiClient } from "@/lib/api-client";
 import type { ProduktivitasTelur, CreateProduktivitasInput, UpdateProduktivitasInput } from "../types";
 
-export async function fetchProduktivitasList(kandangId?: string | null, bulan?: string | null): Promise<ProduktivitasTelur[]> {
+export async function fetchProduktivitasList(kandangId?: string | null, bulan?: string | null) {
   const params = new URLSearchParams();
   if (kandangId) params.append("kandangId", kandangId);
   if (bulan) params.append("bulan", bulan);
   const queryString = params.toString();
-  const response = await apiClient<ProduktivitasTelur[]>(`/api/telur/produksi${queryString ? `?${queryString}` : ""}`);
+  const response = await apiClient<{ list: ProduktivitasTelur[], summary: any }>(`/api/telur/produksi${queryString ? `?${queryString}` : ""}`);
   return response.data;
 }
 

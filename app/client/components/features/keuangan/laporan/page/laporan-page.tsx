@@ -24,7 +24,11 @@ const filterConfig: FilterConfig[] = [
 ];
 
 export function LaporanKeuanganPage() {
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ 
+    bulan_month: String(now.getMonth()), 
+    bulan_year: String(now.getFullYear()) 
+  });
   const { selectedKandangId } = useSelectedKandang();
 
   const bulan = useMemo(() => {

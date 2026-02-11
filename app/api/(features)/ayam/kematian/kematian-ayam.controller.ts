@@ -9,17 +9,19 @@ export class KematianAyamController {
   static async getAll(req: NextRequest) {
     try {
       const { searchParams } = req.nextUrl;
-      const type = searchParams.get("type");
       const kandangId = searchParams.get("kandangId") || undefined;
       const bulan = searchParams.get("bulan") || undefined;
       
-      if (type === "summary" && kandangId) {
-        const data = await KematianAyamService.getSummary(kandangId, bulan);
-        return apiResponse(data, "Summary berhasil diambil");
+      if (!kandangId) {
+        return apiResponse({ list: [], summary: null }, "Kandang ID wajib diisi");
       }
       
-      const data = await KematianAyamService.getAll(kandangId, bulan);
-      return apiResponse(data, "Riwayat kematian ayam berhasil diambil");
+      const [list, summary] = await Promise.all([
+        KematianAyamService.getAll(kandangId, bulan),
+        KematianAyamService.getSummary(kandangId, bulan),
+      ]);
+      
+      return apiResponse({ list, summary }, "Riwayat kematian ayam berhasil diambil");
     } catch (error) {
       return apiError(error);
     }

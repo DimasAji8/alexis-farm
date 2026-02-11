@@ -9,17 +9,19 @@ export class PenjualanTelurController {
   static async getAll(req: NextRequest) {
     try {
       const { searchParams } = req.nextUrl;
-      const type = searchParams.get("type");
       const kandangId = searchParams.get("kandangId") || undefined;
       const bulan = searchParams.get("bulan") || undefined;
       
-      if (type === "summary" && kandangId) {
-        const data = await PenjualanTelurService.getSummary(kandangId, bulan);
-        return apiResponse(data, "Summary berhasil diambil");
+      if (!kandangId) {
+        return apiResponse({ list: [], summary: null }, "Kandang ID wajib diisi");
       }
       
-      const data = await PenjualanTelurService.getAll(kandangId, bulan);
-      return apiResponse(data, "Penjualan telur berhasil diambil");
+      const [list, summary] = await Promise.all([
+        PenjualanTelurService.getAll(kandangId, bulan),
+        PenjualanTelurService.getSummary(kandangId, bulan),
+      ]);
+      
+      return apiResponse({ list, summary }, "Penjualan telur berhasil diambil");
     } catch (error) {
       return apiError(error);
     }

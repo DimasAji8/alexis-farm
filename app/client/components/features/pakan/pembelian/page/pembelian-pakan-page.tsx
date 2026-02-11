@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,7 +28,12 @@ const formatDate = (value?: string) => {
 const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export function PembelianPakanPage() {
-  const [filters, setFilters] = useState<Record<string, string | null>>({ bulan_month: null, bulan_year: null, jenisPakanId: null });
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ 
+    bulan_month: String(now.getMonth()), 
+    bulan_year: String(now.getFullYear()), 
+    jenisPakanId: null 
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PembelianPakan | null>(null);
@@ -37,22 +41,14 @@ export function PembelianPakanPage() {
   const [selected, setSelected] = useState<PembelianPakan | null>(null);
 
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
-  const { data, isLoading } = usePembelianPakanList(bulanFilter, filters.jenisPakanId);
+  const { data: response, isLoading } = usePembelianPakanList(bulanFilter, filters.jenisPakanId);
   const { data: jenisPakan } = useJenisPakanList(true);
   const createMutation = useCreatePembelianPakan();
   const updateMutation = useUpdatePembelianPakan();
   const deleteMutation = useDeletePembelianPakan();
 
-  // Fetch summary from backend
-  const summaryUrl = `/api/pakan/pembelian?type=summary${bulanFilter ? `&bulan=${bulanFilter}` : ""}${filters.jenisPakanId ? `&jenisPakanId=${filters.jenisPakanId}` : ""}`;
-  const { data: summary } = useQuery({
-    queryKey: ["pembelian-pakan", "summary", bulanFilter, filters.jenisPakanId],
-    queryFn: async () => {
-      const res = await fetch(summaryUrl);
-      const json = await res.json();
-      return json.success ? json.data : null;
-    },
-  });
+  const data = response?.list || [];
+  const summary = response?.summary;
 
   const filterConfig: FilterConfig[] = useMemo(() => [
     { key: "bulan", label: "Bulan", type: "month" },
@@ -70,16 +66,16 @@ export function PembelianPakanPage() {
   }, [data]);
 
   const stats: StatItem[] = useMemo(() => {
-    if (!summary || Array.isArray(summary)) return [
+    if (!summary) return [
       { label: "Total Pembelian", value: formatCurrency(0), color: "emerald" },
       { label: "Jenis Pakan Aktif", value: "0", color: "blue" },
       { label: "Total Stok", value: "0 Kg", color: "purple" },
     ];
     
     return [
-      { label: "Total Pembelian", value: formatCurrency((summary as any).totalPembelian || 0), color: "emerald" },
-      { label: "Jenis Pakan Aktif", value: `${(summary as any).jumlahJenisPakanAktif || 0}`, color: "blue" },
-      { label: "Total Stok", value: `${((summary as any).totalStok || 0).toFixed(0)} Kg`, color: "purple" },
+      { label: "Total Pembelian", value: formatCurrency(summary.totalPembelian || 0), color: "emerald" },
+      { label: "Jenis Pakan Aktif", value: `${summary.jumlahJenisPakanAktif || 0}`, color: "blue" },
+      { label: "Total Stok", value: `${(summary.totalStok || 0).toFixed(0)} Kg`, color: "purple" },
     ];
   }, [summary]);
 
