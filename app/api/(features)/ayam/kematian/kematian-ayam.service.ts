@@ -36,19 +36,22 @@ export class KematianAyamService {
     }
 
     const data = await prisma.kematianRecord.findMany({ where });
-    const allData = await prisma.kematianRecord.findMany({ where: { kandangId } });
     const kandang = await prisma.kandang.findUnique({ where: { id: kandangId } });
     
-    const totalKematian = allData.reduce((sum, item) => sum + item.jumlahMati, 0);
     const totalKematianBulanIni = data.reduce((sum, item) => sum + item.jumlahMati, 0);
     const jumlahAyamSekarang = kandang?.jumlahAyam || 0;
-    const totalAyamAwal = jumlahAyamSekarang + totalKematian;
-    const persentaseKematian = totalAyamAwal > 0 ? (totalKematian / totalAyamAwal) * 100 : 0;
+    
+    // Hitung total kematian keseluruhan untuk persentase
+    const allData = await prisma.kematianRecord.findMany({ where: { kandangId } });
+    const totalKematianKeseluruhan = allData.reduce((sum, item) => sum + item.jumlahMati, 0);
+    const totalAyamAwal = jumlahAyamSekarang + totalKematianKeseluruhan;
+    const persentaseKematian = totalAyamAwal > 0 ? (totalKematianKeseluruhan / totalAyamAwal) * 100 : 0;
+    
     const jumlahHari = data.length;
     const rataRataPerHari = jumlahHari > 0 ? totalKematianBulanIni / jumlahHari : 0;
 
     return {
-      totalKematian,
+      totalKematian: totalKematianBulanIni, // Total sesuai filter
       totalKematianBulanIni,
       persentaseKematian: parseFloat(persentaseKematian.toFixed(2)),
       rataRataPerHari: parseFloat(rataRataPerHari.toFixed(1)),

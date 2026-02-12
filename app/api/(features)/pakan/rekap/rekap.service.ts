@@ -114,8 +114,13 @@ export class RekapPakanService {
       const stokAkhirKg = batchTracking.reduce((sum, b) => sum + b.sisaKg, 0);
       const stokAkhirRp = batchTracking.reduce((sum, b) => sum + (b.sisaKg * b.hargaPerKg), 0);
 
-      // Harga rata-rata hari ini (dari pemakaian)
-      const hargaPerKg = keluarKg > 0 ? keluarRp / keluarKg : 0;
+      // Harga per Kg: prioritas pembelian, fallback ke pemakaian
+      let hargaPerKg = 0;
+      if (masukKg > 0) {
+        hargaPerKg = masukRp / masukKg; // Harga pembelian
+      } else if (keluarKg > 0) {
+        hargaPerKg = keluarRp / keluarKg; // Harga pemakaian
+      }
 
       dataHarian.push({
         tanggal: tanggalStr,

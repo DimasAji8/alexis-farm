@@ -248,14 +248,16 @@ export default function DashboardPakanPage() {
               </tbody>
               <tfoot className="border-t-2 font-bold">
                 <tr>
-                  <td className="p-2">TOTAL</td>
+                  <td className="p-2">TOTAL PAKAN</td>
                   <td className="p-2 text-right text-emerald-600">
                     {dashboard?.summary.totalKonsumsi.toFixed(1)} Kg
                   </td>
                   <td className="p-2 text-right">
                     {formatCurrency(dashboard?.summary.totalBiaya || 0)}
                   </td>
-                  <td className="p-2"></td>
+                  <td className="p-2 text-right text-blue-600">
+                    {perJenisPakan.reduce((sum: number, jp: any) => sum + jp.stokTersedia, 0).toFixed(1)} Kg
+                  </td>
                 </tr>
               </tfoot>
             </table>
