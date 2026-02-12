@@ -19,9 +19,7 @@ export default function RekapPakanPage() {
   const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan?active=true");
 
   // Fetch rekap from backend
-  const rekapUrl = jenisPakanId 
-    ? `/api/pakan/rekap?type=harian&bulan=${bulan}&jenisPakanId=${jenisPakanId}`
-    : "";
+  const rekapUrl = `/api/pakan/rekap?type=harian&bulan=${bulan}${jenisPakanId ? `&jenisPakanId=${jenisPakanId}` : ''}`;
   const { data: rekap, loading } = useApiList<any>(rekapUrl);
 
   const filterConfig: FilterConfig[] = useMemo(() => [
@@ -70,7 +68,9 @@ export default function RekapPakanPage() {
 
   const dataHarian = (rekap as any)?.dataHarian || [];
   const summary = (rekap as any)?.summary || {};
-  const jenisPakanNama = jenisPakan.find((jp: any) => jp.id === jenisPakanId)?.nama || "-";
+  const jenisPakanNama = jenisPakanId 
+    ? jenisPakan.find((jp: any) => jp.id === jenisPakanId)?.nama || "-"
+    : "Semua Jenis Pakan";
 
   return (
     <section className="space-y-4 sm:space-y-6">
@@ -110,12 +110,7 @@ export default function RekapPakanPage() {
                 </tr>
               </thead>
               <tbody>
-                {!jenisPakanId ? (
-                  <tr><td colSpan={8} className="text-center p-8 text-muted-foreground">
-                    <p className="text-lg mb-2">Pilih Jenis Pakan</p>
-                    <p className="text-sm">Silakan pilih jenis pakan dari filter di atas untuk melihat rekap</p>
-                  </td></tr>
-                ) : loading ? (
+                {loading ? (
                   <tr><td colSpan={8} className="text-center p-4 text-muted-foreground">Memuat data...</td></tr>
                 ) : dataHarian.length === 0 ? (
                   <tr><td colSpan={8} className="text-center p-4 text-muted-foreground">Tidak ada data untuk periode ini</td></tr>
@@ -136,7 +131,7 @@ export default function RekapPakanPage() {
               </tbody>
             </table>
           </div>
-          {dataHarian.length > 0 && jenisPakanId && (
+          {dataHarian.length > 0 && (
             <div className="border-t-2 bg-background">
               <table className="w-full text-sm">
                 <colgroup>

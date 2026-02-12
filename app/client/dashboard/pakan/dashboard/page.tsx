@@ -33,20 +33,20 @@ export default function DashboardPakanPage() {
     if (!dashboard?.summary) return [
       { label: "Konsumsi/Hari", value: "0 Kg", color: "emerald" },
       { label: "Konsumsi/Bulan", value: "0 Kg", color: "blue" },
-      { label: "Konsumsi/Ekor", value: "0 gram", color: "purple" },
+      { label: "Konsumsi/Ekor", value: "0 gram", color: "purple", highlight: true },
       { label: "Biaya/Kg", value: formatCurrency(0), color: "amber" },
       { label: "Total Biaya", value: formatCurrency(0), color: "rose" },
-      { label: "Biaya/Ekor", value: formatCurrency(0), color: "slate" },
+      { label: "Biaya/Ekor", value: formatCurrency(0), color: "slate", highlight: true },
     ];
 
     const s = dashboard.summary;
     return [
       { label: "Konsumsi/Hari", value: `${s.konsumsiPerHari.toFixed(1)} Kg`, color: "emerald" },
       { label: "Konsumsi/Bulan", value: `${s.totalKonsumsi.toFixed(1)} Kg`, color: "blue" },
-      { label: "Konsumsi/Ekor", value: `${s.konsumsiPerEkorGram.toFixed(0)} gram`, color: "purple" },
+      { label: "Konsumsi/Ekor", value: `${s.konsumsiPerEkorGram.toFixed(0)} gram`, color: "purple", highlight: true },
       { label: "Biaya/Kg", value: formatCurrency(s.biayaPerKg), color: "amber" },
       { label: "Total Biaya", value: formatCurrency(s.totalBiaya), color: "rose" },
-      { label: "Biaya/Ekor", value: formatCurrency(s.biayaPerEkor), color: "slate" },
+      { label: "Biaya/Ekor", value: formatCurrency(s.biayaPerEkor), color: "slate", highlight: true },
     ];
   }, [dashboard]);
 

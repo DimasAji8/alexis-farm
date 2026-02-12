@@ -2,7 +2,7 @@ import { prisma } from "@/app/api/db/prisma";
 import { ValidationError } from "@/app/api/shared/utils/errors";
 
 export class RekapPakanService {
-  static async getRekapHarian(bulan: string, jenisPakanId: string) {
+  static async getRekapHarian(bulan: string, jenisPakanId?: string) {
     const [tahun, bulanNum] = bulan.split("-").map(Number);
     if (!tahun || !bulanNum || bulanNum < 1 || bulanNum > 12) {
       throw new ValidationError("Format bulan tidak valid (gunakan YYYY-MM)");
@@ -12,18 +12,26 @@ export class RekapPakanService {
     const endDate = new Date(tahun, bulanNum, 0, 23, 59, 59);
     const jumlahHari = new Date(tahun, bulanNum, 0).getDate();
 
+    // Build where clause
+    const wherePembelian: any = { tanggalBeli: { lte: endDate } };
+    const wherePemakaian: any = { tanggalPakai: { gte: startDate, lte: endDate } };
+    const wherePemakaianSebelum: any = { tanggalPakai: { lt: startDate } };
+    
+    if (jenisPakanId) {
+      wherePembelian.jenisPakanId = jenisPakanId;
+      wherePemakaian.jenisPakanId = jenisPakanId;
+      wherePemakaianSebelum.jenisPakanId = jenisPakanId;
+    }
+
     // Ambil semua batch pembelian sebelum dan selama bulan
     const batchesPembelian = await prisma.pembelianPakan.findMany({
-      where: { jenisPakanId, tanggalBeli: { lte: endDate } },
+      where: wherePembelian,
       orderBy: { tanggalBeli: "asc" },
     });
 
     // Ambil semua pemakaian selama bulan
     const pemakaianBulanIni = await prisma.pemakaianPakanHeader.findMany({
-      where: {
-        jenisPakanId,
-        tanggalPakai: { gte: startDate, lte: endDate },
-      },
+      where: wherePemakaian,
       include: { details: true },
       orderBy: { tanggalPakai: "asc" },
     });
@@ -36,7 +44,7 @@ export class RekapPakanService {
 
     // Kurangi dengan pemakaian sebelum bulan
     const pemakaianSebelum = await prisma.pemakaianPakanHeader.findMany({
-      where: { jenisPakanId, tanggalPakai: { lt: startDate } },
+      where: wherePemakaianSebelum,
       include: { details: true },
       orderBy: { tanggalPakai: "asc" },
     });

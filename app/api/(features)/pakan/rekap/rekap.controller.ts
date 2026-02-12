@@ -7,13 +7,10 @@ export class RekapPakanController {
     try {
       const { searchParams } = new URL(req.url);
       const bulan = searchParams.get("bulan");
-      const jenisPakanId = searchParams.get("jenisPakanId");
+      const jenisPakanId = searchParams.get("jenisPakanId") || undefined;
 
       if (!bulan) {
         throw new Error("Parameter bulan wajib diisi (format: YYYY-MM)");
-      }
-      if (!jenisPakanId) {
-        throw new Error("Parameter jenisPakanId wajib diisi");
       }
 
       const data = await RekapPakanService.getRekapHarian(bulan, jenisPakanId);

@@ -6,6 +6,7 @@ export type StatItem = {
   label: string;
   value: string | number;
   color: "slate" | "emerald" | "rose" | "amber" | "blue" | "purple";
+  highlight?: boolean;
 };
 
 interface DataStatsProps {
@@ -36,9 +37,24 @@ export function DataStats({ stats, columns }: DataStatsProps) {
     <div className={`grid gap-3 ${gridCols[cols] || "grid-cols-2 sm:grid-cols-3"}`}>
       {stats.map((stat, i) => {
         const c = colors[stat.color];
+        const isHighlighted = stat.highlight;
         return (
-          <Card key={i} className={`${c.border} shadow-sm border dark:border-slate-700`}>
-            <CardContent className={`p-4 sm:p-6 bg-gradient-to-br ${c.bg}`}>
+          <Card 
+            key={i} 
+            className={`${c.border} shadow-sm border dark:border-slate-700 ${
+              isHighlighted ? 'ring-2 ring-offset-2 ring-yellow-400 dark:ring-yellow-500 dark:ring-offset-slate-900' : ''
+            }`}
+          >
+            <CardContent className={`p-4 sm:p-6 bg-gradient-to-br ${c.bg} ${
+              isHighlighted ? 'relative' : ''
+            }`}>
+              {isHighlighted && (
+                <div className="absolute top-2 right-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                    ⭐ Key Metric
+                  </span>
+                </div>
+              )}
               <div className="space-y-2">
                 <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">{stat.label}</p>
                 <p className={`text-xl sm:text-3xl font-bold ${c.text}`}>{stat.value}</p>
