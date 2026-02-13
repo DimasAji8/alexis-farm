@@ -41,11 +41,39 @@ export class PakanDashboardService {
         const totalKonsumsi = pemakaian.reduce((sum, p) => sum + p.jumlahKg, 0);
         const totalBiaya = pemakaian.reduce((sum, p) => sum + p.totalBiaya, 0);
 
-        // Get stok tersedia
-        const stok = await prisma.pembelianPakan.aggregate({
-          where: { jenisPakanId: jp.id, sisaStokKg: { gt: 0 } },
-          _sum: { sisaStokKg: true },
+        // Get stok tersedia sampai akhir bulan yang dipilih
+        // Ambil semua pembelian sampai akhir bulan
+        const pembelianSampaiAkhirBulan = await prisma.pembelianPakan.findMany({
+          where: { 
+            jenisPakanId: jp.id,
+            tanggalBeli: { lte: endDate }
+          },
         });
+
+        // Ambil semua pemakaian sampai akhir bulan
+        const pemakaianSampaiAkhirBulan = await prisma.pemakaianPakanHeader.findMany({
+          where: {
+            jenisPakanId: jp.id,
+            tanggalPakai: { lte: endDate }
+          },
+          include: { details: true },
+        });
+
+        // Hitung stok dengan FIFO
+        const batchTracking = pembelianSampaiAkhirBulan.map(p => ({
+          id: p.id,
+          sisaKg: p.jumlahKg,
+        }));
+
+        // Kurangi dengan pemakaian
+        for (const pemakaian of pemakaianSampaiAkhirBulan) {
+          for (const detail of pemakaian.details) {
+            const batch = batchTracking.find(b => b.id === detail.pembelianPakanId);
+            if (batch) batch.sisaKg -= detail.jumlahKg;
+          }
+        }
+
+        const stokTersedia = batchTracking.reduce((sum, b) => sum + b.sisaKg, 0);
 
         return {
           id: jp.id,
@@ -53,7 +81,7 @@ export class PakanDashboardService {
           nama: jp.nama,
           totalKonsumsi,
           totalBiaya,
-          stokTersedia: stok._sum.sisaStokKg || 0,
+          stokTersedia,
           persentase: 0, // Will calculate after
         };
       })
@@ -73,7 +101,7 @@ export class PakanDashboardService {
     const konsumsiPerEkor = totalAyam > 0 ? totalKonsumsi / totalAyam : 0;
     const konsumsiPerEkorGram = konsumsiPerEkor * 1000;
     const biayaPerKg = totalKonsumsi > 0 ? totalBiaya / totalKonsumsi : 0;
-    const biayaPerEkor = totalAyam > 0 ? totalBiaya / totalAyam : 0;
+    const biayaPerEkor = totalAyam > 0 ? (totalBiaya / jumlahHari) / totalAyam : 0;
 
     // Calculate daily consumption for line chart
     const konsumsiHarian = [];

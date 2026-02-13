@@ -62,7 +62,6 @@ export function ProduktivitasPage() {
     return [
       { label: "Telur Bagus", value: (summary.totalBagus || 0).toLocaleString("id-ID") + " butir", color: "emerald" },
       { label: "Telur Rusak", value: (summary.totalTidakBagus || 0).toLocaleString("id-ID") + " butir", color: "rose" },
-      { label: "% Bagus", value: summary.persentaseHenDay.toFixed(1) + "%", color: "blue" },
       { label: "Total Berat", value: (summary.totalKg || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 }) + " kg", color: "amber" },
       { label: "Total Ayam", value: (currentKandang?.jumlahAyam ?? 0).toLocaleString("id-ID"), color: "slate" },
     ];
@@ -73,7 +72,7 @@ export function ProduktivitasPage() {
     { key: "tanggal", header: "Tanggal", className: styles.table.cellPrimary, render: (item) => formatDate(item.tanggal), skeleton: <Skeleton className="h-4 w-20" /> },
     { key: "bagus", header: "Bagus (butir)", headerClassName: "text-center", className: `${styles.table.cellPrimary} text-center tabular-nums text-emerald-600 dark:text-emerald-400`, render: (item) => item.jumlahBagusButir.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
     { key: "tidakBagus", header: "Rusak (butir)", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell text-rose-600 dark:text-rose-400`, render: (item) => item.jumlahTidakBagusButir.toLocaleString("id-ID"), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
-    { key: "persen", header: "% Bagus", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell`, render: (item) => { const jumlahAyam = currentKandang?.jumlahAyam ?? 0; return jumlahAyam > 0 ? ((item.totalButir / jumlahAyam) * 100).toFixed(1) + "%" : "-"; }, skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
+    { key: "persen", header: "% Bagus", headerClassName: "text-center hidden sm:table-cell", className: `${styles.table.cellSecondary} text-center tabular-nums hidden sm:table-cell`, render: (item) => { const jumlahAyam = item.jumlahAyam; return jumlahAyam > 0 ? ((item.totalButir / jumlahAyam) * 100).toFixed(2) + "%" : "-"; }, skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
     { key: "totalKg", header: "Berat (kg)", headerClassName: "text-center", className: `${styles.table.cellSecondary} text-center tabular-nums`, render: (item) => item.totalKg.toLocaleString("id-ID", { maximumFractionDigits: 2 }), skeleton: <Skeleton className="h-4 w-12 mx-auto" /> },
   ];
 
@@ -124,7 +123,7 @@ export function ProduktivitasPage() {
         </Button>
       </div>
 
-      <DataStats stats={stats} columns={5} />
+      <DataStats stats={stats} columns={4} />
       <DataFiltersMemo config={filterConfig} onFilterChange={setFilters} />
 
       <Card className="p-4 sm:p-6">

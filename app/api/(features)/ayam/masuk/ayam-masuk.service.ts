@@ -33,16 +33,14 @@ export class AyamMasukService {
     }
 
     const data = await prisma.ayamMasuk.findMany({ where });
-    const allData = await prisma.ayamMasuk.findMany({ where: { kandangId } });
     
-    const totalMasuk = allData.reduce((sum, item) => sum + item.jumlahAyam, 0);
     const totalMasukBulanIni = data.reduce((sum, item) => sum + item.jumlahAyam, 0);
     const jumlahHari = data.length;
     const rataRataPerHari = jumlahHari > 0 ? totalMasukBulanIni / jumlahHari : 0;
     const totalTransaksi = data.length;
 
     return {
-      totalMasuk,
+      totalMasuk: totalMasukBulanIni, // Total sesuai filter
       totalMasukBulanIni,
       rataRataPerHari: parseFloat(rataRataPerHari.toFixed(1)),
       totalTransaksi,
@@ -66,9 +64,19 @@ export class AyamMasukService {
         },
       });
 
+      const newJumlahKandang = kandang.jumlahAyam + data.jumlahAyam;
       await tx.kandang.update({
         where: { id: data.kandangId },
-        data: { jumlahAyam: kandang.jumlahAyam + data.jumlahAyam },
+        data: { jumlahAyam: newJumlahKandang },
+      });
+
+      // Update semua produksi telur di tanggal yang sama dan setelahnya
+      await tx.produksiTelur.updateMany({
+        where: {
+          kandangId: data.kandangId,
+          tanggal: { gte: data.tanggal },
+        },
+        data: { jumlahAyam: newJumlahKandang },
       });
 
       return created;
@@ -105,6 +113,15 @@ export class AyamMasukService {
           where: { id: existing.kandangId },
           data: { jumlahAyam: newJumlahKandang },
         });
+
+        // Update produksi telur di tanggal yang sama dan setelahnya
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: existing.kandangId,
+            tanggal: { gte: data.tanggal ?? existing.tanggal },
+          },
+          data: { jumlahAyam: newJumlahKandang },
+        });
       } else {
         const oldJumlahKandang = oldKandang.jumlahAyam - existing.jumlahAyam;
         if (oldJumlahKandang < 0) {
@@ -114,9 +131,29 @@ export class AyamMasukService {
           where: { id: existing.kandangId },
           data: { jumlahAyam: oldJumlahKandang },
         });
+
+        // Update produksi telur kandang lama
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: existing.kandangId,
+            tanggal: { gte: existing.tanggal },
+          },
+          data: { jumlahAyam: oldJumlahKandang },
+        });
+
+        const newJumlahKandang = newKandang.jumlahAyam + newJumlah;
         await tx.kandang.update({
           where: { id: newKandangId },
-          data: { jumlahAyam: newKandang.jumlahAyam + newJumlah },
+          data: { jumlahAyam: newJumlahKandang },
+        });
+
+        // Update produksi telur kandang baru
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: newKandangId,
+            tanggal: { gte: data.tanggal ?? existing.tanggal },
+          },
+          data: { jumlahAyam: newJumlahKandang },
         });
       }
 
@@ -152,6 +189,15 @@ export class AyamMasukService {
 
       await tx.kandang.update({
         where: { id: existing.kandangId },
+        data: { jumlahAyam: newJumlah },
+      });
+
+      // Update produksi telur di tanggal yang sama dan setelahnya
+      await tx.produksiTelur.updateMany({
+        where: {
+          kandangId: existing.kandangId,
+          tanggal: { gte: existing.tanggal },
+        },
         data: { jumlahAyam: newJumlah },
       });
 

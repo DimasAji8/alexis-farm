@@ -86,6 +86,15 @@ export class KematianAyamService {
         data: { jumlahAyam: newJumlah },
       });
 
+      // Update semua produksi telur di tanggal yang sama dan setelahnya
+      await tx.produksiTelur.updateMany({
+        where: {
+          kandangId: data.kandangId,
+          tanggal: { gte: data.tanggal },
+        },
+        data: { jumlahAyam: newJumlah },
+      });
+
       return created;
     });
   }
@@ -119,12 +128,32 @@ export class KematianAyamService {
           where: { id: existing.kandangId },
           data: { jumlahAyam: newJumlahKandang },
         });
+
+        // Update produksi telur di tanggal yang sama dan setelahnya
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: existing.kandangId,
+            tanggal: { gte: data.tanggal ?? existing.tanggal },
+          },
+          data: { jumlahAyam: newJumlahKandang },
+        });
       } else {
         // kembalikan ke kandang lama
+        const restoredJumlah = oldKandang.jumlahAyam + existing.jumlahMati;
         await tx.kandang.update({
           where: { id: existing.kandangId },
-          data: { jumlahAyam: oldKandang.jumlahAyam + existing.jumlahMati },
+          data: { jumlahAyam: restoredJumlah },
         });
+        
+        // Update produksi telur kandang lama
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: existing.kandangId,
+            tanggal: { gte: existing.tanggal },
+          },
+          data: { jumlahAyam: restoredJumlah },
+        });
+
         // kurangi dari kandang baru
         const newJumlahKandang = newKandang.jumlahAyam - newJumlah;
         if (newJumlahKandang < 0) {
@@ -132,6 +161,15 @@ export class KematianAyamService {
         }
         await tx.kandang.update({
           where: { id: newKandangId },
+          data: { jumlahAyam: newJumlahKandang },
+        });
+
+        // Update produksi telur kandang baru
+        await tx.produksiTelur.updateMany({
+          where: {
+            kandangId: newKandangId,
+            tanggal: { gte: data.tanggal ?? existing.tanggal },
+          },
           data: { jumlahAyam: newJumlahKandang },
         });
       }
@@ -163,9 +201,19 @@ export class KematianAyamService {
       }
 
       // Kembalikan jumlah ayam yang mati
+      const restoredJumlah = kandang.jumlahAyam + existing.jumlahMati;
       await tx.kandang.update({
         where: { id: existing.kandangId },
-        data: { jumlahAyam: kandang.jumlahAyam + existing.jumlahMati },
+        data: { jumlahAyam: restoredJumlah },
+      });
+
+      // Update produksi telur di tanggal yang sama dan setelahnya
+      await tx.produksiTelur.updateMany({
+        where: {
+          kandangId: existing.kandangId,
+          tanggal: { gte: existing.tanggal },
+        },
+        data: { jumlahAyam: restoredJumlah },
       });
 
       return tx.kematianRecord.delete({ where: { id } });

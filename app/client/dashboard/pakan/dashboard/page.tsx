@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DataStats, type StatItem } from "@/components/shared/data-stats";
 import { DataFilters, type FilterConfig } from "@/components/shared/data-filters";
 import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -89,7 +90,7 @@ export default function DashboardPakanPage() {
           </div>
           {isLoading ? (
             <div className="h-[300px] flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">Memuat data...</p>
+              <Skeleton className="h-full w-full" />
             </div>
           ) : konsumsiHarian.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center">
@@ -136,7 +137,7 @@ export default function DashboardPakanPage() {
           </div>
           {isLoading ? (
             <div className="h-[300px] flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">Memuat data...</p>
+              <Skeleton className="h-full w-full" />
             </div>
           ) : perJenisPakan.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center">
@@ -205,7 +206,12 @@ export default function DashboardPakanPage() {
           <p className="text-xs text-muted-foreground mt-1">Detail konsumsi, biaya, dan stok per jenis pakan</p>
         </div>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Memuat data...</p>
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         ) : perJenisPakan.length === 0 ? (
           <p className="text-sm text-muted-foreground">Tidak ada data</p>
         ) : (
