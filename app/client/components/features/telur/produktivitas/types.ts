@@ -2,6 +2,7 @@ export type ProduktivitasTelur = {
   id: string;
   kandangId: string;
   tanggal: string;
+  jumlahAyam: number;
   jumlahBagusButir: number;
   jumlahTidakBagusButir: number;
   totalButir: number;
