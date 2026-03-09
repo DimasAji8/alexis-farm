@@ -9,7 +9,8 @@ export const createPenjualanTelurSchema = z.object({
   hargaPerKg: z.number().positive("Harga per kg harus lebih dari 0"),
   uangMasuk: z.number().min(0).optional(),
   uangKeluar: z.number().min(0).optional(),
-  metodeBayar: z.string().optional(),
+  statusBayar: z.enum(["dibayar", "belum_dibayar"]).default("dibayar"),
+  tanggalBayar: z.coerce.date().optional().nullable(),
   nomorTransaksi: z.string().optional(),
 });
 

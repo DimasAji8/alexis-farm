@@ -64,8 +64,15 @@ export class PenjualanTelurService {
   private static async syncKeuangan(
     tx: Parameters<typeof prisma.$transaction>[0] extends (arg: infer T) => any ? T : never,
     penjualanId: string,
-    payload: { tanggal: Date; jumlah: number; pembeli?: string | null; nomorTransaksi?: string | null; keterangan?: string | null }
+    payload: { tanggal: Date; jumlah: number; pembeli?: string | null; nomorTransaksi?: string | null; keterangan?: string | null; statusBayar: string }
   ) {
+    // Hanya catat ke keuangan jika sudah dibayar
+    if (payload.statusBayar !== "dibayar") {
+      // Jika ada transaksi keuangan sebelumnya, hapus (karena statusnya berubah jadi belum dibayar)
+      await PenjualanTelurService.deleteKeuangan(tx, penjualanId);
+      return;
+    }
+
     const existingTx = await tx.transaksiKeuangan.findFirst({
       where: { referensiId: penjualanId, referensiType: "penjualan_telur" },
     });
@@ -108,6 +115,11 @@ export class PenjualanTelurService {
     const uangMasuk = data.uangMasuk ?? totalHarga;
     const uangKeluar = data.uangKeluar ?? 0;
     const nomorTransaksi = data.nomorTransaksi ?? `TRX-TELUR-${randomUUID()}`;
+    
+    // Default statusBayar = dibayar jika tidak disediakan
+    const statusBayar = data.statusBayar ?? "dibayar";
+    // Auto-set tanggalBayar = tanggal transaksi jika status dibayar dan tanggalBayar tidak disediakan
+    const tanggalBayar = data.tanggalBayar ?? (statusBayar === "dibayar" ? data.tanggal : null);
 
     return prisma.$transaction(async (tx) => {
       const saldoAwalRecord = await tx.penjualanTelur.findFirst({
@@ -142,7 +154,8 @@ export class PenjualanTelurService {
           uangMasuk,
           uangKeluar,
           saldoAkhir,
-          metodeBayar: data.metodeBayar,
+          statusBayar,
+          tanggalBayar,
           keterangan: data.deskripsi,
           nomorTransaksi,
           createdBy: userId,
@@ -158,11 +171,12 @@ export class PenjualanTelurService {
       });
 
       await PenjualanTelurService.syncKeuangan(tx, created.id, {
-        tanggal: data.tanggal,
-        jumlah: uangMasuk,
+        tanggal: tanggalBayar ?? data.tanggal,
+        jumlah: totalHarga,
         pembeli: data.pembeli,
         nomorTransaksi,
         keterangan: data.deskripsi,
+        statusBayar,
       });
 
       return created;
@@ -219,6 +233,9 @@ export class PenjualanTelurService {
         deltaKg: -beratKg,
       });
 
+      const statusBayar = data.statusBayar ?? existing.statusBayar ?? "dibayar";
+      const tanggalBayar = data.tanggalBayar ?? existing.tanggalBayar ?? (statusBayar === "dibayar" ? tanggal : null);
+
       const updated = await tx.penjualanTelur.update({
         where: { id },
         data: {
@@ -233,7 +250,8 @@ export class PenjualanTelurService {
           uangMasuk,
           uangKeluar,
           saldoAkhir,
-          metodeBayar: data.metodeBayar ?? existing.metodeBayar,
+          statusBayar,
+          tanggalBayar,
           keterangan: data.deskripsi ?? existing.keterangan,
           nomorTransaksi,
           updatedBy: userId,
@@ -241,11 +259,12 @@ export class PenjualanTelurService {
       });
 
       await PenjualanTelurService.syncKeuangan(tx, id, {
-        tanggal,
-        jumlah: uangMasuk,
+        tanggal: tanggalBayar ?? tanggal,
+        jumlah: totalHarga,
         pembeli: data.pembeli ?? existing.pembeli,
         nomorTransaksi,
         keterangan: data.deskripsi ?? existing.keterangan,
+        statusBayar,
       });
 
       return updated;

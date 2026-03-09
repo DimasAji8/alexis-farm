@@ -19,25 +19,39 @@ type FormData = Omit<CreatePenjualanInput, "kandangId">;
 export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, penjualan, stokTersedia = 0 }: Props) {
   const isEdit = !!penjualan;
 
-  const fields: FieldConfig<FormData>[] = useMemo(() => [
-    { name: "tanggal", label: "Tanggal", type: "date", required: true },
-    { name: "pembeli", label: "Pembeli", type: "text", placeholder: "Nama pembeli", required: true },
-    { name: "beratKg", label: `Berat (Kg)`, type: "number", placeholder: "Contoh: 10.5", required: true, min: 0.1, step: 0.1 },
-    { name: "hargaPerKg", label: "Harga per Kg (Rp)", type: "currency", placeholder: "Contoh: 25.000", required: true, min: 1 },
-    { name: "metodeBayar", label: "Metode Bayar", type: "select", options: [
-      { value: "tunai", label: "Tunai" },
-      { value: "transfer", label: "Transfer" },
-      { value: "tempo", label: "Tempo" },
-    ]},
-    { name: "deskripsi", label: "Keterangan", type: "textarea", placeholder: "Keterangan (opsional)" },
-  ], []);
+  const fields: FieldConfig<FormData>[] = useMemo(() => {
+    const baseFields: FieldConfig<FormData>[] = [
+      { name: "tanggal", label: "Tanggal", type: "date", required: true },
+      { name: "pembeli", label: "Pembeli", type: "text", placeholder: "Nama pembeli", required: true },
+      { name: "beratKg", label: `Berat (Kg)`, type: "number", placeholder: "Contoh: 10.5", required: true, min: 0.1, step: 0.1 },
+      { name: "hargaPerKg", label: "Harga per Kg (Rp)", type: "currency", placeholder: "Contoh: 25.000", required: true, min: 1 },
+    ];
+
+    // Hanya tampilkan status bayar dan tanggal bayar saat edit
+    if (isEdit) {
+      baseFields.push(
+        { name: "statusBayar", label: "Status Bayar", type: "select", required: true, options: [
+          { value: "dibayar", label: "Sudah Dibayar" },
+          { value: "belum_dibayar", label: "Belum Dibayar" },
+        ]},
+        { name: "tanggalBayar", label: "Tanggal Bayar", type: "date", required: false }
+      );
+    }
+
+    baseFields.push(
+      { name: "deskripsi", label: "Keterangan", type: "textarea", placeholder: "Keterangan (opsional)" }
+    );
+
+    return baseFields;
+  }, [isEdit]);
 
   const editData = penjualan ? {
     tanggal: penjualan.tanggal,
     pembeli: penjualan.pembeli,
     beratKg: penjualan.beratKg,
     hargaPerKg: penjualan.hargaPerKg,
-    metodeBayar: penjualan.metodeBayar || "tunai",
+    statusBayar: (penjualan.statusBayar || "dibayar") as "dibayar" | "belum_dibayar",
+    tanggalBayar: penjualan.tanggalBayar || penjualan.tanggal,
     deskripsi: penjualan.keterangan || "",
   } : null;
 
@@ -49,7 +63,7 @@ export function PenjualanFormDialog({ open, onOpenChange, onSubmit, isLoading, p
       isLoading={isLoading}
       title={isEdit ? "Edit Penjualan" : "Tambah Penjualan"}
       fields={fields}
-      defaultValues={{ tanggal: getLocalDateString(), pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, metodeBayar: "tunai", deskripsi: "" }}
+      defaultValues={{ tanggal: getLocalDateString(), pembeli: "", beratKg: undefined as unknown as number, hargaPerKg: undefined as unknown as number, deskripsi: "" }}
       editData={editData}
     />
   );

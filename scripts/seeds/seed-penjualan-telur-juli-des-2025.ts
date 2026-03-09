@@ -44,7 +44,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;
@@ -93,7 +94,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;
@@ -145,7 +147,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;
@@ -200,7 +203,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;
@@ -256,7 +260,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;
@@ -299,7 +304,8 @@ async function main() {
         uangMasuk: totalHarga,
         uangKeluar: 0,
         saldoAkhir: saldoAkhir,
-        metodeBayar: "TUNAI",
+        statusBayar: "dibayar",
+        tanggalBayar: new Date(item.tanggal),
       },
     });
     nomorTransaksi++;

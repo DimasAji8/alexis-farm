@@ -15,6 +15,14 @@ interface AktivitasItem {
   deskripsi: string;
 }
 
+interface PiutangItem {
+  id: string;
+  tanggal: string;
+  pembeli: string;
+  totalHarga: number;
+  beratKg: number;
+}
+
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Selamat Pagi";
@@ -103,35 +111,30 @@ export default function DashboardPage() {
         </Card>
 
         <Card className={`p-3 sm:p-4 ${
-          (dashboard?.stats.tingkatKematian || 0) > 2
+          (dashboard?.stats.piutang?.total || 0) > 0
             ? "bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950/30 dark:to-rose-900/20 border-rose-200 dark:border-rose-800"
             : "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/30 dark:to-slate-700/20 border-slate-200 dark:border-slate-700"
         }`}>
           <p className={`text-xs uppercase tracking-wider ${
-            (dashboard?.stats.tingkatKematian || 0) > 2
+            (dashboard?.stats.piutang?.total || 0) > 0
               ? "text-rose-700 dark:text-rose-300"
               : "text-slate-700 dark:text-slate-300"
-          }`}>Tingkat Kematian Bulan Ini</p>
+          }`}>Belum Dibayar</p>
           <div className="flex items-baseline gap-2 mt-1 sm:mt-2">
             <p className={`text-2xl sm:text-3xl font-bold ${
-              (dashboard?.stats.tingkatKematian || 0) > 2 
+              (dashboard?.stats.piutang?.total || 0) > 0
                 ? "text-rose-600 dark:text-rose-400" 
                 : "text-slate-700 dark:text-slate-300"
             }`}>
-              {isLoading ? "..." : dashboard?.stats.tingkatKematian.toFixed(2) || 0}
+              {isLoading ? "..." : formatCurrency(dashboard?.stats.piutang?.total || 0)}
             </p>
-            <p className={`text-xs sm:text-sm ${
-              (dashboard?.stats.tingkatKematian || 0) > 2
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-slate-600 dark:text-slate-400"
-            }`}>%</p>
           </div>
           <p className={`text-xs mt-1 ${
-            (dashboard?.stats.tingkatKematian || 0) > 2
+            (dashboard?.stats.piutang?.total || 0) > 0
               ? "text-rose-600 dark:text-rose-400"
               : "text-slate-600 dark:text-slate-400"
           }`}>
-            {(dashboard?.stats.tingkatKematian || 0) > 2 ? "Perlu perhatian" : "Normal"}
+            {dashboard?.stats.piutang?.jumlahTransaksi || 0} transaksi belum dibayar
           </p>
         </Card>
       </div>
@@ -391,6 +394,15 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {(dashboard?.stats.piutang?.total || 0) > 0 && (
+                <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800">
+                  <p className="text-sm font-medium text-rose-900 dark:text-rose-100">Ada Transaksi Belum Dibayar</p>
+                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
+                    {dashboard.stats.piutang.jumlahTransaksi} transaksi ({formatCurrency(dashboard.stats.piutang.total)})
+                  </p>
+                </div>
+              )}
+
               {dashboard?.stats.produksiHariIni.butir > 0 &&
                dashboard?.stats.produksiHariIni.persentase >= 60 &&
                dashboard?.stats.tingkatKematian <= 2 &&
@@ -406,6 +418,46 @@ export default function DashboardPage() {
           )}
         </Card>
       </div>
+
+      {/* Transaksi Piutang */}
+      {dashboard?.piutang && dashboard.piutang.length > 0 && (
+        <Card className="p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Transaksi Belum Dibayar</h3>
+              <p className="text-xs text-muted-foreground mt-1">Penjualan telur yang belum lunas</p>
+            </div>
+            <a 
+              href="/client/dashboard/telur/penjualan" 
+              className="text-xs text-primary hover:underline"
+            >
+              Lihat semua
+            </a>
+          </div>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Memuat data...</p>
+          ) : (
+            <div className="space-y-3">
+              {dashboard.piutang.map((p: PiutangItem, idx: number) => (
+                <div key={idx} className="flex items-center justify-between gap-4 pb-3 border-b last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{p.pembeli}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(p.tanggal), "dd/MM/yyyy")} • {p.beratKg} kg
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                      {formatCurrency(p.totalHarga)}
+                    </p>
+                    <p className="text-xs text-rose-500 dark:text-rose-500">Belum Bayar</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
     </section>
   );
 }

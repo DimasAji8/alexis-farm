@@ -100,6 +100,25 @@ export async function GET(req: NextRequest) {
       orderBy: { tanggal: "desc" },
     });
 
+    // 6b. Data Belum Dibayar
+    const piutangData = await prisma.penjualanTelur.findMany({
+      where: { 
+        kandangId,
+        statusBayar: "belum_dibayar",
+      },
+      orderBy: { tanggal: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        tanggal: true,
+        pembeli: true,
+        totalHarga: true,
+        beratKg: true,
+      },
+    });
+
+    const totalPiutang = piutangData.reduce((sum, item) => sum + item.totalHarga, 0);
+
     // 7. Trend Produksi Telur (dengan detail bagus/tidak bagus)
     const trendProduksi = await prisma.produksiTelur.findMany({
       where: {
@@ -186,6 +205,10 @@ export async function GET(req: NextRequest) {
         },
         tingkatKematian,
         saldoKeuangan: penjualanTerakhir?.saldoAkhir || 0,
+        piutang: {
+          total: totalPiutang,
+          jumlahTransaksi: piutangData.length,
+        },
       },
       charts: {
         trendProduksi: trendProduksi.map((p) => ({
@@ -222,6 +245,13 @@ export async function GET(req: NextRequest) {
         },
       },
       aktivitas,
+      piutang: piutangData.map((p) => ({
+        id: p.id,
+        tanggal: p.tanggal,
+        pembeli: p.pembeli,
+        totalHarga: p.totalHarga,
+        beratKg: p.beratKg,
+      })),
     };
 
     return NextResponse.json({ success: true, data });

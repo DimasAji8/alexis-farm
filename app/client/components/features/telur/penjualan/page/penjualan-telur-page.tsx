@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -61,13 +62,19 @@ export function PenjualanTelurPage() {
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: { kg: 0, butir: 0 } };
     const stokKg = typeof s.stokTersedia === 'object' ? s.stokTersedia.kg : s.stokTersedia;
+    
+    // Hitung total belum dibayar
+    const totalBelumDibayar = data
+      .filter((item) => item.statusBayar === "belum_dibayar")
+      .reduce((sum, item) => sum + item.totalHarga, 0);
+    
     return [
       { label: "Stok Tersedia", value: `${(stokKg ?? 0).toLocaleString("id-ID")} kg`, color: (stokKg ?? 0) > 0 ? "blue" : "rose" },
       { label: "Total Penjualan", value: formatCurrency(s.totalPenjualan ?? 0), color: "emerald" },
       { label: "Total Terjual", value: `${(s.totalBeratKg ?? 0).toLocaleString("id-ID")} kg`, color: "amber" },
-      { label: "Jumlah Transaksi", value: s.totalTransaksi ?? 0, color: "slate" },
+      { label: "Belum Dibayar", value: formatCurrency(totalBelumDibayar), color: totalBelumDibayar > 0 ? "rose" : "slate" },
     ];
-  }, [summaryData]);
+  }, [summaryData, data]);
 
   const columns: ColumnDef<PenjualanTelur>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },
@@ -75,7 +82,27 @@ export function PenjualanTelurPage() {
     { key: "pembeli", header: "Pembeli", className: styles.table.cellSecondary, render: (item) => item.pembeli, skeleton: <Skeleton className="h-4 w-24" /> },
     { key: "beratKg", header: "Berat", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums`, render: (item) => `${item.beratKg.toLocaleString("id-ID")} kg`, skeleton: <Skeleton className="h-4 w-14 ml-auto" /> },
     { key: "hargaPerKg", header: "Harga/Kg", headerClassName: "text-right", className: `${styles.table.cellSecondary} text-right tabular-nums`, render: (item) => formatCurrency(item.hargaPerKg), skeleton: <Skeleton className="h-4 w-20 ml-auto" /> },
-    { key: "metodeBayar", header: "Metode", className: styles.table.cellSecondary, render: (item) => item.metodeBayar ? item.metodeBayar.charAt(0).toUpperCase() + item.metodeBayar.slice(1) : "-", skeleton: <Skeleton className="h-4 w-16" /> },
+    { 
+      key: "statusBayar", 
+      header: "Status",
+      headerClassName: "text-center",
+      className: `${styles.table.cellSecondary} text-center`, 
+      render: (item) => (
+        <div className="flex justify-center">
+          <Badge 
+            variant={item.statusBayar === "dibayar" ? "default" : "destructive"} 
+            className={`font-medium ${
+              item.statusBayar === "dibayar" 
+                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300" 
+                : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900 dark:text-rose-300"
+            }`}
+          >
+            {item.statusBayar === "dibayar" ? "Dibayar" : "Belum Dibayar"}
+          </Badge>
+        </div>
+      ), 
+      skeleton: <div className="flex justify-center"><Skeleton className="h-5 w-20" /></div>
+    },
     { key: "totalHarga", header: "Total", headerClassName: "text-right", className: `${styles.table.cellPrimary} text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400`, render: (item) => formatCurrency(item.totalHarga), skeleton: <Skeleton className="h-4 w-24 ml-auto" /> },
   ];
 

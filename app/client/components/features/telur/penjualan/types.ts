@@ -8,7 +8,8 @@ export type PenjualanTelur = {
   beratKg: number;
   hargaPerKg: number;
   totalHarga: number;
-  metodeBayar?: string | null;
+  statusBayar: string;
+  tanggalBayar?: string | null;
   keterangan?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -21,7 +22,8 @@ export type CreatePenjualanInput = {
   pembeli: string;
   beratKg: number;
   hargaPerKg: number;
-  metodeBayar?: string;
+  statusBayar: "dibayar" | "belum_dibayar";
+  tanggalBayar?: string | null;
   deskripsi?: string;
 };
 
