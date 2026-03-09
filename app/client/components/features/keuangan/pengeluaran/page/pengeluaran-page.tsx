@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,6 +47,11 @@ export function PengeluaranPage() {
   const [selected, setSelected] = useState<PengeluaranOperasional | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<PengeluaranOperasional | null>(null);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const filteredData = useMemo(() => data || [], [data]);
   const totalPengeluaran = filteredData.reduce((sum, item) => sum + item.jumlah, 0);

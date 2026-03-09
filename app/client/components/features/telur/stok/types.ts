@@ -9,3 +9,8 @@ export type StokTelur = {
   updatedAt: string;
   kandang: { id: string; kode: string; nama: string };
 };
+
+export type StokTelurResponse = {
+  data: StokTelur[];
+  stokAwal: number;
+};

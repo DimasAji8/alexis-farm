@@ -8,12 +8,36 @@ type AdjustInput = {
 };
 
 export class StockTelurService {
-  static async getAll(kandangId?: string) {
-    return prisma.stockTelur.findMany({
-      where: kandangId ? { kandangId } : undefined,
+  static async getAll(kandangId?: string, bulan?: string) {
+    const where: any = kandangId ? { kandangId } : {};
+    
+    let stokAwal = 0;
+    
+    if (bulan) {
+      const [year, month] = bulan.split("-");
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      where.tanggal = { gte: startDate, lte: endDate };
+      
+      // Get stok akhir bulan sebelumnya
+      const prevMonthStock = await prisma.stockTelur.findFirst({
+        where: {
+          kandangId,
+          tanggal: { lt: startDate },
+        },
+        orderBy: { tanggal: "desc" },
+      });
+      
+      stokAwal = prevMonthStock?.stockKg || 0;
+    }
+    
+    const data = await prisma.stockTelur.findMany({
+      where,
       orderBy: { tanggal: "asc" },
       include: { kandang: { select: { id: true, kode: true, nama: true } } },
     });
+    
+    return { data, stokAwal };
   }
 
   static async getLatestStock(kandangId: string, beforeDate?: Date) {

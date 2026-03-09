@@ -72,19 +72,26 @@ export async function GET(req: NextRequest) {
       _sum: { jumlahKg: true, totalBiaya: true },
     });
 
-    // 5. Tingkat Kematian
-    const totalMasuk = await prisma.ayamMasuk.aggregate({
-      where: { kandangId },
+    // 5. Tingkat Kematian (Bulan Ini)
+    const totalMasukBulanIni = await prisma.ayamMasuk.aggregate({
+      where: { 
+        kandangId,
+        tanggal: { gte: startOfMonth, lte: endOfMonth },
+      },
       _sum: { jumlahAyam: true },
     });
 
-    const totalMati = await prisma.kematianRecord.aggregate({
-      where: { kandangId },
+    const totalMatiBulanIni = await prisma.kematianRecord.aggregate({
+      where: { 
+        kandangId,
+        tanggal: { gte: startOfMonth, lte: endOfMonth },
+      },
       _sum: { jumlahMati: true },
     });
 
-    const tingkatKematian = totalMasuk._sum.jumlahAyam
-      ? ((totalMati._sum.jumlahMati || 0) / totalMasuk._sum.jumlahAyam) * 100
+    // Hitung dari jumlah ayam hidup saat ini
+    const tingkatKematian = kandang.jumlahAyam > 0
+      ? ((totalMatiBulanIni._sum.jumlahMati || 0) / (kandang.jumlahAyam + (totalMatiBulanIni._sum.jumlahMati || 0))) * 100
       : 0;
 
     // 6. Saldo Keuangan (dari penjualan telur terakhir)

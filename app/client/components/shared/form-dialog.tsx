@@ -175,7 +175,11 @@ export function FormDialog<T extends FieldValues>({
                 placeholder={field.placeholder}
                 className={error ? "border-red-500" : ""}
                 value={f.value === undefined || f.value === null ? "" : f.value}
-                onChange={(e) => f.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  f.onChange(val === "" ? undefined : parseFloat(val));
+                }}
+                onFocus={(e) => e.target.select()}
               />
               {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
             </>

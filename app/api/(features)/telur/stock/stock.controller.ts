@@ -8,7 +8,8 @@ export class StockTelurController {
   static async getAll(req: NextRequest) {
     try {
       const kandangId = req.nextUrl.searchParams.get("kandangId") || undefined;
-      const data = await StockTelurService.getAll(kandangId);
+      const bulan = req.nextUrl.searchParams.get("bulan") || undefined;
+      const data = await StockTelurService.getAll(kandangId, bulan);
       return apiResponse(data, "Stok telur berhasil diambil");
     } catch (error) {
       return apiError(error);

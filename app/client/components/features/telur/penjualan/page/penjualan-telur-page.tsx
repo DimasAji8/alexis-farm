@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/page-skeleton";
@@ -52,6 +52,11 @@ export function PenjualanTelurPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<PenjualanTelur | null>(null);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const stats: StatItem[] = useMemo(() => {
     const s = summaryData ?? { totalPenjualan: 0, totalBeratKg: 0, rataRataHargaPerKg: 0, totalTransaksi: 0, stokTersedia: { kg: 0, butir: 0 } };

@@ -8,10 +8,11 @@ export class JenisPakanController {
     try {
       const { searchParams } = new URL(req.url);
       const activeOnly = searchParams.get("active") === "true";
+      const kandangId = searchParams.get("kandangId") || searchParams.get("kandang") || undefined;
       
       const data = activeOnly 
-        ? await JenisPakanService.getActive()
-        : await JenisPakanService.getAll();
+        ? await JenisPakanService.getActive(kandangId)
+        : await JenisPakanService.getAll(kandangId);
         
       return apiResponse(data, "Jenis pakan berhasil diambil");
     } catch (error) {

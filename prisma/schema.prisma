@@ -38,6 +38,7 @@ model Kandang {
   stockTelur           StockTelur[]
   penjualanTelur       PenjualanTelur[]
   pengeluaranOperasional PengeluaranOperasional[]
+  jenisPakan           JenisPakan[]
 
   @@index([kode])
   @@index([status])
@@ -48,7 +49,8 @@ model Kandang {
 
 model JenisPakan {
   id             String                   @id @default(cuid()) @map("id_mst_jenis_pakan")
-  kode           String                   @unique
+  kandangId      String                   @map("id_mst_kandang")
+  kode           String
   nama           String
   satuan         String                   @default("KG")
   keterangan     String?
@@ -57,9 +59,12 @@ model JenisPakan {
   updatedBy      String?                  @map("updated_by")
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
+  kandang        Kandang                  @relation(fields: [kandangId], references: [id], onDelete: Cascade)
   pembelianPakan PembelianPakan[]
   pemakaianPakan PemakaianPakanHeader[]
 
+  @@unique([kandangId, kode])
+  @@index([kandangId])
   @@index([kode])
   @@map("mst_jenis_pakan")
 }
@@ -292,4 +297,22 @@ model LaporanBulanan {
   @@unique([bulan, tahun])
   @@index([tahun, bulan])
   @@map("trx_laporan_bulanan")
+}
+
+model PeriodeAkuntansi {
+  id          String   @id @default(cuid()) @map("id_mst_periode")
+  nama        String   @unique // contoh: "2025", "2026", "Jan 2026", dll
+  tahun       Int
+  bulan       Int?     // null jika periode tahunan
+  tanggalMulai DateTime
+  tanggalAkhir DateTime?
+  isActive    Boolean  @default(false)
+  keterangan  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tahun, bulan])
+  @@index([isActive])
+  @@index([tahun])
+  @@map("mst_periode_akuntansi")
 }

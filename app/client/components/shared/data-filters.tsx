@@ -22,9 +22,10 @@ const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", 
 interface DataFiltersProps {
   config: FilterConfig[];
   onFilterChange: (filters: Record<string, string | null>) => void;
+  initialValues?: Record<string, string | null>;
 }
 
-export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
+export function DataFilters({ config, onFilterChange, initialValues }: DataFiltersProps) {
   const initialized = useRef(false);
   const hasEmittedInitial = useRef(false);
   
@@ -51,6 +52,14 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
     }, {} as Record<string, string>);
   };
 
+  const normalizeFilters = (values: Record<string, string | null>): Record<string, string> => {
+    const normalized: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      normalized[key] = value ?? "";
+    });
+    return normalized;
+  };
+
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [tempFilters, setTempFilters] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
@@ -59,7 +68,7 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
   // Initialize filters after mount
   useEffect(() => {
     if (mounted && !initialized.current) {
-      const initial = getInitialState();
+      const initial = initialValues ? normalizeFilters(initialValues) : getInitialState();
       setFilters(initial);
       setTempFilters(initial);
       filtersSnapshot.current = initial;
@@ -69,17 +78,17 @@ export function DataFilters({ config, onFilterChange }: DataFiltersProps) {
       }
       initialized.current = true;
     }
-  }, [mounted, currentMonth, currentYear, config]);
+  }, [mounted, config, initialValues]);
 
   // Handle popover open/close
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      const currentFilters = { ...filters };
-      filtersSnapshot.current = currentFilters;
-      setTempFilters(currentFilters);
+      // Save current applied filters as snapshot
+      filtersSnapshot.current = { ...filters };
+      setTempFilters({ ...filters });
     } else {
       // Reset tempFilters to last applied state when closing without applying
-      setTempFilters({ ...filtersSnapshot.current });
+      setTempFilters({ ...filters });
     }
     setOpen(isOpen);
   };

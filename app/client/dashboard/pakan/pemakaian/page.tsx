@@ -25,8 +25,21 @@ const formatCurrency = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 export default function PemakaianPakanPage() {
   const queryClient = useQueryClient();
   const { selectedKandangId } = useSelectedKandang();
-  const { data: jenisPakan = [] } = useApiList<any>("/api/jenis-pakan?active=true");
-  const { data: pembelian = [] } = useApiList<any>("/api/pakan/pembelian");
+  const jenisPakanUrl = selectedKandangId 
+    ? `/api/jenis-pakan?active=true&kandangId=${selectedKandangId}` 
+    : "";
+  const { data: jenisPakan = [] } = useApiList<any>(jenisPakanUrl);
+  const { data: pembelianData } = useApiList<any>("/api/pakan/pembelian");
+  
+  // Pastikan pembelian selalu array
+  const pembelian = useMemo(() => {
+    if (!pembelianData) return [];
+    if (Array.isArray(pembelianData)) return pembelianData;
+    // Type assertion untuk mengatasi TypeScript narrowing
+    const data = pembelianData as any;
+    if (data.list && Array.isArray(data.list)) return data.list;
+    return [];
+  }, [pembelianData]);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);

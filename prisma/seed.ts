@@ -67,8 +67,8 @@ async function main() {
   ];
 
   for (const pakan of pakanData) {
-    // Get jenis pakan
-    const jenisPakan = await prisma.jenisPakan.findUnique({
+    // Get jenis pakan - gunakan findFirst karena kode sekarang compound unique dengan kandangId
+    const jenisPakan = await prisma.jenisPakan.findFirst({
       where: { kode: pakan.kode },
     });
 

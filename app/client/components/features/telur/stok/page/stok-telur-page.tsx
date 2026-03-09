@@ -9,6 +9,7 @@ import { DataFilters, type FilterConfig } from "@/components/shared/data-filters
 import { styles } from "@/lib/styles";
 import { Package, ArrowRight } from "lucide-react";
 import { useSelectedKandang } from "@/hooks/use-selected-kandang";
+import { useMonthFilter } from "@/hooks/use-month-filter";
 
 import { useStokTelurList } from "../hooks/use-stok-telur";
 import { useProduktivitasList } from "../../produktivitas/hooks/use-produktivitas";
@@ -26,11 +27,18 @@ const filterConfig: FilterConfig[] = [
 
 export function StokTelurPage() {
   const { selectedKandangId } = useSelectedKandang();
-  const { data, isLoading, isError, error, refetch } = useStokTelurList(selectedKandangId);
-  const { data: produksiResponse } = useProduktivitasList(selectedKandangId);
-  const { data: penjualanResponse } = usePenjualanList(selectedKandangId);
-  const [filters, setFilters] = useState<Record<string, string | null>>({});
-
+  const now = new Date();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ 
+    bulan_month: now.getMonth().toString(),
+    bulan_year: now.getFullYear().toString()
+  });
+  
+  const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
+  
+  const { data, isLoading, isError, error, refetch } = useStokTelurList(selectedKandangId, bulanFilter);
+  const { data: produksiResponse } = useProduktivitasList(selectedKandangId, bulanFilter);
+  const { data: penjualanResponse } = usePenjualanList(selectedKandangId, bulanFilter);
+  
   const produksiData = produksiResponse?.list || [];
   const penjualanData = penjualanResponse?.list || [];
 
@@ -58,13 +66,16 @@ export function StokTelurPage() {
   }, [penjualanData]);
 
   const { filteredData, stats, latestStock } = useMemo(() => {
-    if (!data || data.length === 0) return { filteredData: [], stats: [], latestStock: null };
+    const list = data?.data || [];
+    if (list.length === 0) {
+      return { filteredData: [], stats: [], latestStock: null };
+    }
     
     // Filter bulan yang dipilih
     const month = filters.bulan_month != null ? Number(filters.bulan_month) : null;
     const year = filters.bulan_year != null ? Number(filters.bulan_year) : null;
     
-    const filtered = data.filter(item => {
+    const filtered = list.filter(item => {
       if (month !== null && year !== null) {
         const date = new Date(item.tanggal);
         if (date.getMonth() !== month || date.getFullYear() !== year) return false;
@@ -79,7 +90,7 @@ export function StokTelurPage() {
       const prevYear = month === 0 ? year - 1 : year;
       
       // Filter data bulan sebelumnya dan ambil yang terakhir (data sudah sorted asc)
-      const prevMonthStocks = data.filter(item => {
+      const prevMonthStocks = list.filter(item => {
         const d = new Date(item.tanggal);
         return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
       });
@@ -117,7 +128,9 @@ export function StokTelurPage() {
     return { filteredData: filtered, stats, latestStock: filtered[filtered.length - 1] || null };
   }, [data, filters, produksiByDate, penjualanByDate]);
 
-  const handleFilterChange = (f: Record<string, string | null>) => setFilters(f);
+  const handleFilterChange = (f: Record<string, string | null>) => {
+    setFilters(f);
+  };
 
   if (isLoading && !data) {
     return <PageSkeleton eyebrow="Telur" title="Stok Telur" description="Pantau stok telur per kandang." statsCount={4} statsColumns={2} tableColumns={4} />;
@@ -135,28 +148,7 @@ export function StokTelurPage() {
     );
   }
 
-  if (!data || data.length === 0) {
-    return (
-      <section className="space-y-6">
-        <div>
-          <div className={styles.pageHeader.eyebrow}>Telur</div>
-          <h1 className={styles.pageHeader.title}>Stok Telur</h1>
-          <p className={styles.pageHeader.description}>Posisi stok telur per kandang.</p>
-        </div>
-        <Card className="p-12 text-center">
-          <Package className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="font-medium text-lg mb-2">Belum Ada Data Stok</h3>
-          <p className="text-muted-foreground text-sm mb-4">Stok akan otomatis tercatat saat ada input produksi telur.</p>
-          <Button variant="outline" asChild>
-            <a href="/client/dashboard/telur/produktivitas">
-              Input Produksi <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-        </Card>
-      </section>
-    );
-  }
-
+  // Langsung tampilkan halaman, meskipun data kosong
   return (
     <section className="space-y-6">
       <div>
@@ -166,7 +158,7 @@ export function StokTelurPage() {
       </div>
 
       <DataStats stats={stats} columns={4} />
-      <DataFilters config={filterConfig} onFilterChange={handleFilterChange} />
+      <DataFilters config={filterConfig} initialValues={filters} onFilterChange={handleFilterChange} />
 
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col rounded-lg overflow-hidden" style={{ height: '600px' }}>

@@ -14,6 +14,7 @@ import { DataFilters, type FilterConfig } from "@/components/shared/data-filters
 import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Plus } from "lucide-react";
 import { styles } from "@/lib/styles";
+import { useApiList } from "@/hooks/use-api";
 
 import { JenisPakanFormDialog } from "../components/form-dialog";
 import { useJenisPakanList, useCreateJenisPakan, useUpdateJenisPakan, useDeleteJenisPakan } from "../hooks/use-jenis-pakan";
@@ -27,25 +28,33 @@ const formatDate = (value?: string | null) => {
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 };
 
-const filterConfig: FilterConfig[] = [
-  { key: "search", label: "Cari Jenis Pakan", type: "search", placeholder: "Cari kode atau nama..." },
-  { key: "status", label: "Status", type: "select", options: [
-    { value: "aktif", label: "Aktif" },
-    { value: "tidak_aktif", label: "Tidak Aktif" },
-  ]},
-];
+type Kandang = {
+  id: string;
+  kode: string;
+  nama: string;
+};
 
 export function JenisPakanPage() {
-  const { data, isLoading, isError, error, refetch } = useJenisPakanList();
+  const [filters, setFilters] = useState<Record<string, string | null>>({ search: null, status: null, kandang: null });
+  const { data: kandangList = [] } = useApiList<Kandang>("/api/kandang?status=aktif");
+  const { data, isLoading, isError, error, refetch } = useJenisPakanList(false, filters.kandang || undefined);
   const createMutation = useCreateJenisPakan();
   const updateMutation = useUpdateJenisPakan();
   const deleteMutation = useDeleteJenisPakan();
 
-  const [filters, setFilters] = useState<Record<string, string | null>>({ search: null, status: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<JenisPakan | null>(null);
+
+  const filterConfig: FilterConfig[] = [
+    { key: "search", label: "Cari Jenis Pakan", type: "search", placeholder: "Cari kode atau nama..." },
+    { key: "kandang", label: "Kandang", type: "select", options: kandangList.map(k => ({ value: k.id, label: `${k.kode} - ${k.nama}` })) },
+    { key: "status", label: "Status", type: "select", options: [
+      { value: "aktif", label: "Aktif" },
+      { value: "tidak_aktif", label: "Tidak Aktif" },
+    ]},
+  ];
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -67,6 +76,7 @@ export function JenisPakanPage() {
 
   const columns: ColumnDef<JenisPakan>[] = [
     { key: "no", header: "No", headerClassName: "w-12", className: styles.table.cellMuted, render: (_, i) => i + 1, skeleton: <Skeleton className="h-4 w-5" /> },
+    { key: "kandang", header: "Kandang", className: styles.table.cellTertiary, render: (item) => item.kandang ? `${item.kandang.kode}` : "-", skeleton: <Skeleton className="h-4 w-14" /> },
     { key: "kode", header: "Kode", className: styles.table.cellPrimary, render: (item) => item.kode, skeleton: <Skeleton className="h-4 w-16" /> },
     { key: "nama", header: "Nama", className: styles.table.cellSecondary, render: (item) => item.nama, skeleton: <Skeleton className="h-4 w-24" /> },
     { key: "satuan", header: "Satuan", className: styles.table.cellTertiary, render: (item) => item.satuan, skeleton: <Skeleton className="h-4 w-12" /> },

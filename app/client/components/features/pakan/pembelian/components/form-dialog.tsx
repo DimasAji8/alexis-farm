@@ -103,7 +103,15 @@ export function PembelianPakanFormDialog({ open, onOpenChange, onSubmit, isLoadi
             </div>
             <div className="grid gap-2">
               <Label htmlFor="jumlahKg">Jumlah (Kg) <span className="text-red-500">*</span></Label>
-              <Input id="jumlahKg" type="number" step="0.01" placeholder="Contoh: 50" className={errors.jumlahKg ? "border-red-500" : ""} {...register("jumlahKg", { valueAsNumber: true })} />
+              <Input 
+                id="jumlahKg" 
+                type="number" 
+                step="0.01" 
+                placeholder="Contoh: 50" 
+                className={errors.jumlahKg ? "border-red-500" : ""} 
+                onFocus={(e) => e.target.select()}
+                {...register("jumlahKg", { valueAsNumber: true })} 
+              />
               {errors.jumlahKg && <p className="text-xs text-red-500">{errors.jumlahKg.message}</p>}
             </div>
             <div className="grid gap-2">

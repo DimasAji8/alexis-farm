@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createJenisPakanSchema = z.object({
+  kandangId: z.string().min(1, "Kandang wajib dipilih"),
   kode: z
     .string()
     .min(1, "Kode pakan wajib diisi")

@@ -111,7 +111,7 @@ export default function DashboardPage() {
             (dashboard?.stats.tingkatKematian || 0) > 2
               ? "text-rose-700 dark:text-rose-300"
               : "text-slate-700 dark:text-slate-300"
-          }`}>Tingkat Kematian</p>
+          }`}>Tingkat Kematian Bulan Ini</p>
           <div className="flex items-baseline gap-2 mt-1 sm:mt-2">
             <p className={`text-2xl sm:text-3xl font-bold ${
               (dashboard?.stats.tingkatKematian || 0) > 2 

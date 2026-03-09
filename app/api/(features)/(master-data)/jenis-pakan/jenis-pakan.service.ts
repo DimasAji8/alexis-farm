@@ -5,21 +5,29 @@ import { validateJenisPakanRelations } from "@/app/api/shared/utils/relation-val
 import type { CreateJenisPakanInput, UpdateJenisPakanInput } from "./jenis-pakan.validation";
 
 export class JenisPakanService {
-  static async getAll() {
+  static async getAll(kandangId?: string) {
+    const where = kandangId ? { kandangId } : {};
     return prisma.jenisPakan.findMany({
+      where,
+      include: { kandang: true },
       orderBy: { nama: "asc" },
     });
   }
 
-  static async getActive() {
+  static async getActive(kandangId?: string) {
+    const where = kandangId ? { kandangId, isActive: true } : { isActive: true };
     return prisma.jenisPakan.findMany({
-      where: { isActive: true },
+      where,
+      include: { kandang: true },
       orderBy: { nama: "asc" },
     });
   }
 
   static async getById(id: string) {
-    const jenisPakan = await prisma.jenisPakan.findUnique({ where: { id } });
+    const jenisPakan = await prisma.jenisPakan.findUnique({ 
+      where: { id },
+      include: { kandang: true },
+    });
     if (!jenisPakan) {
       throw new NotFoundError("Jenis pakan tidak ditemukan");
     }
@@ -29,9 +37,23 @@ export class JenisPakanService {
   static async create(data: CreateJenisPakanInput) {
     const userId = await requireRole(["super_user", "staff"]);
     
-    const existing = await prisma.jenisPakan.findUnique({ where: { kode: data.kode } });
+    // Validasi kandang exists
+    const kandang = await prisma.kandang.findUnique({ where: { id: data.kandangId } });
+    if (!kandang) {
+      throw new ValidationError("Kandang tidak ditemukan");
+    }
+    
+    // Check kode unik per kandang
+    const existing = await prisma.jenisPakan.findUnique({ 
+      where: { 
+        kandangId_kode: {
+          kandangId: data.kandangId,
+          kode: data.kode,
+        }
+      } 
+    });
     if (existing) {
-      throw new ValidationError("Kode pakan sudah digunakan");
+      throw new ValidationError("Kode pakan sudah digunakan di kandang ini");
     }
 
     return prisma.jenisPakan.create({
@@ -39,6 +61,7 @@ export class JenisPakanService {
         ...data,
         createdBy: userId,
       },
+      include: { kandang: true },
     });
   }
 
@@ -50,10 +73,21 @@ export class JenisPakanService {
       throw new NotFoundError("Jenis pakan tidak ditemukan");
     }
 
-    if (data.kode && data.kode !== existing.kode) {
-      const duplicate = await prisma.jenisPakan.findUnique({ where: { kode: data.kode } });
-      if (duplicate) {
-        throw new ValidationError("Kode pakan sudah digunakan");
+    // Jika mengubah kandang atau kode, cek uniqueness
+    if ((data.kandangId || data.kode) && (data.kandangId !== existing.kandangId || data.kode !== existing.kode)) {
+      const kandangId = data.kandangId || existing.kandangId;
+      const kode = data.kode || existing.kode;
+      
+      const duplicate = await prisma.jenisPakan.findUnique({ 
+        where: { 
+          kandangId_kode: {
+            kandangId,
+            kode,
+          }
+        } 
+      });
+      if (duplicate && duplicate.id !== id) {
+        throw new ValidationError("Kode pakan sudah digunakan di kandang ini");
       }
     }
 
@@ -63,6 +97,7 @@ export class JenisPakanService {
         ...data,
         updatedBy: userId,
       },
+      include: { kandang: true },
     });
   }
 
@@ -79,6 +114,7 @@ export class JenisPakanService {
     return prisma.jenisPakan.update({
       where: { id },
       data: { isActive: false },
+      include: { kandang: true },
     });
   }
 }

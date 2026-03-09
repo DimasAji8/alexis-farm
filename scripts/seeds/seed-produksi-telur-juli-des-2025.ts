@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { prisma } from "../app/api/db/prisma";
+import { prisma } from "../../app/api/db/prisma";
 
 async function main() {
   console.log("🌱 Seeding Produksi Telur Juli - Desember 2025...");

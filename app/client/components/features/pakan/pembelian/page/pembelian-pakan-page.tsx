@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,6 +39,11 @@ export function PembelianPakanPage() {
   const [editingItem, setEditingItem] = useState<PembelianPakan | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<PembelianPakan | null>(null);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const bulanFilter = useMonthFilter(filters.bulan_month, filters.bulan_year);
   const { data: response, isLoading } = usePembelianPakanList(bulanFilter, filters.jenisPakanId);
