@@ -45,6 +45,7 @@ export default function PemakaianPakanPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     jenisPakanId: "",
+    tanggalPakai: new Date(),
     jumlahKg: "",
     keterangan: "",
   });
@@ -143,9 +144,10 @@ export default function PemakaianPakanPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         kandangId: selectedKandangId,
-        tanggalPakai: format(selectedDate, "yyyy-MM-dd"),
-        ...form,
+        tanggalPakai: format(form.tanggalPakai, "yyyy-MM-dd"),
+        jenisPakanId: form.jenisPakanId,
         jumlahKg: parseFloat(form.jumlahKg),
+        keterangan: form.keterangan,
       }),
     });
     const json = await res.json();
@@ -157,6 +159,7 @@ export default function PemakaianPakanPage() {
       queryClient.invalidateQueries({ queryKey: ["pakan-dashboard"] });
       setForm({
         jenisPakanId: "",
+        tanggalPakai: new Date(),
         jumlahKg: "",
         keterangan: "",
       });
@@ -209,6 +212,20 @@ export default function PemakaianPakanPage() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="tanggalPakai">Tanggal Pakai <span className="text-red-500">*</span></Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("justify-start text-left font-normal", !form.tanggalPakai && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.tanggalPakai ? format(form.tanggalPakai, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.tanggalPakai} onSelect={(date) => date && setForm({ ...form, tanggalPakai: date })} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="jenisPakanId">Jenis Pakan <span className="text-red-500">*</span></Label>
                 <Select value={form.jenisPakanId} onValueChange={(v) => setForm({ ...form, jenisPakanId: v })}>
